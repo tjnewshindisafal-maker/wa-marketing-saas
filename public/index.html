@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>WA Marketing Pro - Advizr Media</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080f;--s1:#0e1018;--s2:#12151f;--s3:#171b28;
+  --border:#1d2235;--border2:#252d42;
+  --accent:#6c63ff;--accent2:#4f46e5;--a3:rgba(108,99,255,0.1);
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--wa:#25d366;
+  --white:#eef2ff;--text:#b8c0dc;--muted:#404868;
+  --font:"Plus Jakarta Sans",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);-webkit-font-smoothing:antialiased;}
+body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse 70% 40% at 60% 0%,rgba(108,99,255,.07),transparent),
+             radial-gradient(ellipse 50% 30% at 10% 80%,rgba(37,211,102,.04),transparent);}
+
+/* NAV */
+.nav{position:fixed;top:0;left:0;right:0;z-index:100;height:62px;display:flex;align-items:center;
+  justify-content:space-between;padding:0 48px;background:rgba(7,8,15,.88);
+  backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-ic{width:36px;height:36px;border-radius:10px;background:linear-gradient(135deg,var(--accent),var(--accent2));
+  display:flex;align-items:center;justify-content:center;font-size:18px;}
+.logo-nm{font-size:16px;font-weight:800;color:var(--white);}
+.logo-nm span{color:var(--wa);}
+.nav-btns{display:flex;gap:10px;}
+.btn-login{background:transparent;border:1px solid var(--border2);color:var(--text);
+  padding:8px 20px;border-radius:8px;font-family:var(--font);font-size:13px;font-weight:600;cursor:pointer;}
+.btn-login:hover{border-color:var(--accent);color:var(--accent);}
+.btn-start{background:var(--wa);color:#fff;padding:8px 20px;border-radius:8px;
+  font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;border:none;}
+.btn-start:hover{background:#128c7e;}
+
+/* HERO */
+.hero{position:relative;z-index:1;min-height:100vh;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;text-align:center;padding:100px 24px 80px;}
+.pill{display:inline-flex;align-items:center;gap:8px;background:rgba(37,211,102,.1);
+  border:1px solid rgba(37,211,102,.25);color:var(--wa);font-size:12px;font-weight:700;
+  padding:6px 16px;border-radius:20px;margin-bottom:28px;text-transform:uppercase;letter-spacing:1.2px;}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--wa);animation:bl 1.4s infinite;}
+@keyframes bl{0%,100%{opacity:1}50%{opacity:.3}}
+.hero h1{font-size:clamp(32px,6vw,72px);font-weight:900;color:var(--white);line-height:1.05;
+  letter-spacing:-2px;margin-bottom:22px;}
+.hero h1 em{color:var(--wa);font-style:normal;}
+.hero-sub{font-size:17px;color:var(--muted);max-width:580px;line-height:1.75;margin-bottom:40px;}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;}
+.btn-hero{padding:15px 36px;border-radius:12px;font-family:var(--font);font-size:15px;font-weight:700;
+  cursor:pointer;border:none;background:var(--wa);color:#fff;box-shadow:0 4px 20px rgba(37,211,102,.3);transition:all .25s;}
+.btn-hero:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(37,211,102,.4);}
+.btn-hero-out{padding:15px 36px;border-radius:12px;font-family:var(--font);font-size:15px;font-weight:700;
+  cursor:pointer;background:transparent;border:1px solid var(--border2);color:var(--text);transition:all .25s;}
+.btn-hero-out:hover{border-color:var(--accent);color:var(--accent);}
+.stats{display:flex;gap:44px;margin-top:56px;justify-content:center;flex-wrap:wrap;}
+.stat-n{font-size:32px;font-weight:800;color:var(--white);}
+.stat-l{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px;}
+
+/* SECTIONS */
+.sec{position:relative;z-index:1;padding:80px 24px;}
+.mw{max-width:1060px;margin:0 auto;}
+.sec-tag{text-align:center;font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--accent);font-weight:700;margin-bottom:12px;}
+.sec-h{text-align:center;font-size:clamp(24px,3.5vw,42px);font-weight:800;color:var(--white);letter-spacing:-1px;margin-bottom:14px;}
+.sec-sub{text-align:center;color:var(--muted);font-size:15px;max-width:520px;margin:0 auto 48px;line-height:1.7;}
+
+/* FEATURES */
+.feat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+.feat{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:26px;transition:all .3s;}
+.feat:hover{border-color:rgba(108,99,255,.3);transform:translateY(-3px);}
+.feat-ico{width:48px;height:48px;border-radius:12px;background:var(--a3);
+  border:1px solid rgba(108,99,255,.2);display:flex;align-items:center;justify-content:center;font-size:24px;margin-bottom:16px;}
+.feat-title{font-size:16px;font-weight:700;color:var(--white);margin-bottom:7px;}
+.feat-text{font-size:13px;color:var(--muted);line-height:1.65;}
+
+/* INDUSTRIES */
+.ind-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.ind-card{background:var(--s1);border:1px solid var(--border);border-radius:12px;padding:20px;
+  display:flex;align-items:center;gap:14px;transition:all .2s;}
+.ind-card:hover{border-color:rgba(37,211,102,.3);}
+.ind-ico{font-size:28px;}
+.ind-name{font-size:14px;font-weight:700;color:var(--white);}
+.ind-desc{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* PRICING */
+.price-grid{display:grid;grid-template-columns:1fr 1.08fr 1fr;gap:16px;max-width:900px;margin:0 auto;}
+.pcard{background:var(--s1);border:1px solid var(--border);border-radius:16px;padding:28px 24px;position:relative;transition:all .3s;}
+.pcard.hot{border-color:var(--accent);box-shadow:0 0 48px rgba(108,99,255,.12);transform:scale(1.03);}
+.hot-tag{position:absolute;top:-13px;left:50%;transform:translateX(-50%);background:var(--accent);
+  color:#fff;font-size:11px;font-weight:800;padding:3px 16px;border-radius:20px;white-space:nowrap;}
+.pplan{font-size:11px;text-transform:uppercase;letter-spacing:2px;color:var(--muted);font-weight:600;margin-bottom:10px;}
+.pprice{font-size:44px;font-weight:800;color:var(--white);line-height:1;}
+.pprice small{font-size:18px;color:var(--muted);}
+.pperiod{font-size:13px;color:var(--muted);margin-bottom:22px;margin-top:4px;}
+.psetup{font-size:12px;color:var(--yellow);margin-bottom:18px;}
+.pfeats{list-style:none;display:flex;flex-direction:column;gap:9px;margin-bottom:24px;}
+.pfeats li{display:flex;align-items:center;gap:8px;font-size:13px;}
+.pfeats li::before{content:"✓";color:var(--green);font-weight:700;font-size:12px;flex-shrink:0;}
+.pfeats li.no::before{content:"✗";color:var(--muted);}
+.pfeats li.no{color:var(--muted);}
+.btn-price{width:100%;padding:13px;border-radius:10px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
+.btn-po{background:transparent;border:1px solid var(--border2);color:var(--text);}
+.btn-po:hover{border-color:var(--accent);color:var(--accent);}
+.btn-pf{background:var(--accent);color:#fff;}
+.btn-pf:hover{background:var(--accent2);}
+.btn-wa2{background:var(--wa);color:#fff;}
+.btn-wa2:hover{background:#128c7e;}
+
+/* HOW IT WORKS */
+.steps{display:flex;gap:0;max-width:800px;margin:0 auto;position:relative;}
+.steps::before{content:"";position:absolute;top:28px;left:10%;right:10%;height:1px;
+  background:linear-gradient(90deg,var(--accent),rgba(108,99,255,.1));z-index:0;}
+.step{flex:1;text-align:center;position:relative;z-index:1;padding:0 8px;}
+.step-c{width:56px;height:56px;border-radius:50%;background:var(--s1);border:2px solid var(--accent);
+  display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 14px;}
+.step-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:5px;}
+.step-text{font-size:12px;color:var(--muted);line-height:1.6;}
+
+/* FOOTER */
+footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28px 48px;
+  display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;}
+.fcopy{font-size:12px;color:var(--muted);}
+.flinks a{font-size:12px;color:var(--muted);text-decoration:none;margin-left:18px;}
+.flinks a:hover{color:var(--accent);}
+
+/* MODALS */
+.overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.8);
+  backdrop-filter:blur(12px);align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:var(--s2);border:1px solid var(--border2);border-radius:18px;padding:36px 32px;
+  width:440px;max-width:95vw;position:relative;max-height:92vh;overflow-y:auto;}
+.modal-x{position:absolute;top:14px;right:16px;background:none;border:none;color:var(--muted);
+  font-size:18px;cursor:pointer;}
+.modal h2{font-size:22px;font-weight:800;color:var(--white);margin-bottom:4px;}
+.modal-sub{font-size:13px;color:var(--muted);margin-bottom:20px;}
+.mfield{margin-bottom:12px;}
+.mfield label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;}
+.mfield input,.mfield select{width:100%;background:var(--s3);border:1px solid var(--border2);
+  border-radius:9px;padding:10px 14px;color:var(--white);font-family:var(--font);font-size:14px;}
+.mfield input:focus,.mfield select:focus{outline:none;border-color:var(--accent);}
+.mfield input::placeholder{color:var(--muted);}
+.mfield select option{background:#14182a;}
+.btn-modal{width:100%;padding:13px;border:none;border-radius:10px;cursor:pointer;
+  font-family:var(--font);font-size:15px;font-weight:700;margin-top:6px;transition:all .2s;}
+.btn-modal-acc{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
+.btn-modal-wa{background:var(--wa);color:#fff;}
+.modal-sw{text-align:center;font-size:13px;color:var(--muted);margin-top:14px;}
+.modal-sw a{color:var(--accent);cursor:pointer;}
+.plan-sel{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:14px;}
+.plan-opt{border:1px solid var(--border2);border-radius:10px;padding:12px 8px;text-align:center;cursor:pointer;transition:all .2s;}
+.plan-opt.sel{border-color:var(--accent);background:var(--a3);}
+.plan-opt-name{font-size:13px;font-weight:700;color:var(--white);}
+.plan-opt-price{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* UPI MODAL */
+.upi-box{background:var(--s3);border:1px solid var(--border2);border-radius:12px;padding:20px;text-align:center;margin:14px 0;}
+.upi-qr{width:180px;height:180px;margin:0 auto 12px;background:#fff;border-radius:10px;padding:10px;display:flex;align-items:center;justify-content:center;}
+.upi-qr img{width:100%;height:100%;object-fit:contain;}
+.upi-id{font-size:14px;font-weight:700;color:var(--white);font-family:monospace;margin-bottom:4px;}
+.upi-name{font-size:12px;color:var(--muted);}
+.upi-amount{font-size:28px;font-weight:800;color:var(--green);margin:10px 0;}
+.copy-btn{background:var(--a3);border:1px solid rgba(108,99,255,.25);color:var(--accent);
+  padding:6px 16px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;font-family:var(--font);}
+.notice-box{background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:9px;
+  padding:10px 14px;font-size:12px;color:#c8932a;line-height:1.7;margin-bottom:12px;}
+.success-box{background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:12px;
+  padding:24px;text-align:center;}
+
+/* TOAST */
+#toasts{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--s1);border:1px solid var(--border2);border-radius:12px;padding:11px 16px;
+  font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;min-width:240px;}
+.toast.ok{border-color:rgba(34,197,94,.4);}
+.toast.err{border-color:rgba(239,68,68,.4);}
+
+@media(max-width:768px){
+  .nav{padding:0 18px;}
+  .feat-grid,.ind-grid,.price-grid{grid-template-columns:1fr;}
+  .pcard.hot{transform:none;}
+  .steps{flex-direction:column;align-items:center;gap:20px;}
+  .steps::before{display:none;}
+  footer{flex-direction:column;text-align:center;}
+  .plan-sel{grid-template-columns:1fr;}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="logo">
+    <div class="logo-ic">&#x1F4AC;</div>
+    <div class="logo-nm">WA Marketing <span>Pro</span></div>
+  </div>
+  <div class="nav-btns">
+    <button class="btn-login" id="nav-login">Login</button>
+    <button class="btn-start" id="nav-signup">Get Started</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="pill">&#x1F4AC; India's #1 WhatsApp Bulk Marketing Tool</div>
+  <h1>Send WhatsApp Messages<br>With <em>Image + Your Name</em><br>To Every Customer</h1>
+  <p class="hero-sub">Upload Excel, add product image, send to 500+ customers — directly from your WhatsApp number. Your business name shows up!</p>
+  <div class="hero-btns">
+    <button class="btn-hero" id="hero-signup">&#x1F680; Start Free Trial — 7 Days</button>
+    <button class="btn-hero-out" onclick="document.getElementById('sec-price').scrollIntoView({behavior:'smooth'})">View Pricing</button>
+  </div>
+  <div class="stats">
+    <div><div class="stat-n">500+</div><div class="stat-l">Businesses</div></div>
+    <div><div class="stat-n">6</div><div class="stat-l">Industries</div></div>
+    <div><div class="stat-n">0</div><div class="stat-l">API Cost</div></div>
+    <div><div class="stat-n">100%</div><div class="stat-l">Your Name</div></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="sec" style="background:var(--s1);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="sec-tag">Features</div>
+  <div class="sec-h">Everything You Need</div>
+  <div class="sec-sub">Send images, videos & messages directly from your WhatsApp</div>
+  <div class="feat-grid mw">
+    <div class="feat"><div class="feat-ico">&#x1F4F8;</div><div class="feat-title">Image + Message</div><div class="feat-text">Send product photos directly — no links, real image in WhatsApp.</div></div>
+    <div class="feat"><div class="feat-ico">&#x1F4CA;</div><div class="feat-title">Excel Bulk Upload</div><div class="feat-text">Upload your customer list — Name, Phone. Done in seconds.</div></div>
+    <div class="feat"><div class="feat-ico">&#x1F3E2;</div><div class="feat-title">Your Business Name</div><div class="feat-text">Messages go from YOUR WhatsApp — your name shows, not ours!</div></div>
+    <div class="feat"><div class="feat-ico">&#x270F;&#xFE0F;</div><div class="feat-title">Custom Templates</div><div class="feat-text">Product launch, Sale offer, Festival wishes — ready templates.</div></div>
+    <div class="feat"><div class="feat-ico">&#x1F4CA;</div><div class="feat-title">Live Status</div><div class="feat-text">See each message — Sent or Failed — in real time.</div></div>
+    <div class="feat"><div class="feat-ico">&#x1F4F1;</div><div class="feat-title">Any Device</div><div class="feat-text">Works on mobile, tablet and desktop. Send from anywhere.</div></div>
+  </div>
+</section>
+
+<!-- INDUSTRIES -->
+<section class="sec">
+  <div class="sec-tag">Industries</div>
+  <div class="sec-h">Works for Every Business</div>
+  <div class="ind-grid mw">
+    <div class="ind-card"><div class="ind-ico">&#x1F4E6;</div><div><div class="ind-name">Courier & Logistics</div><div class="ind-desc">Pickup & delivery notifications</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F6D2;</div><div><div class="ind-name">E-commerce</div><div class="ind-desc">Order updates & promotions</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F374;</div><div><div class="ind-name">Restaurant & Food</div><div class="ind-desc">Daily specials & offers</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F3E0;</div><div><div class="ind-name">Real Estate</div><div class="ind-desc">Property listings & reminders</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F527;</div><div><div class="ind-name">Repair Services</div><div class="ind-desc">Job status & ready alerts</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x26A1;</div><div><div class="ind-name">Electrician & Plumber</div><div class="ind-desc">Work order confirmations</div></div></div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="sec" style="background:var(--s1);border-top:1px solid var(--border);border-bottom:1px solid var(--border);">
+  <div class="sec-tag">Process</div>
+  <div class="sec-h">How It Works</div>
+  <div class="sec-sub">Up and running in 2 minutes</div>
+  <div class="steps mw">
+    <div class="step"><div class="step-c">&#x1F4F1;</div><div class="step-title">Scan QR</div><div class="step-text">Connect your WhatsApp by scanning QR code once</div></div>
+    <div class="step"><div class="step-c">&#x1F4CA;</div><div class="step-title">Upload Excel</div><div class="step-text">Upload customer list with Name & Phone</div></div>
+    <div class="step"><div class="step-c">&#x1F4F8;</div><div class="step-title">Add Image</div><div class="step-text">Select product photo and write message</div></div>
+    <div class="step"><div class="step-c">&#x1F680;</div><div class="step-title">Send All</div><div class="step-text">Click Send — messages go from YOUR number!</div></div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="sec" id="sec-price">
+  <div class="sec-tag">Pricing</div>
+  <div class="sec-h">Simple & Transparent</div>
+  <div class="sec-sub">Start free. No hidden charges.</div>
+  <div class="price-grid">
+    <div class="pcard">
+      <div class="pplan">Starter</div>
+      <div class="pprice"><small>&#x20B9;</small>499</div>
+      <div class="pperiod">per month</div>
+      <div class="psetup">+ &#x20B9;1,000 one-time setup</div>
+      <ul class="pfeats">
+        <li>50 messages/day</li>
+        <li>Excel Upload</li>
+        <li>Image + Message</li>
+        <li>3 Templates</li>
+        <li class="no">Priority Support</li>
+        <li class="no">Scheduled Messages</li>
+      </ul>
+      <button class="btn-price btn-po" data-plan="starter" data-amount="499">Get Started</button>
+    </div>
+    <div class="pcard hot">
+      <div class="hot-tag">&#x2B50; Most Popular</div>
+      <div class="pplan">Pro</div>
+      <div class="pprice"><small>&#x20B9;</small>999</div>
+      <div class="pperiod">per month</div>
+      <div class="psetup">+ &#x20B9;2,000 one-time setup</div>
+      <ul class="pfeats">
+        <li>200 messages/day</li>
+        <li>Excel Upload</li>
+        <li>Image + Message</li>
+        <li>All Templates</li>
+        <li>Priority Support</li>
+        <li class="no">Scheduled Messages</li>
+      </ul>
+      <button class="btn-price btn-pf" data-plan="pro" data-amount="999">Start 7-Day Free Trial</button>
+    </div>
+    <div class="pcard">
+      <div class="pplan">Business</div>
+      <div class="pprice"><small>&#x20B9;</small>1,999</div>
+      <div class="pperiod">per month</div>
+      <div class="psetup">+ &#x20B9;5,000 one-time setup</div>
+      <ul class="pfeats">
+        <li>500 messages/day</li>
+        <li>Excel Upload</li>
+        <li>Image + Message</li>
+        <li>All Templates</li>
+        <li>Priority Support</li>
+        <li>Scheduled Messages</li>
+      </ul>
+      <button class="btn-price btn-wa2" data-plan="business" data-amount="1999">Contact Sales</button>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="logo"><div class="logo-ic" style="width:28px;height:28px;font-size:14px;">&#x1F4AC;</div><div class="logo-nm" style="font-size:14px;">WA Marketing <span>Pro</span></div></div>
+  <div class="fcopy">&#x00A9; 2025 Advizr Media. All rights reserved.</div>
+  <div class="flinks"><a href="#">Privacy</a><a href="#">Terms</a><a href="https://wa.me/918087289267">Support</a></div>
+</footer>
+
+<!-- LOGIN MODAL -->
+<div class="overlay" id="modal-login">
+  <div class="modal">
+    <button class="modal-x" id="close-login">&#x2715;</button>
+    <h2>Welcome Back &#x1F44B;</h2>
+    <div class="modal-sub">Login to your WA Marketing dashboard</div>
+    <div class="mfield"><label>Email</label><input type="email" id="l-email" placeholder="you@example.com"></div>
+    <div class="mfield"><label>Password</label><input type="password" id="l-pass" placeholder="Your password"></div>
+    <button class="btn-modal btn-modal-acc" id="do-login">Login to Dashboard</button>
+    <div class="modal-sw">No account? <a id="goto-signup">Sign up</a></div>
+  </div>
+</div>
+
+<!-- SIGNUP MODAL -->
+<div class="overlay" id="modal-signup">
+  <div class="modal">
+    <button class="modal-x" id="close-signup">&#x2715;</button>
+    <h2>Get Started &#x1F680;</h2>
+    <div class="modal-sub">Choose your plan and create account</div>
+
+    <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Select Plan:</div>
+    <div class="plan-sel" id="plan-sel">
+      <div class="plan-opt sel" data-plan="starter" data-amount="499"><div class="plan-opt-name">Starter</div><div class="plan-opt-price">&#x20B9;499/mo</div></div>
+      <div class="plan-opt" data-plan="pro" data-amount="999"><div class="plan-opt-name">Pro &#x2B50;</div><div class="plan-opt-price">&#x20B9;999/mo</div></div>
+      <div class="plan-opt" data-plan="business" data-amount="1999"><div class="plan-opt-name">Business</div><div class="plan-opt-price">&#x20B9;1999/mo</div></div>
+    </div>
+
+    <div class="mfield"><label>Full Name *</label><input type="text" id="s-name" placeholder="Ramesh Kumar"></div>
+    <div class="mfield"><label>Business Name</label><input type="text" id="s-biz" placeholder="My Business"></div>
+    <div class="mfield"><label>Industry</label>
+      <select id="s-ind">
+        <option value="courier">📦 Courier & Logistics</option>
+        <option value="ecom">🛒 E-commerce</option>
+        <option value="food">🍴 Restaurant / Food</option>
+        <option value="realty">🏠 Real Estate</option>
+        <option value="repair">🔧 Repair Services</option>
+        <option value="electric">⚡ Electrician / Plumber</option>
+      </select>
+    </div>
+    <div class="mfield"><label>Email *</label><input type="email" id="s-email" placeholder="you@example.com"></div>
+    <div class="mfield"><label>Phone *</label><input type="tel" id="s-phone" placeholder="9876543210"></div>
+    <div class="mfield"><label>Password *</label><input type="password" id="s-pass" placeholder="Min 6 characters"></div>
+    <button class="btn-modal btn-modal-acc" id="do-signup">Continue to Payment</button>
+    <div class="modal-sw">Have account? <a id="goto-login2">Login</a></div>
+  </div>
+</div>
+
+<!-- UPI PAYMENT MODAL -->
+<div class="overlay" id="modal-upi">
+  <div class="modal">
+    <button class="modal-x" id="close-upi">&#x2715;</button>
+    <h2>&#x1F4B3; Pay via UPI</h2>
+    <div class="modal-sub">Complete payment to activate your account</div>
+
+    <div class="upi-box">
+      <div class="upi-qr">
+        <!-- UPI QR - replace src with your actual UPI QR image -->
+        <div style="width:100%;height:100%;background:linear-gradient(135deg,#6c63ff,#4f46e5);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;text-align:center;padding:10px;">
+          Upload your UPI QR image here
+        </div>
+      </div>
+      <div class="upi-amount" id="upi-amount">&#x20B9;999</div>
+      <div class="upi-id">advizrmedia@upi</div>
+      <div class="upi-name">Advizr Media</div>
+      <br>
+      <button class="copy-btn" id="copy-upi">&#x1F4CB; Copy UPI ID</button>
+    </div>
+
+    <div class="notice-box">
+      &#x26A0;&#xFE0F; After payment, send screenshot to WhatsApp: <b>8087289267</b><br>
+      Your account will be activated within <b>2-4 hours</b>.
+    </div>
+
+    <button class="btn-modal btn-modal-wa" id="send-payment-proof">&#x1F4AC; Send Payment Screenshot on WhatsApp</button>
+    <div style="text-align:center;margin-top:12px;">
+      <a href="https://wa.me/918087289267" target="_blank" style="color:var(--wa);font-size:13px;">Or WhatsApp us directly: 8087289267</a>
+    </div>
+  </div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+var selectedPlan   = 'starter';
+var selectedAmount = 499;
+var pendingUser    = null;
+
+// Toast
+function toast(msg, type){
+  var el = document.createElement('div');
+  el.className = 'toast '+(type||'ok');
+  el.innerHTML = (type==='err'?'&#x274C;':'&#x2705;')+' '+msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(function(){ el.remove(); }, 3500);
+}
+
+// Modal helpers
+function openModal(id){ document.getElementById('modal-'+id).classList.add('open'); }
+function closeModal(id){ document.getElementById('modal-'+id).classList.remove('open'); }
+
+// Nav buttons
+document.getElementById('nav-login').addEventListener('click', function(){ openModal('login'); });
+document.getElementById('nav-signup').addEventListener('click', function(){ openModal('signup'); });
+document.getElementById('hero-signup').addEventListener('click', function(){ openModal('signup'); });
+
+// Price buttons
+document.querySelectorAll('.btn-price').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    selectedPlan   = this.getAttribute('data-plan');
+    selectedAmount = this.getAttribute('data-amount');
+    // Pre-select plan in signup modal
+    document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.remove('sel'); });
+    document.querySelector('[data-plan="'+selectedPlan+'"]').classList.add('sel');
+    closeModal('login');
+    openModal('signup');
+  });
+});
+
+// Plan selector
+document.querySelectorAll('.plan-opt').forEach(function(opt){
+  opt.addEventListener('click', function(){
+    document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.remove('sel'); });
+    this.classList.add('sel');
+    selectedPlan   = this.getAttribute('data-plan');
+    selectedAmount = this.getAttribute('data-amount');
+  });
+});
+
+// Close modals
+document.getElementById('close-login').addEventListener('click', function(){ closeModal('login'); });
+document.getElementById('close-signup').addEventListener('click', function(){ closeModal('signup'); });
+document.getElementById('close-upi').addEventListener('click', function(){ closeModal('upi'); });
+
+// Switch modals
+document.getElementById('goto-signup').addEventListener('click', function(){ closeModal('login'); setTimeout(function(){ openModal('signup'); }, 150); });
+document.getElementById('goto-login2').addEventListener('click', function(){ closeModal('signup'); setTimeout(function(){ openModal('login'); }, 150); });
+
+// Login
+document.getElementById('do-login').addEventListener('click', function(){
+  var email = document.getElementById('l-email').value.trim();
+  var pass  = document.getElementById('l-pass').value.trim();
+  if(!email||!pass){ toast('Enter email and password!','err'); return; }
+  var btn = this; btn.textContent='Logging in...'; btn.disabled=true;
+  fetch('/api/auth/login',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({email:email, pass:pass})
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    btn.textContent='Login to Dashboard'; btn.disabled=false;
+    if(d.error){ toast(d.error,'err'); return; }
+    localStorage.setItem('wa_token', d.token);
+    localStorage.setItem('wa_user', JSON.stringify(d.user));
+    if(d.user.role==='admin'){
+      window.location.href='/admin';
+    } else {
+      window.location.href='/client';
+    }
+  })
+  .catch(function(){ btn.textContent='Login to Dashboard'; btn.disabled=false; toast('Server error!','err'); });
+});
+
+document.getElementById('l-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('do-login').click(); });
+
+// Signup
+document.getElementById('do-signup').addEventListener('click', function(){
+  var name  = document.getElementById('s-name').value.trim();
+  var biz   = document.getElementById('s-biz').value.trim();
+  var ind   = document.getElementById('s-ind').value;
+  var email = document.getElementById('s-email').value.trim();
+  var phone = document.getElementById('s-phone').value.trim();
+  var pass  = document.getElementById('s-pass').value.trim();
+
+  if(!name||!email||!pass||!phone){ toast('Fill all required fields!','err'); return; }
+  if(pass.length<6){ toast('Password min 6 characters!','err'); return; }
+
+  var btn = this; btn.textContent='Creating account...'; btn.disabled=true;
+
+  fetch('/api/auth/register',{
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ name:name, business:biz||name, industry:ind, email:email, phone:phone, pass:pass, plan:selectedPlan })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    btn.textContent='Continue to Payment'; btn.disabled=false;
+    if(d.error){ toast(d.error,'err'); return; }
+    pendingUser = { name:name, email:email, phone:phone, plan:selectedPlan, amount:selectedAmount };
+    closeModal('signup');
+    // Show UPI payment
+    document.getElementById('upi-amount').textContent = '&#x20B9;'+selectedAmount;
+    openModal('upi');
+  })
+  .catch(function(){ btn.textContent='Continue to Payment'; btn.disabled=false; toast('Server error!','err'); });
+});
+
+// Copy UPI ID
+document.getElementById('copy-upi').addEventListener('click', function(){
+  navigator.clipboard.writeText('advizrmedia@upi').then(function(){
+    toast('UPI ID copied!','ok');
+  }).catch(function(){});
+});
+
+// Send payment proof via WhatsApp
+document.getElementById('send-payment-proof').addEventListener('click', function(){
+  if(!pendingUser) return;
+  var msg = 'Hi Advizr Media!\n\nI have made payment for WA Marketing Pro.\n\nName: '+pendingUser.name+'\nEmail: '+pendingUser.email+'\nPhone: '+pendingUser.phone+'\nPlan: '+pendingUser.plan+' (Rs.'+pendingUser.amount+')\n\nPlease activate my account.\n\n[Attach payment screenshot]';
+  window.open('https://wa.me/918087289267?text='+encodeURIComponent(msg), '_blank');
+});
+
+// Close overlays on backdrop click
+document.querySelectorAll('.overlay').forEach(function(o){
+  o.addEventListener('click', function(e){ if(e.target===o) o.classList.remove('open'); });
+});
+
+// Check if already logged in
+var token = localStorage.getItem('wa_token');
+if(token){
+  fetch('/api/auth/me', { headers:{'Authorization':'Bearer '+token} })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.user){
+      if(d.user.role==='admin') window.location.href='/admin';
+      else window.location.href='/client';
+    }
+  }).catch(function(){});
+}
+</script>
+</body>
+</html>

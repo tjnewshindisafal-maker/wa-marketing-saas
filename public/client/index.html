@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Dashboard - WA Marketing Pro</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="/socket.io/socket.io.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#07080f;--s1:#0e1018;--s2:#12151f;--s3:#171b28;
+  --border:#1d2235;--border2:#252d42;
+  --accent:#6c63ff;--accent2:#4f46e5;--a3:rgba(108,99,255,0.1);
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--wa:#25d366;
+  --white:#eef2ff;--text:#b8c0dc;--muted:#404868;
+  --font:"Plus Jakarta Sans",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;-webkit-font-smoothing:antialiased;}
+
+/* NAV */
+.nav{background:var(--s1);border-bottom:1px solid var(--border);height:56px;
+  display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;z-index:50;}
+.nav-logo{display:flex;align-items:center;gap:9px;}
+.nav-logo-ic{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,#25d366,#128c7e);
+  display:flex;align-items:center;justify-content:center;font-size:15px;}
+.nav-logo-nm{font-size:15px;font-weight:800;color:var(--white);}
+.nav-logo-nm span{color:var(--wa);}
+.nav-right{display:flex;align-items:center;gap:10px;}
+.uchip{background:var(--s2);border:1px solid var(--border);border-radius:20px;
+  padding:5px 12px 5px 7px;display:flex;align-items:center;gap:8px;}
+.uav{width:26px;height:26px;border-radius:50%;background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;font-weight:800;font-size:12px;}
+.uname{font-size:13px;font-weight:600;color:var(--white);}
+.ptag{font-size:10px;padding:2px 8px;border-radius:10px;font-weight:700;}
+.ptag-starter{color:var(--muted);background:rgba(255,255,255,.05);border:1px solid var(--border);}
+.ptag-pro{color:var(--accent);background:var(--a3);border:1px solid rgba(108,99,255,.2);}
+.ptag-business{color:var(--yellow);background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.2);}
+.btn-lo{background:transparent;border:1px solid var(--border2);color:var(--muted);
+  padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;font-family:var(--font);}
+.btn-lo:hover{border-color:var(--red);color:var(--red);}
+
+/* PAGE */
+.page{max-width:1060px;margin:0 auto;padding:24px 16px;}
+
+/* CARDS */
+.card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:16px;}
+.card-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:14px;display:flex;align-items:center;gap:8px;}
+.step-num{width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center;}
+
+/* STATUS */
+.status-box{display:flex;align-items:center;gap:12px;padding:14px;background:var(--s2);border-radius:10px;border:1px solid var(--border2);margin-bottom:12px;}
+.sdot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+.sdot-dis{background:var(--red);}
+.sdot-con{background:var(--yellow);animation:pl 1s infinite;}
+.sdot-ok{background:var(--green);}
+@keyframes pl{0%,100%{opacity:1}50%{opacity:.4}}
+.stext{font-size:13px;font-weight:600;color:var(--white);}
+.sinfo{font-size:12px;color:var(--muted);margin-top:2px;}
+
+/* QR */
+#qrWrap{text-align:center;padding:16px 0;}
+#qrImg{width:210px;height:210px;border-radius:12px;border:3px solid var(--accent);}
+.qr-steps{font-size:12px;color:var(--muted);margin-top:10px;line-height:1.8;}
+
+/* GRID */
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+
+/* FIELDS */
+.field{margin-bottom:12px;}
+.field label{font-size:11px;color:var(--muted);display:block;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px;font-weight:600;}
+.field input,.field textarea{width:100%;background:var(--s3);border:1px solid var(--border2);border-radius:9px;padding:10px 14px;color:var(--white);font-family:var(--font);font-size:13px;}
+.field input:focus,.field textarea:focus{outline:none;border-color:var(--accent);}
+.field input::placeholder,.field textarea::placeholder{color:var(--muted);}
+.field textarea{resize:vertical;min-height:110px;line-height:1.6;}
+
+/* TEMPLATES */
+.tmpl-tabs{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;}
+.tmpl-tab{padding:7px 14px;border-radius:20px;border:1px solid var(--border2);background:var(--s2);
+  cursor:pointer;font-family:var(--font);font-size:12px;font-weight:600;color:var(--muted);}
+.tmpl-tab.on,.tmpl-tab:hover{background:var(--accent);border-color:var(--accent);color:#fff;}
+
+/* IMAGE */
+.img-drop{border:2px dashed var(--border2);border-radius:10px;padding:22px;text-align:center;cursor:pointer;position:relative;background:var(--s2);}
+.img-drop:hover{border-color:var(--accent);}
+.img-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+#imgPreview img{width:100%;max-height:160px;object-fit:cover;border-radius:8px;margin-top:10px;border:1px solid var(--border2);}
+.img-rem{background:rgba(239,68,68,.8);color:#fff;border:none;border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer;margin-top:6px;font-family:var(--font);}
+
+/* EXCEL */
+.excel-drop{border:2px dashed var(--border2);border-radius:10px;padding:18px;text-align:center;cursor:pointer;position:relative;background:var(--s2);margin-bottom:10px;}
+.excel-drop:hover{border-color:var(--green);}
+.excel-drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+
+/* TABLE */
+.contacts-list{max-height:240px;overflow-y:auto;border:1px solid var(--border);border-radius:9px;}
+table{width:100%;border-collapse:collapse;}
+th{background:rgba(255,255,255,.02);padding:7px 10px;text-align:left;font-size:10px;text-transform:uppercase;color:var(--muted);}
+td{padding:8px 10px;font-size:12px;border-top:1px solid rgba(255,255,255,.04);}
+
+/* STATS BAR */
+.stats-bar{display:flex;gap:10px;margin-bottom:10px;flex-wrap:wrap;}
+.stat-pill{background:var(--s2);border:1px solid var(--border);border-radius:20px;padding:5px 12px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:5px;}
+.dot{width:7px;height:7px;border-radius:50%;}
+
+/* PROGRESS */
+.prog-wrap{background:var(--s2);border-radius:8px;height:8px;margin:10px 0;overflow:hidden;}
+.prog-bar{height:100%;background:linear-gradient(90deg,var(--accent),var(--green));border-radius:8px;transition:width .4s;width:0;}
+
+/* PREVIEW */
+.wa-prev{background:#0b141a;border-radius:12px;padding:14px;}
+.wa-bub{background:#1f2c34;border-radius:12px 12px 12px 0;padding:10px 12px;max-width:90%;}
+.wa-img-prev{width:100%;border-radius:7px;margin-bottom:7px;max-height:140px;object-fit:cover;display:none;}
+.wa-txt{font-size:13px;color:#e9edef;line-height:1.6;white-space:pre-wrap;word-break:break-word;}
+.wa-time{font-size:10px;color:#8696a0;text-align:right;margin-top:4px;}
+
+/* LIMIT BAR */
+.limit-box{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:14px;}
+.limit-bar-wrap{flex:1;background:var(--s3);border-radius:20px;height:8px;overflow:hidden;}
+.limit-bar{height:100%;background:linear-gradient(90deg,var(--green),var(--accent));border-radius:20px;}
+.limit-text{font-size:12px;color:var(--muted);white-space:nowrap;}
+
+/* BUTTONS */
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:var(--font);}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;}
+.btn-wa{background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;border:none;border-radius:10px;padding:12px 22px;font-size:14px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-family:var(--font);}
+.btn-wa:disabled{opacity:.5;cursor:not-allowed;}
+.btn-sec{background:transparent;border:1px solid var(--border2);color:var(--text);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);}
+.btn-sec:hover{border-color:var(--accent);color:var(--accent);}
+.btn-danger{background:transparent;border:1px solid rgba(239,68,68,.3);color:var(--red);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:600;cursor:pointer;font-family:var(--font);}
+
+/* SENT STATUS */
+.st-sent{color:var(--green);font-weight:700;}
+.st-fail{color:var(--red);font-weight:700;}
+.st-pend{color:var(--muted);}
+
+/* TOAST */
+#toasts{position:fixed;bottom:24px;right:24px;z-index:9999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--s1);border:1px solid var(--border2);border-radius:12px;padding:11px 16px;font-size:13px;font-weight:500;display:flex;align-items:center;gap:10px;min-width:240px;}
+.toast.ok{border-color:rgba(34,197,94,.4);}
+.toast.err{border-color:rgba(239,68,68,.4);}
+
+@media(max-width:640px){.grid-2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-logo">
+    <div class="nav-logo-ic">&#x1F4AC;</div>
+    <div class="nav-logo-nm">WA Marketing <span>Pro</span></div>
+  </div>
+  <div class="nav-right">
+    <div class="uchip">
+      <div class="uav" id="uav">U</div>
+      <span class="uname" id="uname">Loading...</span>
+      <span class="ptag ptag-pro" id="ptag">Pro</span>
+    </div>
+    <button class="btn-lo" id="logoutBtn">Logout</button>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- Daily Limit -->
+  <div class="limit-box" id="limitBox" style="display:none;">
+    <div>&#x1F4CA;</div>
+    <div class="limit-bar-wrap"><div class="limit-bar" id="limitBar" style="width:0%"></div></div>
+    <div class="limit-text" id="limitText">0 / 0 messages today</div>
+  </div>
+
+  <!-- STEP 1: CONNECT -->
+  <div class="card">
+    <div class="card-title"><span class="step-num">1</span> Connect Your WhatsApp</div>
+    <div class="status-box">
+      <div class="sdot sdot-dis" id="sdot"></div>
+      <div><div class="stext" id="stext">Not Connected</div><div class="sinfo" id="sinfo">Connect your WhatsApp to start sending</div></div>
+    </div>
+    <div id="qrWrap" style="display:none;">
+      <img id="qrImg" src="" alt="QR">
+      <div class="qr-steps">1. Open WhatsApp on your phone<br>2. Menu (3 dots) → Linked Devices → Link a Device<br>3. Scan this QR code</div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn-wa" id="connectBtn">&#x1F4F1; Connect WhatsApp</button>
+      <button class="btn-danger" id="disconnectBtn" style="display:none;">Disconnect</button>
+    </div>
+  </div>
+
+  <!-- STEP 2 + 3: COMPOSE -->
+  <div class="card" id="composeCard" style="display:none;">
+    <div class="card-title"><span class="step-num">2</span> Compose Message</div>
+    <div class="grid-2">
+      <div>
+        <div class="field">
+          <label>Your Business Name</label>
+          <input type="text" id="storeName" placeholder="e.g. Ramesh Electronics" readonly style="color:var(--accent);">
+        </div>
+        <div class="tmpl-tabs">
+          <button class="tmpl-tab on" id="t1">&#x1F6CD; Product</button>
+          <button class="tmpl-tab" id="t2">&#x1F3F7; Sale</button>
+          <button class="tmpl-tab" id="t3">&#x1F389; Festival</button>
+          <button class="tmpl-tab" id="t4">&#x270F; Custom</button>
+        </div>
+        <div class="field">
+          <label>Message <span style="color:var(--muted);font-weight:400;">(use {name} for customer name)</span></label>
+          <textarea id="msgText" rows="6" placeholder="Hi {name}! ..."></textarea>
+        </div>
+      </div>
+      <div>
+        <div class="field">
+          <label>Product Image (Optional)</label>
+          <div class="img-drop" id="imgDrop">
+            <input type="file" id="imgInput" accept="image/*">
+            <div style="font-size:32px;">&#x1F4F8;</div>
+            <div style="font-size:13px;color:var(--muted);margin-top:6px;">Click or drag image here</div>
+            <div style="font-size:11px;color:var(--muted);">JPG, PNG, WEBP (max 50MB)</div>
+          </div>
+          <div id="imgPreview" style="display:none;">
+            <img id="prevImg" src="" alt="Preview">
+            <br><button class="img-rem" id="remImg">&#x2715; Remove</button>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <div style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px;">WhatsApp Preview:</div>
+          <div class="wa-prev">
+            <div class="wa-bub">
+              <img class="wa-img-prev" id="prevBubImg" src="" alt="">
+              <div class="wa-txt" id="prevTxt">Your message will appear here...</div>
+              <div class="wa-time">12:00 PM &#x2713;&#x2713;</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: CONTACTS -->
+  <div class="card" id="contactsCard" style="display:none;">
+    <div class="card-title"><span class="step-num">3</span> Contacts</div>
+    <div class="excel-drop">
+      <input type="file" id="excelInput" accept=".xlsx,.xls,.csv">
+      <div style="font-size:28px;">&#x1F4CA;</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:4px;">Upload Excel / CSV</div>
+      <div style="font-size:11px;color:var(--muted);">Need: <b style="color:var(--green);">Name</b> and <b style="color:var(--green);">Phone</b> columns</div>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:10px;">
+      <input type="text" id="mName" placeholder="Name" style="flex:1;background:var(--s3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--white);font-size:12px;font-family:var(--font);">
+      <input type="tel" id="mPhone" placeholder="Phone" style="flex:1;background:var(--s3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--white);font-size:12px;font-family:var(--font);">
+      <button class="btn-sec" id="addBtn">+ Add</button>
+    </div>
+    <div id="contactsWrap" style="display:none;">
+      <div class="stats-bar" id="statsBar"></div>
+      <div class="prog-wrap" id="progWrap" style="display:none;"><div class="prog-bar" id="progBar"></div></div>
+      <div style="display:flex;gap:8px;margin-bottom:8px;">
+        <button class="btn-sec" id="selAllBtn" style="font-size:11px;padding:5px 12px;">&#x2714; All</button>
+        <button class="btn-sec" id="clearSentBtn" style="font-size:11px;padding:5px 12px;">Clear Sent</button>
+        <button class="btn-sec" id="clearAllBtn" style="font-size:11px;padding:5px 12px;color:var(--red);">Clear All</button>
+      </div>
+      <div class="contacts-list">
+        <table><thead><tr><th><input type="checkbox" id="chkAll"></th><th>#</th><th>Name</th><th>Phone</th><th>Status</th></tr></thead>
+        <tbody id="cTb"></tbody></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 4: SEND -->
+  <div class="card" id="sendCard" style="display:none;">
+    <div class="card-title"><span class="step-num">4</span> Send Messages</div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.7;">
+      &#x26A0;&#xFE0F; Messages sent with 1.5-2.5 sec delay to avoid ban. Do not close this tab while sending.
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+      <button class="btn-wa" id="sendAllBtn" disabled>&#x1F4AC; Send to All (0)</button>
+      <button class="btn-primary" id="sendNextBtn" disabled>&#x25B6; Send Next</button>
+    </div>
+  </div>
+
+</div>
+
+<div id="toasts"></div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────────────
+var token     = localStorage.getItem('wa_token') || '';
+var currentUser = null;
+var contacts  = [];
+var imgFile   = null;
+var imgData   = null;
+var connected = false;
+var sending   = false;
+var pollTimer = null;
+
+// ── AUTH CHECK ────────────────────────────────────────────────────────────────
+function authHeaders(){ return { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }; }
+
+fetch('/api/auth/me', { headers:{ 'Authorization':'Bearer '+token } })
+.then(function(r){ return r.json(); })
+.then(function(d){
+  if(!d.user){ localStorage.removeItem('wa_token'); window.location.href='/'; return; }
+  currentUser = d.user;
+  document.getElementById('uav').textContent   = d.user.name.charAt(0).toUpperCase();
+  document.getElementById('uname').textContent = d.user.name;
+  document.getElementById('storeName').value   = d.user.business || d.user.name;
+  var pt = document.getElementById('ptag');
+  pt.textContent = d.user.plan;
+  pt.className   = 'ptag ptag-'+(d.user.plan||'starter');
+
+  // Show limit bar
+  var LIMITS = { starter:50, pro:200, business:500 };
+  var limit  = LIMITS[d.user.plan] || 50;
+  var used   = d.user.msgCount || 0;
+  var pct    = Math.min(100, Math.round((used/limit)*100));
+  document.getElementById('limitBox').style.display = 'flex';
+  document.getElementById('limitBar').style.width   = pct+'%';
+  document.getElementById('limitText').textContent  = used+' / '+limit+' messages today ('+d.user.plan+' plan)';
+
+  setTemplate('product');
+  startPolling();
+})
+.catch(function(){ window.location.href='/'; });
+
+// ── SOCKET ────────────────────────────────────────────────────────────────────
+var socket = io();
+socket.on('connect', function(){ if(currentUser) socket.emit('join_wa', currentUser.id); });
+
+socket.on('qr', function(d){
+  document.getElementById('qrImg').src = d.qr;
+  document.getElementById('qrWrap').style.display = 'block';
+  setStatus('connecting','Scan QR Code','Open WhatsApp → Linked Devices → Link a Device');
+});
+
+socket.on('ready', function(d){
+  onConnected(d.name, d.number);
+});
+
+socket.on('disconnected', function(){
+  connected=false;
+  setStatus('disconnected','Not Connected','');
+  document.getElementById('connectBtn').style.display='block';
+  document.getElementById('disconnectBtn').style.display='none';
+  document.getElementById('composeCard').style.display='none';
+  document.getElementById('contactsCard').style.display='none';
+  document.getElementById('sendCard').style.display='none';
+});
+
+socket.on('sent', function(d){
+  contacts[d.index].status = d.status;
+  renderContacts();
+  var done = contacts.filter(function(c){ return c.status!=='pending'; }).length;
+  var pct  = contacts.length ? Math.round((done/contacts.length)*100) : 0;
+  document.getElementById('progBar').style.width = pct+'%';
+});
+
+socket.on('done', function(d){
+  sending=false;
+  document.getElementById('progWrap').style.display='none';
+  document.getElementById('sendAllBtn').disabled=false;
+  toast('Done! '+d.sent+' of '+d.total+' messages sent!','ok');
+  updateSendBtns();
+});
+
+// ── POLLING ───────────────────────────────────────────────────────────────────
+function startPolling(){
+  if(pollTimer) clearInterval(pollTimer);
+  pollTimer = setInterval(function(){
+    if(connected) return;
+    fetch('/api/wa/status', { headers:{ 'Authorization':'Bearer '+token } })
+    .then(function(r){ return r.json(); })
+    .then(function(d){
+      if(d.status==='qr_ready' && d.qr){
+        document.getElementById('qrImg').src = d.qr;
+        document.getElementById('qrWrap').style.display='block';
+        setStatus('connecting','Scan QR Code','');
+      } else if(d.status==='ready'){
+        clearInterval(pollTimer);
+        onConnected('','');
+      }
+    }).catch(function(){});
+  }, 3000);
+}
+
+function onConnected(name, number){
+  connected=true;
+  clearInterval(pollTimer);
+  document.getElementById('qrWrap').style.display='none';
+  var info = name ? 'Connected as '+name+(number?' (+'+number+')':'') : 'WhatsApp Connected';
+  setStatus('ready','Connected ✓', info);
+  document.getElementById('connectBtn').style.display='none';
+  document.getElementById('disconnectBtn').style.display='block';
+  document.getElementById('composeCard').style.display='block';
+  document.getElementById('contactsCard').style.display='block';
+  document.getElementById('sendCard').style.display='block';
+  toast('WhatsApp Connected! Ready to send.','ok');
+}
+
+// ── STATUS ────────────────────────────────────────────────────────────────────
+function setStatus(type, text, info){
+  var dot = document.getElementById('sdot');
+  dot.className = 'sdot '+(type==='ready'?'sdot-ok':type==='connecting'?'sdot-con':'sdot-dis');
+  document.getElementById('stext').textContent = text;
+  document.getElementById('sinfo').textContent = info||'';
+}
+
+// ── CONNECT ───────────────────────────────────────────────────────────────────
+document.getElementById('connectBtn').addEventListener('click', function(){
+  setStatus('connecting','Starting...','Connecting to WhatsApp servers...');
+  fetch('/api/wa/connect', { method:'POST', headers:authHeaders() })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.error){ toast(d.error,'err'); setStatus('disconnected','Not Connected',''); return; }
+    if(d.status==='qr_ready' && d.qr){
+      document.getElementById('qrImg').src = d.qr;
+      document.getElementById('qrWrap').style.display='block';
+      setStatus('connecting','Scan QR Code','');
+    }
+    startPolling();
+  })
+  .catch(function(){ toast('Connection failed!','err'); });
+});
+
+document.getElementById('disconnectBtn').addEventListener('click', function(){
+  if(!confirm('Disconnect WhatsApp?')) return;
+  fetch('/api/wa/disconnect',{ method:'POST', headers:authHeaders() })
+  .then(function(){ location.reload(); });
+});
+
+document.getElementById('logoutBtn').addEventListener('click', function(){
+  localStorage.removeItem('wa_token');
+  window.location.href='/';
+});
+
+// ── TEMPLATES ─────────────────────────────────────────────────────────────────
+var TMPLS = {
+  product: 'Hi {name}!\n\n*{store}* has a NEW product for you! &#x1F6CD;&#xFE0F;\n\n[Product Name]\nPrice: Rs.[PRICE]\n\nLimited stock — Order now!\nCall: [YOUR NUMBER]',
+  sale:    'Hi {name}!\n\n*BIG SALE* at *{store}*! &#x1F3F7;&#xFE0F;\n\n*[X]% OFF* — Today only!\n\nDon\'t miss this deal!\nContact: [YOUR NUMBER]',
+  festival:'Hi {name}!\n\n*{store}* wishes you a very Happy *[FESTIVAL]*! &#x1F389;\n\nMay this bring joy to your life!\n\n- {store} Team',
+  custom:  'Hi {name}!\n\nA special message from *{store}*...\n\n[Your message here]\n\n- {store} Team'
+};
+
+var tmplMap = {t1:'product',t2:'sale',t3:'festival',t4:'custom'};
+Object.keys(tmplMap).forEach(function(id){
+  document.getElementById(id).addEventListener('click', function(){
+    document.querySelectorAll('.tmpl-tab').forEach(function(b){ b.classList.remove('on'); });
+    this.classList.add('on');
+    setTemplate(tmplMap[id]);
+  });
+});
+
+function setTemplate(key){
+  var store = (currentUser && (currentUser.business||currentUser.name)) || 'Our Store';
+  document.getElementById('msgText').value = TMPLS[key]
+    .replace(/\{store\}/g, store)
+    .replace(/\{name\}/g, 'Customer');
+  updatePreview();
+}
+
+document.getElementById('msgText').addEventListener('input', updatePreview);
+
+function updatePreview(){
+  var store = (currentUser && (currentUser.business||currentUser.name)) || 'Our Store';
+  var msg = document.getElementById('msgText').value
+    .replace(/\{store\}/g, store).replace(/\{name\}/g, 'Customer');
+  var html = msg
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/\*([^*\n]+)\*/g,'<b>$1</b>').replace(/\n/g,'<br>');
+  document.getElementById('prevTxt').innerHTML = html;
+  updateSendBtns();
+}
+
+// ── IMAGE ─────────────────────────────────────────────────────────────────────
+document.getElementById('imgInput').addEventListener('change', function(e){
+  if(e.target.files[0]) loadImage(e.target.files[0]);
+});
+document.getElementById('imgDrop').addEventListener('dragover', function(e){ e.preventDefault(); this.style.borderColor='var(--accent)'; });
+document.getElementById('imgDrop').addEventListener('dragleave', function(){ this.style.borderColor=''; });
+document.getElementById('imgDrop').addEventListener('drop', function(e){
+  e.preventDefault(); this.style.borderColor='';
+  if(e.dataTransfer.files[0]) loadImage(e.dataTransfer.files[0]);
+});
+
+function loadImage(file){
+  imgFile = file;
+  var r = new FileReader();
+  r.onload = function(ev){
+    imgData = ev.target.result;
+    document.getElementById('prevImg').src = imgData;
+    document.getElementById('prevBubImg').src = imgData;
+    document.getElementById('prevBubImg').style.display='block';
+    document.getElementById('imgPreview').style.display='block';
+    document.getElementById('imgDrop').style.display='none';
+  };
+  r.readAsDataURL(file);
+}
+
+document.getElementById('remImg').addEventListener('click', function(){
+  imgFile=null; imgData=null;
+  document.getElementById('imgPreview').style.display='none';
+  document.getElementById('imgDrop').style.display='block';
+  document.getElementById('prevBubImg').style.display='none';
+  document.getElementById('imgInput').value='';
+});
+
+// ── CONTACTS ──────────────────────────────────────────────────────────────────
+document.getElementById('excelInput').addEventListener('change', function(e){
+  var file=e.target.files[0]; if(!file) return;
+  var r=new FileReader();
+  r.onload=function(ev){
+    try{
+      var wb=XLSX.read(ev.target.result,{type:'binary'});
+      var ws=wb.Sheets[wb.SheetNames[0]];
+      var rows=XLSX.utils.sheet_to_json(ws,{defval:''});
+      var added=0;
+      rows.forEach(function(row){
+        var nk=Object.keys(row).find(function(k){ return k.toLowerCase().includes('name'); });
+        var pk=Object.keys(row).find(function(k){ return k.toLowerCase().includes('phone')||k.toLowerCase().includes('mobile'); });
+        var name=nk?String(row[nk]).trim():'Customer';
+        var phone=pk?String(row[pk]).trim():'';
+        if(phone){ addContact(name,phone); added++; }
+      });
+      toast(added+' contacts imported!','ok');
+    }catch(e){ toast('File read failed!','err'); }
+  };
+  r.readAsBinaryString(file);
+});
+
+function addContact(name,phone){
+  var ph=String(phone).replace(/\D/g,'');
+  if(ph.length<10) return;
+  if(ph.length===10) ph='91'+ph;
+  if(contacts.find(function(c){ return c.phone===ph; })) return;
+  contacts.push({name:name||'Customer',phone:ph,status:'pending',selected:true});
+  renderContacts();
+  updateSendBtns();
+}
+
+document.getElementById('addBtn').addEventListener('click', function(){
+  var n=document.getElementById('mName').value.trim();
+  var p=document.getElementById('mPhone').value.trim();
+  if(!p){ toast('Enter phone!','err'); return; }
+  addContact(n||'Customer',p);
+  document.getElementById('mName').value='';
+  document.getElementById('mPhone').value='';
+});
+document.getElementById('mPhone').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('addBtn').click(); });
+
+document.getElementById('chkAll').addEventListener('change', function(){
+  contacts.forEach(function(c){ c.selected=this.checked; }.bind(this)); renderContacts(); updateSendBtns();
+});
+document.getElementById('selAllBtn').addEventListener('click', function(){
+  contacts.forEach(function(c){ c.selected=true; }); renderContacts(); updateSendBtns();
+});
+document.getElementById('clearSentBtn').addEventListener('click', function(){
+  contacts=contacts.filter(function(c){ return c.status!=='sent'; }); renderContacts(); updateSendBtns();
+});
+document.getElementById('clearAllBtn').addEventListener('click', function(){
+  if(!confirm('Clear all?')) return;
+  contacts=[]; renderContacts(); updateSendBtns();
+  document.getElementById('excelInput').value='';
+});
+
+function renderContacts(){
+  if(!contacts.length){ document.getElementById('contactsWrap').style.display='none'; return; }
+  document.getElementById('contactsWrap').style.display='block';
+  var total=contacts.length;
+  var sent=contacts.filter(function(c){ return c.status==='sent'; }).length;
+  var failed=contacts.filter(function(c){ return c.status==='failed'; }).length;
+  var pending=contacts.filter(function(c){ return c.status==='pending'; }).length;
+  document.getElementById('statsBar').innerHTML=
+    '<div class="stat-pill"><div class="dot" style="background:var(--accent)"></div>'+total+'</div>'+
+    '<div class="stat-pill"><div class="dot" style="background:var(--green)"></div>Sent: '+sent+'</div>'+
+    '<div class="stat-pill"><div class="dot" style="background:var(--red)"></div>Failed: '+failed+'</div>'+
+    '<div class="stat-pill"><div class="dot" style="background:var(--yellow)"></div>Pending: '+pending+'</div>';
+  document.getElementById('cTb').innerHTML=contacts.map(function(c,i){
+    var sc=c.status==='sent'?'st-sent':c.status==='failed'?'st-fail':'st-pend';
+    var sv=c.status==='sent'?'&#x2705; Sent':c.status==='failed'?'&#x274C; Failed':'&#x23F3; Pending';
+    return '<tr style="opacity:'+(c.status==='sent'?.6:1)+'">'
+      +'<td><input type="checkbox" class="ck" data-i="'+i+'" '+(c.selected?'checked':'')+'></td>'
+      +'<td style="color:var(--muted);">'+(i+1)+'</td>'
+      +'<td style="font-weight:600;color:var(--white);">'+c.name+'</td>'
+      +'<td style="font-size:11px;color:var(--muted);">+'+c.phone+'</td>'
+      +'<td class="'+sc+'">'+sv+'</td>'
+      +'</tr>';
+  }).join('');
+  document.querySelectorAll('.ck').forEach(function(cb){
+    cb.addEventListener('change',function(){
+      contacts[parseInt(this.getAttribute('data-i'))].selected=this.checked;
+      updateSendBtns();
+    });
+  });
+}
+
+function updateSendBtns(){
+  var pending=contacts.filter(function(c){ return c.selected&&c.status==='pending'; });
+  document.getElementById('sendAllBtn').disabled=!connected||!pending.length||sending;
+  document.getElementById('sendNextBtn').disabled=!connected||!pending.length||sending;
+  document.getElementById('sendAllBtn').textContent='Send to All ('+pending.length+')';
+}
+
+// ── SEND ──────────────────────────────────────────────────────────────────────
+function doSend(onlyNext){
+  if(!connected){ toast('Connect WhatsApp first!','err'); return; }
+  var pending=contacts.filter(function(c){ return c.selected&&c.status==='pending'; });
+  if(!pending.length){ toast('No pending contacts!','err'); return; }
+  var msg=document.getElementById('msgText').value.trim();
+  if(!msg){ toast('Enter message!','err'); return; }
+
+  var toSend=onlyNext?[pending[0]]:pending;
+  if(!confirm('Send to '+toSend.length+' contacts?')) return;
+
+  sending=true;
+  updateSendBtns();
+  document.getElementById('progWrap').style.display='block';
+  document.getElementById('progBar').style.width='0%';
+
+  var store=(currentUser&&(currentUser.business||currentUser.name))||'Our Store';
+  var contactsData=toSend.map(function(c){ return {name:c.name,phone:c.phone,store:store}; });
+
+  var form=new FormData();
+  form.append('contacts', JSON.stringify(contactsData));
+  form.append('message', msg);
+  if(imgFile) form.append('image', imgFile);
+
+  fetch('/api/wa/send',{
+    method:'POST',
+    headers:{ 'Authorization':'Bearer '+token },
+    body:form
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.error){ toast(d.error,'err'); sending=false; updateSendBtns(); return; }
+    toast('Sending '+d.total+' messages...','ok');
+  })
+  .catch(function(){ toast('Send failed!','err'); sending=false; updateSendBtns(); });
+}
+
+document.getElementById('sendAllBtn').addEventListener('click', function(){ doSend(false); });
+document.getElementById('sendNextBtn').addEventListener('click', function(){ doSend(true); });
+
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function toast(msg,type){
+  var el=document.createElement('div');
+  el.className='toast '+(type||'ok');
+  el.innerHTML=(type==='err'?'&#x274C;':'&#x2705;')+' '+msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(function(){ el.remove(); },3500);
+}
+</script>
+</body>
+</html>
