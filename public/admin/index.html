@@ -468,7 +468,7 @@ document.getElementById('addClientBtn').addEventListener('click',function(){
     plan:  document.getElementById('an-plan').value
   };
   if(!body.name||!body.email||!body.pass){ toast('Name, email, password required!','err'); return; }
-  fetch('/api/admin/add-user',{method:'POST',headers:authH(),body:JSON.stringify(body)})
+  fetch('/api/admin/users',{method:'POST',headers:authH(),body:JSON.stringify(body)})
   .then(function(r){ return r.json(); })
   .then(function(d){
     if(d.error){ toast(d.error,'err'); return; }
