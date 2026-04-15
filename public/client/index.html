@@ -368,11 +368,11 @@ function startPolling(){
     fetch('/api/wa/status', { headers:{ 'x-token': token } })
     .then(function(r){ return r.json(); })
     .then(function(d){
-      if(d.status==='qr_ready' && d.qr){
+      if((d.status==='qr'||d.status==='qr_ready') && d.qr){
         document.getElementById('qrImg').src = d.qr;
         document.getElementById('qrWrap').style.display='block';
         setStatus('connecting','Scan QR Code','');
-      } else if(d.status==='ready'){
+      } else if(d.status==='connected'||d.status==='ready'){
         clearInterval(pollTimer);
         onConnected('','');
       }
@@ -405,16 +405,20 @@ function setStatus(type, text, info){
 // ── CONNECT ───────────────────────────────────────────────────────────────────
 document.getElementById('connectBtn').addEventListener('click', function(){
   setStatus('connecting','Starting...','Connecting to WhatsApp servers...');
+  // Start via socket
+  if(socket && currentUser){
+    socket.emit('start', { token: token });
+    startPolling();
+  }
   fetch('/api/wa/connect', { method:'POST', headers:authHeaders() })
   .then(function(r){ return r.json(); })
   .then(function(d){
-    if(d.error){ toast(d.error,'err'); setStatus('disconnected','Not Connected',''); return; }
-    if(d.status==='qr_ready' && d.qr){
+    if(!d.ok){ toast(d.msg||'Error','err'); setStatus('disconnected','Not Connected',''); return; }
+    if((d.status==='qr'||d.status==='qr_ready') && d.qr){
       document.getElementById('qrImg').src = d.qr;
       document.getElementById('qrWrap').style.display='block';
       setStatus('connecting','Scan QR Code','');
     }
-    startPolling();
   })
   .catch(function(){ toast('Connection failed!','err'); });
 });
