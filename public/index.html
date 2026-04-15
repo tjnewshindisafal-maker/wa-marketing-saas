@@ -463,17 +463,17 @@ document.getElementById('do-login').addEventListener('click', function(){
   var pass  = document.getElementById('l-pass').value.trim();
   if(!email||!pass){ toast('Enter email and password!','err'); return; }
   var btn = this; btn.textContent='Logging in...'; btn.disabled=true;
-  fetch('/api/auth/login',{
+  fetch('/api/login',{
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({email:email, pass:pass})
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
     btn.textContent='Login to Dashboard'; btn.disabled=false;
-    if(d.error){ toast(d.error,'err'); return; }
+    if(!d.ok){ toast(d.msg||'Login failed!','err'); return; }
     localStorage.setItem('wa_token', d.token);
     localStorage.setItem('wa_user', JSON.stringify(d.user));
-    if(d.user.role==='admin'){
+    if(d.role==='admin'){
       window.location.href='/admin';
     } else {
       window.location.href='/client';
@@ -498,14 +498,14 @@ document.getElementById('do-signup').addEventListener('click', function(){
 
   var btn = this; btn.textContent='Creating account...'; btn.disabled=true;
 
-  fetch('/api/auth/register',{
+  fetch('/api/signup',{
     method:'POST', headers:{'Content-Type':'application/json'},
     body: JSON.stringify({ name:name, business:biz||name, industry:ind, email:email, phone:phone, pass:pass, plan:selectedPlan })
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
     btn.textContent='Continue to Payment'; btn.disabled=false;
-    if(d.error){ toast(d.error,'err'); return; }
+    if(!d.ok){ toast(d.msg||'Login failed!','err'); return; }
     pendingUser = { name:name, email:email, phone:phone, plan:selectedPlan, amount:selectedAmount };
     closeModal('signup');
     // Show UPI payment
