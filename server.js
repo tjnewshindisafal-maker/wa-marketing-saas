@@ -119,6 +119,17 @@ app.post('/api/login', async (req, res) => {
   }
 });
 
+// Me endpoint
+app.get('/api/me', async (req, res) => {
+  try {
+    const token = req.headers['x-token'];
+    if(!token) return res.json({ ok:false, msg:'No token' });
+    const user = await db.collection('users').findOne({ token });
+    if(!user) return res.json({ ok:false, msg:'Invalid token' });
+    res.json({ ok:true, user:{ id:user._id, name:user.name, email:user.email, role:user.role, plan:user.plan, business:user.business, industry:user.industry, phone:user.phone } });
+  } catch(e) { res.json({ ok:false, msg:e.message }); }
+});
+
 // ── ADMIN ROUTES ──────────────────────────────────────────────────────────────
 
 async function adminAuth(req, res, next) {
