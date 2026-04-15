@@ -312,6 +312,50 @@ app.post('/api/send', upload.single('image'), async (req, res) => {
   }
 });
 
+
+// ── WA HTTP ROUTES ────────────────────────────────────────────────────────────
+app.post('/api/wa/connect', async (req, res) => {
+  try {
+    const token = req.headers['x-token'];
+    const user = await db.collection('users').findOne({ token });
+    if(!user) return res.json({ ok:false, msg:'Unauthorized' });
+    const userId = user._id.toString();
+    if(waSessions[userId] && waSessions[userId].status === 'connected'){
+      return res.json({ ok:true, status:'connected' });
+    }
+    res.json({ ok:true, status:'starting' });
+    // Session will be created via socket
+  } catch(e) { res.json({ ok:false, msg:e.message }); }
+});
+
+app.get('/api/wa/status', async (req, res) => {
+  try {
+    const token = req.headers['x-token'];
+    const user = await db.collection('users').findOne({ token });
+    if(!user) return res.json({ ok:false, msg:'Unauthorized' });
+    const userId = user._id.toString();
+    const s = waSessions[userId];
+    res.json({ ok:true, status: s ? s.status : 'disconnected' });
+  } catch(e) { res.json({ ok:false, msg:e.message }); }
+});
+
+app.post('/api/wa/disconnect', async (req, res) => {
+  try {
+    const token = req.headers['x-token'];
+    const user = await db.collection('users').findOne({ token });
+    if(!user) return res.json({ ok:false, msg:'Unauthorized' });
+    const userId = user._id.toString();
+    if(waSessions[userId]){
+      try{ await waSessions[userId].sock.logout(); }catch(e){}
+      delete waSessions[userId];
+    }
+    res.json({ ok:true });
+  } catch(e) { res.json({ ok:false, msg:e.message }); }
+});
+
+// Also store sessions by userId
+const waSessions = {};
+
 // ── PAGE ROUTES ───────────────────────────────────────────────────────────────
 app.get('/',        (req,res) => res.sendFile(path.join(__dirname,'public','index.html')));
 app.get('/admin',   (req,res) => res.sendFile(path.join(__dirname,'public','admin','index.html')));
