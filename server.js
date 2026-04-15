@@ -11,7 +11,7 @@ const qrcode     = require('qrcode');
 const { MongoClient, ObjectId } = require('mongodb');
 
 // ── MongoDB ──────────────────────────────────────────────────────────────────
-const MONGO_URI = 'mongodb+srv://waadmin:S@ndeep9821@cluster0.0krvn5v.mongodb.net/?appName=Cluster0';
+const MONGO_URI = 'mongodb+srv://waadmin:S%40ndeep9821@cluster0.0krvn5v.mongodb.net/?appName=Cluster0';
 const DB_NAME   = 'wamarketing';
 let db;
 
