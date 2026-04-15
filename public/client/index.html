@@ -292,12 +292,12 @@ var sending   = false;
 var pollTimer = null;
 
 // ── AUTH CHECK ────────────────────────────────────────────────────────────────
-function authHeaders(){ return { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }; }
+function authHeaders(){ return { 'x-token': token, 'Content-Type':'application/json' }; }
 
-fetch('/api/auth/me', { headers:{ 'Authorization':'Bearer '+token } })
+fetch('/api/me', { headers:{ 'x-token': token } })
 .then(function(r){ return r.json(); })
 .then(function(d){
-  if(!d.user){ localStorage.removeItem('wa_token'); window.location.href='/'; return; }
+  if(!d.ok){ localStorage.removeItem('wa_token'); window.location.href='/'; return; }
   currentUser = d.user;
   document.getElementById('uav').textContent   = d.user.name.charAt(0).toUpperCase();
   document.getElementById('uname').textContent = d.user.name;
