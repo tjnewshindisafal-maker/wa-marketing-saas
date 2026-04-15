@@ -11,15 +11,16 @@ const qrcode     = require('qrcode');
 const { MongoClient, ObjectId } = require('mongodb');
 
 // ── MongoDB ──────────────────────────────────────────────────────────────────
-const MONGO_URI = 'mongodb+srv://waadmin:Waadmin2025@cluster0.0krvn5v.mongodb.net/wamarketing?appName=Cluster0&ssl=true&tlsAllowInvalidCertificates=true';
+const MONGO_URI = 'mongodb+srv://waadmin:Waadmin2025@cluster0.0krvn5v.mongodb.net/wamarketing';
 const DB_NAME   = 'wamarketing';
 let db;
 
 async function connectDB() {
   try {
     const client = new MongoClient(MONGO_URI, {
-  serverSelectionTimeoutMS: 10000,
-  socketTimeoutMS: 45000
+  serverSelectionTimeoutMS: 30000,
+  socketTimeoutMS: 75000,
+  family: 4
 });
     await client.connect();
     db = client.db(DB_NAME);
