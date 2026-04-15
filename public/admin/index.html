@@ -254,7 +254,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
 var token = localStorage.getItem('wa_token') || '';
 var changingPlanId = null;
 
-function authH(){ return { 'Authorization':'Bearer '+token, 'Content-Type':'application/json' }; }
+function authH(){ return { 'x-token': token, 'Content-Type':'application/json' }; }
 function toast(msg,type){
   var el=document.createElement('div'); el.className='toast '+(type||'ok');
   el.innerHTML=(type==='err'?'&#x274C;':'&#x2705;')+' '+msg;
@@ -284,6 +284,7 @@ document.getElementById('loginBtn').addEventListener('click', function(){
     if(!d.ok){ document.getElementById('lerr').style.display='block'; return; }
     localStorage.setItem('wa_token',d.token);
     token=d.token;
+    localStorage.setItem('wa_admin_token',d.token);
     document.getElementById('loginPage').style.display='none';
     document.getElementById('appPage').style.display='block';
     loadStats(); loadUsers();
@@ -294,7 +295,7 @@ document.getElementById('lpass').addEventListener('keydown',function(e){ if(e.ke
 
 // Check existing token
 if(token){
-  fetch('/api/admin/stats',{headers:{'x-token':token}})
+  fetch('/api/auth/me',{headers:{'x-token':token}})
   .then(function(r){ return r.json(); })
   .then(function(d){
     if(d.user&&d.user.role==='admin'){
@@ -330,12 +331,13 @@ document.getElementById('refreshBtn').addEventListener('click', loadStats);
 var allUsers=[];
 function loadStats(){
   fetch('/api/admin/stats',{headers:authH()}).then(function(r){ return r.json(); }).then(function(d){
+    var s=d.ok?d:{total:0,active:0,blocked:0,pro:0};
     document.getElementById('statsGrid').innerHTML=
-      '<div class="stat-card"><div class="stat-val">'+d.total+'</div><div class="stat-lbl">Total Clients</div></div>'+
-      '<div class="stat-card"><div class="stat-val">'+d.active+'</div><div class="stat-lbl">Active</div></div>'+
-      '<div class="stat-card"><div class="stat-val">'+d.pending+'</div><div class="stat-lbl">Pending</div></div>'+
-      '<div class="stat-card"><div class="stat-val">'+d.totalMsg+'</div><div class="stat-lbl">Messages Sent</div></div>';
-    document.getElementById('pendCount').textContent=d.pending;
+      '<div class="stat-card"><div class="stat-val">'+(s.total||0)+'</div><div class="stat-lbl">Total Clients</div></div>'+
+      '<div class="stat-card"><div class="stat-val">'+(s.active||0)+'</div><div class="stat-lbl">Active</div></div>'+
+      '<div class="stat-card"><div class="stat-val">'+(s.blocked||0)+'</div><div class="stat-lbl">Pending</div></div>'+
+      '<div class="stat-card"><div class="stat-val">'+(s.pro||0)+'</div><div class="stat-lbl">Pro Clients</div></div>';
+    document.getElementById('pendCount').textContent=s.blocked||0;
   });
   loadUsers();
 }
