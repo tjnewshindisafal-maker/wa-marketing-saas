@@ -278,7 +278,7 @@ function tagPlan(p){
 document.getElementById('loginBtn').addEventListener('click', function(){
   var email=document.getElementById('lemail').value.trim();
   var pass=document.getElementById('lpass').value.trim();
-  fetch('/api/auth/login',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,pass}) })
+  fetch('/api/admin/login',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,pass}) })
   .then(function(r){ return r.json(); })
   .then(function(d){
     if(d.error||d.user?.role!=='admin'){ document.getElementById('lerr').style.display='block'; return; }
