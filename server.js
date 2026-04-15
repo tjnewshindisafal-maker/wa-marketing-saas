@@ -54,7 +54,7 @@ const io     = new Server(server, { cors: { origin: '*' } });
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(__dirname));
+app.use(express.static(path.join(__dirname,'public')));
 
 const upload = multer({ dest: 'uploads/', limits: { fileSize: 50 * 1024 * 1024 } });
 fs.mkdirSync('uploads', { recursive: true });
