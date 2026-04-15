@@ -27,23 +27,26 @@ async function connectDB() {
   }
 }
 
-async function initAdmin() {
-  const users = db.collection('users');
-  const admin = await users.findOne({ role: 'admin' });
-  if (!admin) {
-    await users.insertOne({
-      name: 'Admin',
-      email: 'admin@advizrmedia.in',
-      pass: 'Advizr@2025',
-      role: 'admin',
-      status: 'active',
-      plan: 'admin',
-      createdAt: new Date()
-    });
-    console.log('Admin created');
-  } else {
-    await users.updateOne({ role: 'admin' }, { $set: { pass: 'Advizr@2025', status: 'active' } });
-    console.log('Admin verified');
+async function initDB(){
+  try {
+    const admin = await User.findOne({ role: 'admin' });
+    if(!admin){
+      await User.create({
+        id: 'admin_1',
+        name: 'Admin',
+        email: 'admin@advizrmedia.in',
+        pass: 'Advizr@2025',
+        role: 'admin',
+        status: 'active',
+        plan: 'admin'
+      });
+      console.log('Admin created');
+    } else {
+      await User.updateOne({ role:'admin' }, { $set: { pass:'Advizr@2025', status:'active' } });
+      console.log('Admin updated');
+    }
+  } catch(e){
+    console.log('initDB error:', e.message);
   }
 }
 
