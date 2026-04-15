@@ -290,12 +290,11 @@ app.post('/api/send', upload.single('image'), async (req, res) => {
 });
 
 // ── PAGE ROUTES ───────────────────────────────────────────────────────────────
-app.get('/', (req, res) => res.sendFile(path.join(__dirname, 'index.html')));
-app.get('/admin', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
-app.get('/admin/', (req, res) => res.sendFile(path.join(__dirname, 'admin.html')));
-app.get('/client', (req, res) => res.sendFile(path.join(__dirname, 'client.html')));
-app.get('/client/', (req, res) => res.sendFile(path.join(__dirname, 'client.html')));
-
+app.get('/',        (req,res) => res.sendFile(path.join(__dirname,'public','index.html')));
+app.get('/admin',   (req,res) => res.sendFile(path.join(__dirname,'public','admin','index.html')));
+app.get('/admin/',  (req,res) => res.sendFile(path.join(__dirname,'public','admin','index.html')));
+app.get('/client',  (req,res) => res.sendFile(path.join(__dirname,'public','client','index.html')));
+app.get('/client/', (req,res) => res.sendFile(path.join(__dirname,'public','client','index.html')));
 // ── START ─────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, async () => {
