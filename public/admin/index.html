@@ -281,7 +281,7 @@ document.getElementById('loginBtn').addEventListener('click', function(){
   fetch('/api/admin/login',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,pass}) })
   .then(function(r){ return r.json(); })
   .then(function(d){
-    if(d.error||d.user?.role!=='admin'){ document.getElementById('lerr').style.display='block'; return; }
+    if(!d.ok){ document.getElementById('lerr').style.display='block'; return; }
     localStorage.setItem('wa_token',d.token);
     token=d.token;
     document.getElementById('loginPage').style.display='none';
@@ -294,7 +294,7 @@ document.getElementById('lpass').addEventListener('keydown',function(e){ if(e.ke
 
 // Check existing token
 if(token){
-  fetch('/api/auth/me',{headers:{'Authorization':'Bearer '+token}})
+  fetch('/api/admin/stats',{headers:{'x-token':token}})
   .then(function(r){ return r.json(); })
   .then(function(d){
     if(d.user&&d.user.role==='admin'){
