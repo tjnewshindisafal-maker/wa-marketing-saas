@@ -365,7 +365,7 @@ function startPolling(){
   if(pollTimer) clearInterval(pollTimer);
   pollTimer = setInterval(function(){
     if(connected) return;
-    fetch('/api/wa/status', { headers:{ 'Authorization':'Bearer '+token } })
+    fetch('/api/wa/status', { headers:{ 'x-token': token } })
     .then(function(r){ return r.json(); })
     .then(function(d){
       if(d.status==='qr_ready' && d.qr){
