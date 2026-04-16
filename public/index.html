@@ -428,10 +428,17 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
 <script> 
   // ── GOOGLE LOGIN ────────────────────────────────────────────────────────────
 function handleGoogleLogin(response){
+  var phone = document.getElementById('s-phone') ? document.getElementById('s-phone').value.trim() : '';
+  var business = document.getElementById('s-biz') ? document.getElementById('s-biz').value.trim() : '';
   fetch('/api/google-login',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
-    body:JSON.stringify({credential: response.credential})
+    body:JSON.stringify({
+      credential: response.credential,
+      plan: selectedPlan,
+      phone: phone,
+      business: business
+    })
   })
   .then(function(r){return r.json();})
   .then(function(d){
