@@ -253,7 +253,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
 <div id="toasts"></div>
 
 <script>
-var token = localStorage.getItem('wa_token') || '';
+var token = localStorage.getItem('wa_admin_token') || localStorage.getItem('wa_token') || '';
 var changingPlanId = null;
 
 function authH(){ return { 'x-token': token, 'Content-Type':'application/json' }; }
@@ -325,7 +325,7 @@ Object.keys(navMap).forEach(function(id){
 });
 
 document.getElementById('nav-logout').addEventListener('click',function(){
-  localStorage.removeItem('wa_token'); window.location.href='/';
+  localStorage.removeItem('wa_token'); localStorage.removeItem('wa_admin_token'); window.location.href='/';
 });
 document.getElementById('refreshBtn').addEventListener('click', loadStats);
 
@@ -425,7 +425,7 @@ document.addEventListener('click',function(e){
   }
   if(action==='del'){
     if(!confirm('Delete this client permanently?')) return;
-    fetch('/api/admin/user/'+id,{method:'DELETE',headers:authH()})
+    fetch('/api/admin/users/'+id,{method:'DELETE',headers:authH()})
     .then(function(r){ return r.json(); })
     .then(function(){ toast('Client deleted!','ok'); loadUsers(); });
   }
