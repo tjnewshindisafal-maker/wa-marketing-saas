@@ -297,10 +297,10 @@ document.getElementById('lpass').addEventListener('keydown',function(e){ if(e.ke
 
 // Check existing token
 if(token){
-  fetch('/api/auth/me',{headers:{'x-token':token}})
+  fetch('/api/me',{headers:{'x-token':token}})
   .then(function(r){ return r.json(); })
   .then(function(d){
-    if(d.user&&d.user.role==='admin'){
+    if(d.ok && d.user && d.user.role==='admin'){
       document.getElementById('loginPage').style.display='none';
       document.getElementById('appPage').style.display='block';
       loadStats(); loadUsers();
