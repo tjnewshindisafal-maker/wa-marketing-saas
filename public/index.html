@@ -276,12 +276,12 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
         <li>Image + Message</li>
         <li>3 Templates</li>
         <li class="no">Priority Support</li>
-        <li class="no">Scheduled Messages</li>
+        <li class="no">Job Tracking</li>
       </ul>
       <button class="btn-price btn-po" data-plan="starter" data-amount="499">Get Started</button>
     </div>
-    <div class="pcard hot">
-      <div class="hot-tag">&#x2B50; Most Popular</div>
+
+    <div class="pcard">
       <div class="pplan">Pro</div>
       <div class="pprice"><small>&#x20B9;</small>999</div>
       <div class="pperiod">per month</div>
@@ -291,25 +291,43 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
         <li>Excel Upload</li>
         <li>Image + Message</li>
         <li>All Templates</li>
-        <li>Priority Support</li>
-        <li class="no">Scheduled Messages</li>
+        <li>Scheduled Messages</li>
+        <li class="no">Job Tracking</li>
       </ul>
-      <button class="btn-price btn-pf" data-plan="pro" data-amount="999">Start 7-Day Free Trial</button>
+      <button class="btn-price btn-pf" data-plan="pro" data-amount="999">Start Free Trial</button>     </div>      <div class="pcard hot">       <div class="hot-tag">&#x1F525; For Shops</div>       <div class="pplan">Service</div>       <div class="pprice"><small>&#x20B9;</small>1,499</div>       <div class="pperiod">per month</div>       <div class="psetup">+ &#x20B9;3,000 one-time setup</div>       <ul class="pfeats">         <li>200 messages/day</li>         <li>&#x2705; Job Tracking Dashboard</li>         <li>&#x2705; Digital Invoice Generator</li>         <li>&#x2705; Customer Live Track Link</li>         <li>&#x2705; Technician Management</li>         <li>&#x2705; Auto WA Notifications</li>       </ul>       <button class="btn-price btn-pf" data-plan="service" data-amount="1499">Get Service Plan</button>
     </div>
+
+    <div class="pcard hot">
+      <div class="hot-tag">&#x1F525; For Shops</div>
+      <div class="pplan">Service</div>
+      <div class="pprice"><small>&#x20B9;</small>1,499</div>
+      <div class="pperiod">per month</div>
+      <div class="psetup">+ &#x20B9;3,000 one-time setup</div>
+      <ul class="pfeats">
+        <li>200 messages/day</li>
+        <li>&#x2705; Job Tracking Dashboard</li>
+        <li>&#x2705; Digital Invoice Generator</li>
+        <li>&#x2705; Customer Live Track Link</li>
+        <li>&#x2705; Technician Management</li>
+        <li>&#x2705; Auto WA Notifications</li>
+      </ul>
+      <button class="btn-price btn-pf" data-plan="service" data-amount="1499">Get Service Plan</button>
+    </div>
+
     <div class="pcard">
       <div class="pplan">Business</div>
-      <div class="pprice"><small>&#x20B9;</small>1,999</div>
+      <div class="pprice"><small>&#x20B9;</small>2,499</div>
       <div class="pperiod">per month</div>
       <div class="psetup">+ &#x20B9;5,000 one-time setup</div>
       <ul class="pfeats">
         <li>500 messages/day</li>
-        <li>Excel Upload</li>
-        <li>Image + Message</li>
-        <li>All Templates</li>
+        <li>Everything in Service</li>
         <li>Priority Support</li>
-        <li>Scheduled Messages</li>
+        <li>API Access</li>
+        <li>Custom Branding</li>
+        <li>Dedicated Manager</li>
       </ul>
-      <button class="btn-price btn-wa2" data-plan="business" data-amount="1999">Contact Sales</button>
+      <button class="btn-price btn-wa2" data-plan="business" data-amount="2499">Contact Sales</button>
     </div>
   </div>
 </section>
@@ -341,10 +359,11 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
     <div class="modal-sub">Choose your plan and create account</div>
 
     <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Select Plan:</div>
-    <div class="plan-sel" id="plan-sel">
+    <div class="plan-sel" id="plan-sel" style="grid-template-columns:1fr 1fr;">
       <div class="plan-opt sel" data-plan="starter" data-amount="499"><div class="plan-opt-name">Starter</div><div class="plan-opt-price">&#x20B9;499/mo</div></div>
       <div class="plan-opt" data-plan="pro" data-amount="999"><div class="plan-opt-name">Pro &#x2B50;</div><div class="plan-opt-price">&#x20B9;999/mo</div></div>
-      <div class="plan-opt" data-plan="business" data-amount="1999"><div class="plan-opt-name">Business</div><div class="plan-opt-price">&#x20B9;1999/mo</div></div>
+      <div class="plan-opt" data-plan="service" data-amount="1499"><div class="plan-opt-name">Service &#x1F525;</div><div class="plan-opt-price">&#x20B9;1499/mo</div></div>
+      <div class="plan-opt" data-plan="business" data-amount="2499"><div class="plan-opt-name">Business</div><div class="plan-opt-price">&#x20B9;2499/mo</div></div>
     </div>
 
     <div class="mfield"><label>Full Name *</label><input type="text" id="s-name" placeholder="Ramesh Kumar"></div>
