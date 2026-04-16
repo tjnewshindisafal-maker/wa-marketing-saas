@@ -276,7 +276,34 @@ td{padding:8px 10px;font-size:12px;border-top:1px solid rgba(255,255,255,.04);}
       <button class="btn-primary" id="sendNextBtn" disabled>&#x25B6; Send Next</button>
     </div>
   </div>
+<!-- STEP 5: SCHEDULED MESSAGES (Pro+) -->
+<div class="card" id="schedCard" style="display:none;">
+  <div class="card-title"><span class="step-num">5</span> Scheduled Messages <span style="font-size:11px;background:#6c63ff33;color:#6c63ff;padding:3px 8px;border-radius:6px;margin-left:8px;">PRO</span></div>
+  <div style="color:var(--muted);font-size:13px;margin-bottom:14px;">Schedule a campaign to send later automatically.</div>
 
+  <div class="grid-2">
+    <div class="field">
+      <label>Campaign Title</label>
+      <input type="text" id="sch-title" placeholder="Diwali Offer Blast">
+    </div>
+    <div class="field">
+      <label>Send Date & Time</label>
+      <input type="datetime-local" id="sch-when">
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:12px;">
+    <button class="btn-primary" id="schedBtn">&#x1F4C5; Schedule Current Campaign</button>
+    <button class="btn-wa" id="refreshSchedBtn" style="background:#2a2a3e;">&#x1F504; Refresh</button>
+  </div>
+
+  <div style="margin-top:20px;">
+    <div style="font-weight:600;color:var(--white);margin-bottom:8px;">Upcoming & Past Schedules</div>
+    <div id="schedList" style="display:flex;flex-direction:column;gap:8px;">
+      <div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">No scheduled campaigns yet.</div>
+    </div>
+  </div>
+</div>
 </div>
 
 <div id="toasts"></div>
@@ -317,11 +344,71 @@ fetch('/api/me', { headers:{ 'x-token': token } })
   document.getElementById('limitText').textContent  = used+' / '+limit+' messages today ('+d.user.plan+' plan)';
 
   setTemplate('product');
+  if(d.user.features && d.user.features.scheduler){ document.getElementById('schedCard').style.display='block'; loadSchedules(); }
   startPolling();
 })
 .catch(function(){ window.location.href='/'; });
+// ── SCHEDULER ─────────────────────────────────────────────────────────────────
+function loadSchedules(){
+  fetch('/api/scheduler',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) return;
+    var list = d.tasks||[];
+    var html = '';
+    if(!list.length){
+      html = '<div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">No scheduled campaigns yet.</div>';
+    } else {
+      list.forEach(function(t){
+        var when = new Date(t.scheduledAt).toLocaleString('en-IN');
+        var badge = t.status==='pending' ? '<span style="background:#f9c74f33;color:#f9c74f;padding:2px 8px;border-radius:4px;font-size:11px;">Pending</span>'
+                 : t.status==='sent' ? '<span style="background:#10b98133;color:#10b981;padding:2px 8px;border-radius:4px;font-size:11px;">Sent</span>'
+                 : '<span style="background:#ef444433;color:#ef4444;padding:2px 8px;border-radius:4px;font-size:11px;">'+t.status+'</span>';
+        html += '<div style="border:1px solid var(--border2);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;">'
+             + '<div><div style="font-weight:600;color:var(--white);">'+t.title+'</div>'
+             + '<div style="font-size:12px;color:var(--muted);margin-top:4px;">'+when+' | '+(t.contacts?t.contacts.length:0)+' contacts | Sent: '+(t.sentCount||0)+'</div></div>'
+             + '<div style="display:flex;gap:6px;align-items:center;">'+badge
+             + (t.status==='pending'?'<button onclick="deleteSchedule(\''+t._id+'\')" style="background:none;border:1px solid #ef4444;color:#ef4444;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>':'')
+             + '</div></div>';
+      });
+    }
+    document.getElementById('schedList').innerHTML = html;
+  });
+}
 
-// ── SOCKET ────────────────────────────────────────────────────────────────────
+function deleteSchedule(id){
+  if(!confirm('Delete this scheduled campaign?')) return;
+  fetch('/api/scheduler/'+id,{method:'DELETE',headers:{'x-token':token}})
+  .then(function(r){return r.json();}).then(function(d){ if(d.ok){ toast('Deleted!','ok'); loadSchedules(); } });
+}
+
+document.getElementById('schedBtn').addEventListener('click', function(){
+  var title = document.getElementById('sch-title').value.trim() || 'Scheduled Campaign';
+  var when  = document.getElementById('sch-when').value;
+  var message = document.getElementById('msgText').value;
+  if(!when){ toast('Pick date & time!','err'); return; }
+  if(new Date(when) <= new Date()){ toast('Select future time!','err'); return; }
+  if(!contacts.length){ toast('Add contacts first!','err'); return; }
+  if(!message.trim()){ toast('Message empty!','err'); return; }
+
+  var fd = new FormData();
+  fd.append('title', title);
+  fd.append('message', message);
+  fd.append('scheduledAt', new Date(when).toISOString());
+  fd.append('contacts', JSON.stringify(contacts));
+  if(imgFile) fd.append('image', imgFile);
+
+  fetch('/api/scheduler',{method:'POST',headers:{'x-token':token},body:fd})
+  .then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){ toast(d.msg||'Failed','err'); return; }
+    toast('Campaign scheduled!','ok');
+    document.getElementById('sch-title').value='';
+    document.getElementById('sch-when').value='';
+    loadSchedules();
+  });
+});
+
+document.getElementById('refreshSchedBtn').addEventListener('click', loadSchedules);
+
+  // ── SOCKET ────────────────────────────────────────────────────────────────────
 var socket = io();
 socket.on('connect', function(){ if(currentUser) socket.emit('join_wa', currentUser.id); });
 
