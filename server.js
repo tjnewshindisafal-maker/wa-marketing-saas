@@ -162,6 +162,40 @@ app.post('/api/login', async (req,res) => {
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
+// ── GOOGLE LOGIN ──────────────────────────────────────────────────────────────
+app.post('/api/google-login', async (req,res) => {
+  try {
+    const { credential } = req.body;
+    if(!credential) return res.json({ ok:false, msg:'No credential' });
+    // Decode Google JWT (client-side token)
+    const payload = JSON.parse(Buffer.from(credential.split('.')[1],'base64').toString());
+    if(!payload.email) return res.json({ ok:false, msg:'Invalid token' });
+    const email = payload.email.toLowerCase();
+    const name  = payload.name || email.split('@')[0];
+
+    let user = await db.collection('users').findOne({ email });
+    if(!user){
+      // New user — auto signup as starter
+      const token = genToken(email);
+      const doc = {
+        name, email, pass:'', phone:'', business:name,
+        industry:'General', plan:'starter',
+        role:'user', status:'active', token, googleAuth:true,
+        msgCount:0, jobCount:0, createdAt:new Date(),
+        trialEnds:new Date(Date.now()+7*24*60*60*1000)
+      };
+      await db.collection('users').insertOne(doc);
+      user = doc;
+    } else {
+      if(user.status==='blocked') return res.json({ ok:false, msg:'Account suspended.' });
+      const token = genToken(user._id.toString());
+      await db.collection('users').updateOne({ _id:user._id }, { $set:{ token, lastLogin:new Date(), googleAuth:true } });
+      user.token = token;
+    }
+    res.json({ ok:true, token:user.token, name:user.name, role:user.role||'user', plan:user.plan, business:user.business });
+  } catch(e){ res.json({ ok:false, msg:e.message }); }
+});
+
 app.get('/api/me', async (req,res) => {
   try {
     const token = req.headers['x-token'];
