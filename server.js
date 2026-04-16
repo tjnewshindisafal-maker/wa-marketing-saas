@@ -21,6 +21,7 @@ async function connectDB() {
     console.log('MongoDB connected');
     await initAdmin();
     startScheduler();
+    startTrialChecker();
   } catch(e) { console.error('MongoDB error:', e.message); }
 }
 
@@ -36,6 +37,22 @@ async function initAdmin() {
       console.log('Admin updated');
     }
   } catch(e) { console.log('initAdmin error:', e.message); }
+}
+
+// ── TRIAL CHECKER ─────────────────────────────────────────────────────────────
+function startTrialChecker() {
+  // Every hour, downgrade expired trials to starter
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const result = await db.collection('users').updateMany(
+        { isTrial:true, trialEnds:{ $lte:now }, plan:{ $ne:'starter' } },
+        { $set:{ plan:'starter', isTrial:false, trialExpired:true, trialExpiredAt:now } }
+      );
+      if(result.modifiedCount > 0) console.log('Trial expired for', result.modifiedCount, 'users');
+    } catch(e){ console.log('Trial check error:', e.message); }
+  }, 60*60*1000); // Every hour
+  console.log('Trial checker started');
 }
 
 // ── SCHEDULER ─────────────────────────────────────────────────────────────────
@@ -139,14 +156,17 @@ app.post('/api/signup', async (req,res) => {
     const { name,email,pass,phone,industry,plan,business } = req.body;
     if(await db.collection('users').findOne({ email })) return res.json({ ok:false, msg:'Email already registered' });
     const token = genToken(email);
+    const planFinal = plan || 'starter';
+    const isPaidPlan = planFinal !== 'starter';
     await db.collection('users').insertOne({
       name, email, pass, phone, business:business||name,
-      industry:industry||'General', plan:plan||'starter',
+      industry:industry||'General', plan:planFinal,
       role:'user', status:'active', token,
-      msgCount:0, jobCount:0, createdAt:new Date(),
-      trialEnds:new Date(Date.now()+7*24*60*60*1000)
+      isTrial: isPaidPlan,
+      trialEnds: isPaidPlan ? new Date(Date.now()+7*24*60*60*1000) : null,
+      msgCount:0, jobCount:0, createdAt:new Date()
     });
-    res.json({ ok:true, token, name, plan:plan||'starter' });
+    res.json({ ok:true, token, name, plan:planFinal });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
@@ -175,14 +195,19 @@ app.post('/api/google-login', async (req,res) => {
 
     let user = await db.collection('users').findOne({ email });
     if(!user){
-      // New user — auto signup as starter
+      // New user — auto signup with selected plan + 7-day trial if paid
       const token = genToken(email);
+      const plan = (req.body.plan || 'starter').toString();
+      const phone = (req.body.phone || '').toString();
+      const business = (req.body.business || name).toString();
+      const isPaidPlan = plan !== 'starter';
       const doc = {
-        name, email, pass:'', phone:'', business:name,
-        industry:'General', plan:'starter',
+        name, email, pass:'', phone, business,
+        industry:'General', plan,
         role:'user', status:'active', token, googleAuth:true,
-        msgCount:0, jobCount:0, createdAt:new Date(),
-        trialEnds:new Date(Date.now()+7*24*60*60*1000)
+        isTrial: isPaidPlan,
+        trialEnds: isPaidPlan ? new Date(Date.now()+7*24*60*60*1000) : null,
+        msgCount:0, jobCount:0, createdAt:new Date()
       };
       await db.collection('users').insertOne(doc);
       user = doc;
@@ -192,7 +217,7 @@ app.post('/api/google-login', async (req,res) => {
       await db.collection('users').updateOne({ _id:user._id }, { $set:{ token, lastLogin:new Date(), googleAuth:true } });
       user.token = token;
     }
-    res.json({ ok:true, token:user.token, name:user.name, role:user.role||'user', plan:user.plan, business:user.business });
+    res.json({ ok:true, token:user.token, name:user.name, role:user.role||'user', plan:user.plan, business:user.business, email:user.email, isTrial:user.isTrial||false });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
@@ -201,11 +226,31 @@ app.get('/api/me', async (req,res) => {
     const token = req.headers['x-token'];
     const user = await db.collection('users').findOne({ token });
     if(!user) return res.json({ ok:false, msg:'Invalid token' });
+
+    // Check trial expiry on-the-fly
+    let trialStatus = null;
+    if(user.isTrial && user.trialEnds){
+      const msLeft = new Date(user.trialEnds).getTime() - Date.now();
+      if(msLeft <= 0){
+        // Trial expired - downgrade to starter
+        await db.collection('users').updateOne(
+          { _id:user._id },
+          { $set:{ plan:'starter', isTrial:false, trialExpired:true, trialExpiredAt:new Date() } }
+        );
+        user.plan = 'starter';
+        user.trialExpired = true;
+      } else {
+        const daysLeft = Math.ceil(msLeft / (24*60*60*1000));
+        trialStatus = { active:true, daysLeft, endsAt:user.trialEnds };
+      }
+    }
+
     const features = PLAN_FEATURES[user.plan] || PLAN_FEATURES.starter;
     res.json({ ok:true, user:{
       id:user._id, name:user.name, email:user.email, role:user.role,
       plan:user.plan, business:user.business, industry:user.industry,
-      msgCount:user.msgCount||0, jobCount:user.jobCount||0, features
+      msgCount:user.msgCount||0, jobCount:user.jobCount||0, features,
+      trial: trialStatus, trialExpired: user.trialExpired || false
     }});
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
@@ -279,7 +324,14 @@ app.post('/api/admin/block/:id', adminAuth, async (req,res) => {
 });
 
 app.post('/api/admin/plan/:id', adminAuth, async (req,res) => {
-  try { await db.collection('users').updateOne({ _id:new ObjectId(req.params.id) }, { $set:{ plan:req.body.plan } }); res.json({ ok:true }); }
+  try {
+    // When admin manually sets plan, clear trial status (make it permanent)
+    await db.collection('users').updateOne(
+      { _id:new ObjectId(req.params.id) },
+      { $set:{ plan:req.body.plan, isTrial:false, trialEnds:null, trialExpired:false } }
+    );
+    res.json({ ok:true });
+  }
   catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
@@ -289,11 +341,12 @@ app.get('/api/admin/stats', adminAuth, async (req,res) => {
     const active   = await db.collection('users').countDocuments({ role:'user', status:'active' });
     const blocked  = await db.collection('users').countDocuments({ role:'user', status:'blocked' });
     const pro      = await db.collection('users').countDocuments({ role:'user', plan:{ $in:['pro','service','business'] } });
+    const trials   = await db.collection('users').countDocuments({ role:'user', isTrial:true });
     const jobs     = await db.collection('jobs').countDocuments({});
     const pending  = await db.collection('jobs').countDocuments({ status:'pending' });
     const completed= await db.collection('jobs').countDocuments({ status:'completed' });
     const scheduled= await db.collection('scheduled_msgs').countDocuments({ status:'pending' });
-    res.json({ ok:true, total, active, blocked, pro, jobs, pending, completed, scheduled });
+    res.json({ ok:true, total, active, blocked, pro, trials, jobs, pending, completed, scheduled });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
