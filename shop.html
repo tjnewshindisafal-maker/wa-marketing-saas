@@ -529,7 +529,7 @@ document.getElementById('disconnectWaBtn').addEventListener('click',function(){
   .then(function(){ setWAStatus(false); toast('Disconnected'); });
 });
 
-function loadAll(){ loadJobs(); loadTechs(); loadCustomers(); loadStats(); }
+function loadAll(){ loadStats(); loadTechs(); loadCustomers(); }
 
 function loadStats(){
   fetch('/api/jobs',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
