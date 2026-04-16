@@ -202,6 +202,7 @@ app.post('/api/admin/login', async (req,res) => {
 
 app.get('/api/admin/users', adminAuth, async (req,res) => {
   const users = await db.collection('users').find({ role:{ $ne:'admin' } }).toArray();
+  users.forEach(u => { u.id = u._id.toString(); });
   res.json({ ok:true, users });
 });
 
