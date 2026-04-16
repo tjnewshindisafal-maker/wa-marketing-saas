@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Invoice - WA Marketing Pro</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f8f9fc;--white:#ffffff;--dark:#0a0e1a;--s1:#f1f3f9;
+  --accent:#6c63ff;--green:#16a34a;--red:#dc2626;--yellow:#d97706;
+  --text:#1e293b;--muted:#64748b;--border:#e2e8f0;
+  --font:"Space Grotesk",sans-serif;--mono:"JetBrains Mono",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding:20px;}
+
+/* TOP TOOLBAR */
+.toolbar{max-width:860px;margin:0 auto 16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.tb-title{font-size:14px;font-weight:700;color:var(--muted);}
+.tb-btns{display:flex;gap:8px;}
+.btn-print{background:var(--accent);color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px;}
+.btn-wa{background:#25d366;color:#fff;border:none;border-radius:8px;padding:9px 18px;font-size:13px;font-weight:700;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px;}
+.btn-back{background:transparent;border:1px solid var(--border);color:var(--muted);border-radius:8px;padding:9px 18px;font-size:13px;cursor:pointer;font-family:var(--font);}
+
+/* INVOICE */
+.invoice{max-width:860px;margin:0 auto;background:var(--white);border-radius:16px;box-shadow:0 4px 32px rgba(0,0,0,.08);overflow:hidden;}
+
+.inv-header{background:var(--dark);color:#fff;padding:36px 40px;position:relative;overflow:hidden;}
+.inv-header::before{content:"";position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:rgba(108,99,255,.15);}
+.inv-header::after{content:"";position:absolute;bottom:-40px;left:40%;width:140px;height:140px;border-radius:50%;background:rgba(108,99,255,.08);}
+.inv-header-top{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1;}
+.biz-name{font-size:24px;font-weight:800;margin-bottom:4px;}
+.biz-tag{font-size:12px;color:rgba(255,255,255,.5);font-family:var(--mono);}
+.inv-badge{background:rgba(108,99,255,.3);border:1px solid rgba(108,99,255,.5);border-radius:10px;padding:10px 20px;text-align:right;}
+.inv-badge-label{font-size:10px;text-transform:uppercase;letter-spacing:2px;color:rgba(255,255,255,.5);margin-bottom:4px;}
+.inv-badge-num{font-size:22px;font-weight:800;font-family:var(--mono);color:#a78bfa;}
+
+.inv-header-bot{display:flex;justify-content:space-between;margin-top:24px;position:relative;z-index:1;flex-wrap:wrap;gap:16px;}
+.inv-meta-item{}
+.inv-meta-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:rgba(255,255,255,.4);margin-bottom:4px;}
+.inv-meta-val{font-size:13px;font-weight:600;}
+
+/* BODY */
+.inv-body{padding:36px 40px;}
+.inv-parties{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;}
+.party-box{background:var(--s1);border-radius:12px;padding:18px;}
+.party-label{font-size:10px;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:10px;font-weight:600;}
+.party-name{font-size:16px;font-weight:800;color:var(--dark);margin-bottom:4px;}
+.party-info{font-size:13px;color:var(--muted);line-height:1.7;}
+
+/* JOB INFO */
+.job-info-box{background:linear-gradient(135deg,rgba(108,99,255,.05),rgba(108,99,255,.02));border:1px solid rgba(108,99,255,.15);border-radius:12px;padding:18px;margin-bottom:28px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.ji-item{}
+.ji-label{font-size:10px;text-transform:uppercase;letter-spacing:1px;color:var(--muted);margin-bottom:4px;}
+.ji-val{font-size:14px;font-weight:700;color:var(--dark);}
+
+/* ITEMS TABLE */
+.items-title{font-size:13px;font-weight:700;color:var(--dark);margin-bottom:12px;display:flex;align-items:center;gap:8px;}
+table.items{width:100%;border-collapse:collapse;margin-bottom:20px;}
+table.items thead th{background:var(--dark);color:#fff;padding:10px 14px;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:1px;}
+table.items thead th:last-child{text-align:right;}
+table.items tbody td{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;}
+table.items tbody td:last-child{text-align:right;font-weight:600;}
+table.items tbody tr:last-child td{border-bottom:none;}
+table.items tbody tr:hover td{background:var(--s1);}
+
+/* TOTALS */
+.totals{display:flex;justify-content:flex-end;margin-bottom:28px;}
+.totals-box{width:280px;}
+.total-row{display:flex;justify-content:space-between;padding:7px 0;font-size:13px;border-bottom:1px solid var(--border);}
+.total-row:last-child{border-bottom:none;font-size:16px;font-weight:800;color:var(--dark);padding-top:12px;}
+.total-row.discount{color:var(--green);}
+.total-row.tax{color:var(--muted);}
+
+/* STATUS */
+.inv-status-box{display:flex;align-items:center;justify-content:space-between;background:var(--s1);border-radius:12px;padding:16px 20px;margin-bottom:24px;flex-wrap:wrap;gap:12px;}
+.inv-status-label{font-size:12px;color:var(--muted);}
+.inv-status-val{padding:6px 16px;border-radius:20px;font-size:12px;font-weight:700;}
+.status-paid{background:rgba(22,163,74,.1);color:var(--green);border:1px solid rgba(22,163,74,.2);}
+.status-unpaid{background:rgba(220,38,38,.1);color:var(--red);border:1px solid rgba(220,38,38,.2);}
+.status-partial{background:rgba(217,119,6,.1);color:var(--yellow);border:1px solid rgba(217,119,6,.2);}
+
+/* NOTES */
+.notes-box{background:var(--s1);border-radius:10px;padding:14px 18px;margin-bottom:24px;}
+.notes-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.notes-text{font-size:13px;color:var(--text);line-height:1.7;}
+
+/* FOOTER */
+.inv-footer{background:var(--s1);border-top:1px solid var(--border);padding:20px 40px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;}
+.inv-footer-msg{font-size:13px;color:var(--muted);}
+.inv-footer-brand{font-size:11px;color:var(--muted);font-family:var(--mono);}
+
+/* TOAST */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--dark);color:#fff;border-radius:10px;padding:10px 16px;font-size:13px;display:flex;align-items:center;gap:8px;}
+
+@media print {
+  .toolbar{ display:none!important; }
+  body{ background:white; padding:0; }
+  .invoice{ box-shadow:none; border-radius:0; }
+}
+@media(max-width:600px){
+  .inv-header{padding:24px 20px;}
+  .inv-body{padding:20px;}
+  .inv-parties{grid-template-columns:1fr;}
+  .job-info-box{grid-template-columns:1fr 1fr;}
+  .inv-footer{padding:16px 20px;}
+}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="tb-title">📄 Invoice Preview</div>
+  <div class="tb-btns">
+    <button class="btn-back" onclick="window.history.back()">← Back</button>
+    <button class="btn-wa" onclick="shareWA()">📱 Send on WhatsApp</button>
+    <button class="btn-print" onclick="window.print()">🖨️ Print / Save PDF</button>
+  </div>
+</div>
+
+<div class="invoice" id="invoice">
+
+  <!-- HEADER -->
+  <div class="inv-header">
+    <div class="inv-header-top">
+      <div>
+        <div class="biz-name" id="bizName">Business Name</div>
+        <div class="biz-tag" id="bizTag">Service Provider</div>
+      </div>
+      <div class="inv-badge">
+        <div class="inv-badge-label">Invoice</div>
+        <div class="inv-badge-num" id="invNum">#INV-0001</div>
+      </div>
+    </div>
+    <div class="inv-header-bot">
+      <div class="inv-meta-item">
+        <div class="inv-meta-label">Invoice Date</div>
+        <div class="inv-meta-val" id="invDate">—</div>
+      </div>
+      <div class="inv-meta-item">
+        <div class="inv-meta-label">Due Date</div>
+        <div class="inv-meta-val" id="invDue">On Receipt</div>
+      </div>
+      <div class="inv-meta-item">
+        <div class="inv-meta-label">Job ID</div>
+        <div class="inv-meta-val" id="invJobId">—</div>
+      </div>
+      <div class="inv-meta-item">
+        <div class="inv-meta-label">Technician</div>
+        <div class="inv-meta-val" id="invTech">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- BODY -->
+  <div class="inv-body">
+
+    <!-- PARTIES -->
+    <div class="inv-parties">
+      <div class="party-box">
+        <div class="party-label">From</div>
+        <div class="party-name" id="fromName">Business Name</div>
+        <div class="party-info" id="fromInfo">Phone | Email | Address</div>
+      </div>
+      <div class="party-box">
+        <div class="party-label">Bill To</div>
+        <div class="party-name" id="toName">Customer Name</div>
+        <div class="party-info" id="toInfo">Phone Number</div>
+      </div>
+    </div>
+
+    <!-- JOB INFO -->
+    <div class="job-info-box">
+      <div class="ji-item"><div class="ji-label">Service Type</div><div class="ji-val" id="jiService">—</div></div>
+      <div class="ji-item"><div class="ji-label">Device / Item</div><div class="ji-val" id="jiDevice">—</div></div>
+      <div class="ji-item"><div class="ji-label">Service Date</div><div class="ji-val" id="jiDate">—</div></div>
+    </div>
+
+    <!-- STATUS -->
+    <div class="inv-status-box">
+      <div>
+        <div class="inv-status-label">Payment Status</div>
+      </div>
+      <div class="inv-status-val status-unpaid" id="payStatus">Unpaid</div>
+    </div>
+
+    <!-- ITEMS -->
+    <div class="items-title">🧾 Service Details</div>
+    <table class="items">
+      <thead>
+        <tr>
+          <th style="width:40px">#</th>
+          <th>Description</th>
+          <th style="width:80px">Qty</th>
+          <th style="width:100px">Rate (₹)</th>
+          <th style="width:110px">Amount (₹)</th>
+        </tr>
+      </thead>
+      <tbody id="itemsTbody">
+        <tr>
+          <td>1</td>
+          <td>Service Charge</td>
+          <td>1</td>
+          <td>0</td>
+          <td>₹0</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- TOTALS -->
+    <div class="totals">
+      <div class="totals-box">
+        <div class="total-row"><span>Subtotal</span><span id="subtotal">₹0</span></div>
+        <div class="total-row discount" id="discountRow" style="display:none"><span>Discount</span><span id="discount">-₹0</span></div>
+        <div class="total-row tax" id="taxRow" style="display:none"><span>GST (18%)</span><span id="tax">₹0</span></div>
+        <div class="total-row"><span>Total</span><span id="grandTotal">₹0</span></div>
+      </div>
+    </div>
+
+    <!-- NOTES -->
+    <div class="notes-box" id="notesBox">
+      <div class="notes-label">Notes</div>
+      <div class="notes-text" id="notesText">Thank you for choosing our service!</div>
+    </div>
+
+  </div>
+
+  <!-- FOOTER -->
+  <div class="inv-footer">
+    <div class="inv-footer-msg">💚 Thank you for your business!</div>
+    <div class="inv-footer-brand">Powered by WA Marketing Pro</div>
+  </div>
+
+</div>
+
+<div id="toasts"></div>
+
+<script>
+function toast(msg){ var el=document.createElement('div'); el.className='toast'; el.textContent=msg; document.getElementById('toasts').appendChild(el); setTimeout(function(){ el.remove(); },3000); }
+function fmtDate(iso){ return iso ? new Date(iso).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'}) : '—'; }
+function fmt(n){ return '₹'+(n||0).toLocaleString('en-IN'); }
+
+// Load invoice data from URL params or localStorage
+var invData = null;
+try {
+  var raw = localStorage.getItem('wa_invoice');
+  if(raw) invData = JSON.parse(raw);
+} catch(e){}
+
+// Also support URL param ?job=JOB-1001
+var urlParams = new URLSearchParams(window.location.search);
+var jobId = urlParams.get('job');
+if(jobId){
+  // Fetch job from API
+  var token = localStorage.getItem('wa_token');
+  fetch('/api/jobs/'+jobId, { headers:{ 'x-token':token } })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.ok) loadInvoice(d.job);
+  });
+} else if(invData){
+  loadInvoice(invData);
+}
+
+function loadInvoice(job){
+  // Header
+  var biz = job.clientName || 'Business Name';
+  document.getElementById('bizName').textContent = biz;
+  document.getElementById('bizTag').textContent = job.serviceType || 'Service Provider';
+  document.getElementById('invNum').textContent = '#INV-'+job.jobId;
+  document.getElementById('invDate').textContent = fmtDate(job.updatedAt||job.createdAt);
+  document.getElementById('invJobId').textContent = job.jobId;
+  document.getElementById('invTech').textContent = job.technicianName||'—';
+
+  // Parties
+  document.getElementById('fromName').textContent = biz;
+  document.getElementById('fromInfo').textContent = job.clientPhone||'Contact us for details';
+  document.getElementById('toName').textContent = job.customerName;
+  document.getElementById('toInfo').textContent = '+'+job.customerPhone;
+
+  // Job info
+  document.getElementById('jiService').textContent = job.serviceType||'—';
+  document.getElementById('jiDevice').textContent = job.deviceModel||'—';
+  document.getElementById('jiDate').textContent = fmtDate(job.createdAt);
+
+  // Items
+  var items = job.items || [{ desc:job.description||job.serviceType||'Service Charge', qty:1, rate:job.cost||0 }];
+  var subtotal = 0;
+  var rows = items.map(function(item,i){
+    var amt = (item.qty||1)*(item.rate||0);
+    subtotal += amt;
+    return '<tr><td>'+(i+1)+'</td><td>'+item.desc+'</td><td>'+(item.qty||1)+'</td><td>'+fmt(item.rate||0)+'</td><td>'+fmt(amt)+'</td></tr>';
+  }).join('');
+  document.getElementById('itemsTbody').innerHTML = rows;
+  document.getElementById('subtotal').textContent = fmt(subtotal);
+  document.getElementById('grandTotal').textContent = fmt(job.cost||subtotal);
+
+  // Payment status
+  var ps = document.getElementById('payStatus');
+  if(job.costApproved && job.status==='delivered'){ ps.textContent='Paid'; ps.className='inv-status-val status-paid'; }
+  else if(job.costApproved){ ps.textContent='Approved - Pending Payment'; ps.className='inv-status-val status-partial'; }
+  else { ps.textContent='Unpaid'; ps.className='inv-status-val status-unpaid'; }
+
+  // Notes
+  if(job.notes||job.description){
+    document.getElementById('notesText').textContent = job.notes||job.description;
+  }
+}
+
+function shareWA(){
+  var name  = document.getElementById('toName').textContent;
+  var phone = document.getElementById('toInfo').textContent.replace(/\D/g,'');
+  var jobId = document.getElementById('invJobId').textContent;
+  var total = document.getElementById('grandTotal').textContent;
+  var biz   = document.getElementById('bizName').textContent;
+  var invUrl = window.location.href;
+  var msg = 'Hi *'+name+'*! 🧾\n\n*'+biz+'* — Aapka invoice ready hai.\n\n📄 *Invoice:* '+jobId+'\n💰 *Amount:* '+total+'\n\n🔗 Invoice dekhein:\n'+invUrl+'\n\nThank you!';
+  if(phone){ window.open('https://wa.me/91'+phone+'?text='+encodeURIComponent(msg),'_blank'); }
+  else { toast('Phone number not found!'); }
+}
+</script>
+</body>
+</html>

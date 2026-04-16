@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Track Your Service - WA Marketing Pro</title>
+<style>
+:root{
+  --bg:#07080f;--s1:#0e1018;--s2:#12151f;--border:#1d2235;
+  --accent:#6c63ff;--green:#22c55e;--yellow:#f59e0b;--red:#ef4444;--wa:#25d366;
+  --white:#eef2ff;--text:#b8c0dc;--muted:#404868;
+  --font:"Segoe UI",sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);color:var(--text);font-family:var(--font);min-height:100vh;padding:20px;}
+.container{max-width:600px;margin:0 auto;}
+.header{text-align:center;padding:30px 0 20px;}
+.logo{font-size:28px;font-weight:800;color:var(--white);margin-bottom:6px;}
+.logo span{color:var(--wa);}
+.sub{font-size:13px;color:var(--muted);}
+
+/* SEARCH */
+.search-box{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:20px;}
+.search-title{font-size:14px;font-weight:700;color:var(--white);margin-bottom:12px;}
+.search-row{display:flex;gap:8px;}
+.search-row input{flex:1;background:var(--s2);border:1px solid var(--border);border-radius:9px;padding:11px 14px;color:var(--white);font-family:var(--font);font-size:14px;}
+.search-row input:focus{outline:none;border-color:var(--accent);}
+.search-row input::placeholder{color:var(--muted);}
+.btn-search{background:var(--accent);color:#fff;border:none;border-radius:9px;padding:11px 20px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);}
+
+/* JOB CARD */
+.job-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:16px;}
+.job-header{padding:18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;}
+.job-id{font-size:18px;font-weight:800;color:var(--white);}
+.job-biz{font-size:12px;color:var(--muted);}
+.status-badge{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:700;}
+.status-pending{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.2);}
+.status-in_progress{background:rgba(108,99,255,.1);color:var(--accent);border:1px solid rgba(108,99,255,.2);}
+.status-completed{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.status-delivered{background:rgba(37,211,102,.1);color:var(--wa);border:1px solid rgba(37,211,102,.2);}
+.status-cancelled{background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.2);}
+.status-cost_sent{background:rgba(245,158,11,.1);color:var(--yellow);border:1px solid rgba(245,158,11,.2);}
+.status-approved{background:rgba(34,197,94,.1);color:var(--green);border:1px solid rgba(34,197,94,.2);}
+.status-waiting_parts{background:rgba(108,99,255,.1);color:#a78bfa;border:1px solid rgba(167,139,250,.2);}
+
+.job-body{padding:18px;}
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.info-item{}
+.info-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px;}
+.info-value{font-size:14px;font-weight:600;color:var(--white);}
+
+/* TIMELINE */
+.timeline-title{font-size:13px;font-weight:700;color:var(--white);margin-bottom:12px;}
+.timeline{position:relative;padding-left:20px;}
+.timeline::before{content:"";position:absolute;left:6px;top:0;bottom:0;width:2px;background:var(--border);}
+.tl-item{position:relative;padding-bottom:16px;}
+.tl-item:last-child{padding-bottom:0;}
+.tl-dot{position:absolute;left:-17px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--accent);border:2px solid var(--bg);}
+.tl-dot.active{background:var(--green);}
+.tl-status{font-size:13px;font-weight:600;color:var(--white);text-transform:capitalize;}
+.tl-note{font-size:12px;color:var(--muted);margin-top:2px;}
+.tl-time{font-size:11px;color:var(--muted);margin-top:2px;}
+
+/* COST APPROVAL */
+.cost-box{background:var(--s2);border:1px solid rgba(245,158,11,.2);border-radius:10px;padding:16px;margin-top:14px;}
+.cost-title{font-size:13px;font-weight:700;color:var(--yellow);margin-bottom:8px;}
+.cost-amount{font-size:28px;font-weight:800;color:var(--white);margin-bottom:6px;}
+.cost-note{font-size:13px;color:var(--muted);margin-bottom:14px;}
+.cost-btns{display:flex;gap:8px;}
+.btn-approve{flex:1;padding:12px;background:var(--green);color:#fff;border:none;border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);}
+.btn-reject{flex:1;padding:12px;background:transparent;color:var(--red);border:1px solid rgba(239,68,68,.3);border-radius:9px;font-size:14px;font-weight:700;cursor:pointer;font-family:var(--font);}
+
+/* TECHNICIAN */
+.tech-box{background:var(--s2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-top:12px;display:flex;align-items:center;gap:12px;}
+.tech-av{width:40px;height:40px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:800;color:#fff;font-size:16px;flex-shrink:0;}
+.tech-name{font-size:14px;font-weight:700;color:var(--white);}
+.tech-label{font-size:11px;color:var(--muted);}
+
+/* NOT FOUND */
+.not-found{text-align:center;padding:40px;color:var(--muted);}
+.not-found .icon{font-size:48px;margin-bottom:12px;}
+
+/* TOAST */
+#toasts{position:fixed;bottom:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:var(--s1);border:1px solid var(--border);border-radius:10px;padding:10px 14px;font-size:13px;display:flex;align-items:center;gap:8px;}
+.toast.ok{border-color:rgba(34,197,94,.4);}
+.toast.err{border-color:rgba(239,68,68,.4);}
+
+.wa-btn{display:flex;align-items:center;justify-content:center;gap:8px;background:var(--wa);color:#fff;border:none;border-radius:10px;padding:13px;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-top:14px;font-family:var(--font);}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <div class="logo">WA Marketing <span>Pro</span></div>
+    <div class="sub">Service Tracking Portal</div>
+  </div>
+
+  <div class="search-box">
+    <div class="search-title">🔍 Track Your Service</div>
+    <div class="search-row">
+      <input type="text" id="jobInput" placeholder="Enter Job ID (e.g. JOB-1001)" maxlength="20">
+      <button class="btn-search" onclick="trackJob()">Track</button>
+    </div>
+  </div>
+
+  <div id="result"></div>
+</div>
+
+<div id="toasts"></div>
+
+<script>
+function toast(msg, type){
+  var el = document.createElement('div');
+  el.className = 'toast '+(type||'ok');
+  el.innerHTML = (type==='err'?'❌':'✅')+' '+msg;
+  document.getElementById('toasts').appendChild(el);
+  setTimeout(function(){ el.remove(); }, 3000);
+}
+
+function statusLabel(s){
+  var labels = {
+    pending: '⏳ Pending',
+    in_progress: '🔧 In Progress',
+    waiting_parts: '📦 Waiting for Parts',
+    cost_sent: '💰 Cost Estimate Sent',
+    approved: '✅ Cost Approved',
+    completed: '✔️ Completed',
+    delivered: '🎉 Delivered',
+    cancelled: '❌ Cancelled'
+  };
+  return labels[s] || s;
+}
+
+function fmtDate(iso){
+  var d = new Date(iso);
+  return d.toLocaleDateString('en-IN')+' '+d.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+}
+
+function trackJob(){
+  var jobId = document.getElementById('jobInput').value.trim().toUpperCase();
+  if(!jobId){ toast('Enter Job ID!','err'); return; }
+  if(!jobId.startsWith('JOB-')) jobId = 'JOB-'+jobId;
+
+  fetch('/api/track/'+jobId)
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(!d.ok){ 
+      document.getElementById('result').innerHTML = '<div class="not-found"><div class="icon">🔍</div><div>Job not found!</div><div style="font-size:12px;margin-top:8px;">Check your Job ID and try again.</div></div>';
+      return;
+    }
+    renderJob(d.job);
+  })
+  .catch(function(){ toast('Server error!','err'); });
+}
+
+function renderJob(job){
+  var costBox = '';
+  if(job.status === 'cost_sent' && job.cost){
+    costBox = '<div class="cost-box"><div class="cost-title">💰 Repair Cost Estimate</div><div class="cost-amount">₹'+job.cost+'</div><div class="cost-note">Please approve or reject the repair cost.</div><div class="cost-btns"><button class="btn-approve" onclick="approveCost(\''+job.jobId+'\', true)">✅ Approve</button><button class="btn-reject" onclick="approveCost(\''+job.jobId+'\', false)">❌ Reject</button></div></div>';
+  }
+
+  var techBox = '';
+  if(job.technicianName){
+    techBox = '<div class="tech-box"><div class="tech-av">'+job.technicianName.charAt(0)+'</div><div><div class="tech-name">'+job.technicianName+'</div><div class="tech-label">Assigned Technician</div></div></div>';
+  }
+
+  var timeline = (job.statusHistory||[]).slice().reverse().map(function(h){
+    return '<div class="tl-item"><div class="tl-dot active"></div><div class="tl-status">'+statusLabel(h.status)+'</div>'+(h.note?'<div class="tl-note">'+h.note+'</div>':'')+'<div class="tl-time">'+fmtDate(h.time)+'</div></div>';
+  }).join('');
+
+  document.getElementById('result').innerHTML = 
+    '<div class="job-card">'+
+      '<div class="job-header">'+
+        '<div><div class="job-id">'+job.jobId+'</div><div class="job-biz">'+job.clientName+'</div></div>'+
+        '<div class="status-badge status-'+job.status+'">'+statusLabel(job.status)+'</div>'+
+      '</div>'+
+      '<div class="job-body">'+
+        '<div class="info-grid">'+
+          '<div class="info-item"><div class="info-label">Customer</div><div class="info-value">'+job.customerName+'</div></div>'+
+          '<div class="info-item"><div class="info-label">Service</div><div class="info-value">'+job.serviceType+'</div></div>'+
+          (job.deviceModel?'<div class="info-item"><div class="info-label">Device</div><div class="info-value">'+job.deviceModel+'</div></div>':'')+ 
+          '<div class="info-item"><div class="info-label">Created</div><div class="info-value" style="font-size:12px;">'+fmtDate(job.createdAt)+'</div></div>'+
+        '</div>'+
+        costBox+
+        techBox+
+        '<div style="margin-top:16px;"><div class="timeline-title">📋 Status History</div><div class="timeline">'+timeline+'</div></div>'+
+      '</div>'+
+    '</div>';
+}
+
+function approveCost(jobId, approved){
+  if(!confirm(approved?'Approve this repair cost?':'Reject this repair?')) return;
+  fetch('/api/track/'+jobId+'/approve', {
+    method:'POST', headers:{'Content-Type':'application/json'},
+    body: JSON.stringify({ approved })
+  })
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.ok){ toast(approved?'Cost approved! ✅':'Rejected.','ok'); trackJob(); }
+    else toast(d.msg,'err');
+  });
+}
+
+// Auto-track from URL
+var urlJobId = window.location.pathname.split('/track/')[1];
+if(urlJobId){
+  document.getElementById('jobInput').value = urlJobId;
+  trackJob();
+}
+</script>
+</body>
+</html>
