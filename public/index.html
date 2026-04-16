@@ -385,7 +385,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
     <div class="mfield"><label>Password *</label><input type="password" id="s-pass" placeholder="Min 6 characters"></div>
     <div id="g-signup" style="display:flex;justify-content:center;margin-bottom:12px;"></div>
     <div style="text-align:center;margin:0 0 14px;color:var(--muted);font-size:12px;">— OR fill form below —</div>
-    <button class="btn-modal btn-modal-acc" id="do-signup">Continue to Payment</button>
+    <button class="btn-modal btn-modal-acc" id="do-signup">Start 7-Day Free Trial</button>
     <div class="modal-sw">Have account? <a id="goto-login2">Login</a></div>
   </div>
 </div>
@@ -554,7 +554,7 @@ document.getElementById('do-signup').addEventListener('click', function(){
   })
   .then(function(r){ return r.json(); })
   .then(function(d){
-    btn.textContent='Continue to Payment'; btn.disabled=false;
+    btn.textContent='Start 7-Day Free Trial'; btn.disabled=false;
     if(!d.ok){ toast(d.msg||'Login failed!','err'); return; }
     pendingUser = { name:name, email:email, phone:phone, plan:selectedPlan, amount:selectedAmount };
     closeModal('signup');
@@ -562,7 +562,7 @@ document.getElementById('do-signup').addEventListener('click', function(){
     document.getElementById('upi-amount').textContent = '&#x20B9;'+selectedAmount;
     openModal('upi');
   })
-  .catch(function(){ btn.textContent='Continue to Payment'; btn.disabled=false; toast('Server error!','err'); });
+  .catch(function(){ btn.textContent='Start 7-Day Free Trial'; btn.disabled=false; toast('Server error!','err'); });
 });
 
 // Copy UPI ID
