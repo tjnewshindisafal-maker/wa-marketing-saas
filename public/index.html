@@ -186,6 +186,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
   .plan-sel{grid-template-columns:1fr;}
 }
 </style>
+  <script src="https://accounts.google.com/gsi/client" async defer></script>
 </head>
 <body>
 
@@ -346,6 +347,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
     <div class="mfield"><label>Email</label><input type="email" id="l-email" placeholder="you@example.com"></div>
     <div class="mfield"><label>Password</label><input type="password" id="l-pass" placeholder="Your password"></div>
     <button class="btn-modal btn-modal-acc" id="do-login">Login to Dashboard</button>
+    <div style="text-align:center;margin:14px 0;color:var(--muted);font-size:12px;">— OR —</div>
+    <div id="g-login" style="display:flex;justify-content:center;margin-bottom:12px;"></div>
     <div class="modal-sw">No account? <a id="goto-signup">Sign up</a></div>
   </div>
 </div>
@@ -380,6 +383,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
     <div class="mfield"><label>Email *</label><input type="email" id="s-email" placeholder="you@example.com"></div>
     <div class="mfield"><label>Phone *</label><input type="tel" id="s-phone" placeholder="9876543210"></div>
     <div class="mfield"><label>Password *</label><input type="password" id="s-pass" placeholder="Min 6 characters"></div>
+    <div id="g-signup" style="display:flex;justify-content:center;margin-bottom:12px;"></div>
+    <div style="text-align:center;margin:0 0 14px;color:var(--muted);font-size:12px;">— OR fill form below —</div>
     <button class="btn-modal btn-modal-acc" id="do-signup">Continue to Payment</button>
     <div class="modal-sw">Have account? <a id="goto-login2">Login</a></div>
   </div>
@@ -420,7 +425,34 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
 
 <div id="toasts"></div>
 
-<script>
+<script> 
+  // ── GOOGLE LOGIN ────────────────────────────────────────────────────────────
+function handleGoogleLogin(response){
+  fetch('/api/google-login',{
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({credential: response.credential})
+  })
+  .then(function(r){return r.json();})
+  .then(function(d){
+    if(!d.ok){ alert(d.msg || 'Login failed'); return; }
+    localStorage.setItem('wa_token', d.token);
+    window.location.href = '/client';
+  });
+}
+
+window.onload = function(){
+  if(window.google && google.accounts){
+    google.accounts.id.initialize({
+      client_id: '696867354990-eeoltdrq0j6nhctc30jv0ktqm77r6k22.apps.googleusercontent.com',
+      callback: handleGoogleLogin
+    });
+    ['g-login','g-signup'].forEach(function(id){
+      var el = document.getElementById(id);
+      if(el) google.accounts.id.renderButton(el, {theme:'filled_blue', size:'large', width:320, text:'continue_with'});
+    });
+  }
+};
 var selectedPlan   = 'starter';
 var selectedAmount = 499;
 var pendingUser    = null;
