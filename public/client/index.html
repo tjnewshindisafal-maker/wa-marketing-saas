@@ -157,6 +157,7 @@ td{padding:8px 10px;font-size:12px;border-top:1px solid rgba(255,255,255,.04);}
       <span class="uname" id="uname">Loading...</span>
       <span class="ptag ptag-pro" id="ptag">Pro</span>
     </div>
+    <a href="/shop" id="shopBtn" class="btn-lo" style="display:none;text-decoration:none;margin-right:8px;background:var(--accent);color:#fff;">🛠 Shop Dashboard</a>
     <button class="btn-lo" id="logoutBtn">Logout</button>
   </div>
 </nav>
@@ -304,7 +305,7 @@ fetch('/api/me', { headers:{ 'x-token': token } })
   document.getElementById('storeName').value   = d.user.business || d.user.name;
   var pt = document.getElementById('ptag');
   pt.textContent = d.user.plan;
-  pt.className   = 'ptag ptag-'+(d.user.plan||'starter');
+  pt.className   = 'ptag ptag-'+(d.user.plan||'starter');if(d.user.plan==='service'||d.user.plan==='business'){ document.getElementById('shopBtn').style.display='inline-block'; }
 
   // Show limit bar
   var LIMITS = { starter:50, pro:200, business:500 };
