@@ -611,10 +611,10 @@ io.on('connection', (socket) => {
 
 // ── HEALTH + STATIC ───────────────────────────────────────────────────────────
 app.get('/health', (req,res) => res.json({ ok:true, sessions:Object.keys(sessions).length }));
-app.get('/track/:jobId', (req,res) => res.sendFile(path.join(__dirname,'public','track.html')));
-app.get('/shop',  (req,res) => res.sendFile(path.join(__dirname,'public','shop.html')));
-app.get('/shop/', (req,res) => res.sendFile(path.join(__dirname,'public','shop.html')));
-app.get('/invoice', (req,res) => res.sendFile(path.join(__dirname,'public','invoice.html')));
+app.get('/track/:jobId', (req,res) => res.sendFile(path.join(__dirname,'track.html')));
+app.get('/shop',  (req,res) => res.sendFile(path.join(__dirname,'shop.html')));
+app.get('/shop/', (req,res) => res.sendFile(path.join(__dirname,'shop.html')));
+app.get('/invoice', (req,res) => res.sendFile(path.join(__dirname,'invoice.html')));
 app.use('/uploads', express.static('uploads'));
 
 // ── PAGES ─────────────────────────────────────────────────────────────────────
