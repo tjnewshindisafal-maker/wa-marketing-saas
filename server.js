@@ -557,11 +557,11 @@ app.post('/api/wa/notify-job', clientAuth, async (req,res) => {
     const trackUrl = `https://wa-marketing-saas-1.onrender.com/track/${jobId}`;
     const business = req.user.business||req.user.name;
     const msgs = {
-      created:`Hi *${job.customerName}*! 👋\n\n*${business}* ne aapki service request receive kar li hai.\n\n🔖 *Job ID:* ${jobId}\n🛠 *Service:* ${job.serviceType}\n📱 *Device:* ${job.deviceModel||'N/A'}\n📊 *Status:* Pending\n\n🔗 Live track karein:\n${trackUrl}\n\n— ${business}`,
-      in_progress:`Hi *${job.customerName}*! 🔧\n\n*${business}* — Aapka kaam shuru ho gaya!\n\n🔖 *Job ID:* ${jobId}\n👨‍🔧 *Technician:* ${job.technicianName||'Assigned'}\n📊 *Status:* In Progress\n\n🔗 Track: ${trackUrl}\n\n— ${business}`,
-      cost:`Hi *${job.customerName}*! 💰\n\n*${business}* — Repair estimate ready hai.\n\n🔖 *Job ID:* ${jobId}\n💵 *Estimated Cost:* ₹${job.cost}\n📝 *Note:* ${job.costNote||''}\n\n✅ Approve/Reject:\n${trackUrl}\n\n— ${business}`,
-      completed:`Hi *${job.customerName}*! ✅\n\n*${business}* — Aapki service complete ho gayi!\n\n🔖 *Job ID:* ${jobId}\n💵 *Amount:* ₹${job.cost||'0'}\n\nDevice collect karein.\n\n⭐ Feedback: ${trackUrl}\n\n— ${business}`,
-      ready:`Hi *${job.customerName}*! 📦\n\n*${business}* — Aapka device ready hai! Device collect karne aayein.\n\n🔖 Job ID: ${jobId}\n\n— ${business}`
+     created:`Hi *${job.customerName}*! 👋\n\n*${business}* has received your service request.\n\n🔖 *Job ID:* ${jobId}\n🛠 *Service:* ${job.serviceType}\n📱 *Device:* ${job.deviceModel||'N/A'}\n📊 *Status:* Pending\n\n🔗 Track live:\n${trackUrl}\n\n— ${business}`,
+      in_progress:`Hi *${job.customerName}*! 🔧\n\n*${business}* — Your work has started!\n\n🔖 *Job ID:* ${jobId}\n👨‍🔧 *Technician:* ${job.technicianName||'Assigned'}\n📊 *Status:* In Progress\n\n🔗 Track: ${trackUrl}\n\n— ${business}`,
+      cost:`Hi *${job.customerName}*! 💰\n\n*${business}* — Repair estimate is ready.\n\n🔖 *Job ID:* ${jobId}\n💵 *Estimated Cost:* ₹${job.cost}\n📝 *Note:* ${job.costNote||''}\n\n✅ Approve/Reject:\n${trackUrl}\n\n— ${business}`,
+      completed:`Hi *${job.customerName}*! ✅\n\n*${business}* — Your service is complete!\n\n🔖 *Job ID:* ${jobId}\n💵 *Amount:* ₹${job.cost||'0'}\n\nPlease collect your device.\n\n⭐ Feedback: ${trackUrl}\n\n— ${business}`,
+      ready:`Hi *${job.customerName}*! 📦\n\n*${business}* — Your device is ready! Please come to collect it.\n\n🔖 Job ID: ${jobId}\n\n— ${business}`
     };
     const msg = msgs[type];
     if(!msg) return res.json({ ok:false, msg:'Invalid notification type' });
