@@ -131,14 +131,14 @@ body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:9998;o
 .mock-name{font-size:12px;color:var(--white);font-weight:600;flex:1;}
 .mock-service{font-size:11px;color:var(--muted);}
 
-/* INDUSTRIES */
-.ind-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-.ind-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:22px;
-  display:flex;align-items:center;gap:16px;transition:all .3s;cursor:default;}
+/* INDUSTRIES — 12 cards in 4-col grid */
+.ind-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.ind-card{background:var(--s1);border:1px solid var(--border);border-radius:14px;padding:18px;
+  display:flex;align-items:center;gap:12px;transition:all .3s;cursor:default;}
 .ind-card:hover{border-color:rgba(37,211,102,.25);transform:translateY(-2px);}
-.ind-ico{font-size:30px;width:50px;height:50px;background:rgba(37,211,102,.06);border-radius:12px;display:flex;align-items:center;justify-content:center;}
-.ind-name{font-size:14px;font-weight:700;color:var(--white);}
-.ind-desc{font-size:12px;color:var(--muted);margin-top:3px;}
+.ind-ico{font-size:24px;width:42px;height:42px;background:rgba(37,211,102,.06);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.ind-name{font-size:13px;font-weight:700;color:var(--white);}
+.ind-desc{font-size:11px;color:var(--muted);margin-top:2px;}
 
 /* HOW IT WORKS */
 .steps{display:flex;gap:0;max-width:900px;margin:0 auto;position:relative;}
@@ -275,9 +275,13 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
 .toast.err{border-color:rgba(255,71,87,.3);}
 @keyframes toastIn{from{opacity:0;transform:translateY(10px);}to{opacity:1;transform:translateY(0);}}
 
+@media(max-width:992px){
+  .ind-grid{grid-template-columns:repeat(3,1fr);}
+}
 @media(max-width:768px){
   .nav{padding:0 18px;}
-  .feat-grid,.ind-grid,.testi-grid{grid-template-columns:1fr;}
+  .feat-grid,.testi-grid{grid-template-columns:1fr;}
+  .ind-grid{grid-template-columns:repeat(2,1fr);}
   .price-grid{grid-template-columns:1fr 1fr;}
   .pcard.hot{transform:none;}
   .steps{flex-direction:column;align-items:center;gap:24px;}
@@ -290,6 +294,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
 }
 @media(max-width:480px){
   .price-grid{grid-template-columns:1fr;}
+  .ind-grid{grid-template-columns:1fr;}
 }
 </style>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -418,18 +423,24 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
   </div>
 </section>
 
-<!-- INDUSTRIES -->
+<!-- INDUSTRIES — 12 cards -->
 <section class="sec">
   <div class="sec-tag">Industries</div>
   <div class="sec-h">Works for Every Business</div>
-  <div class="sec-sub">Trusted by local businesses across India</div>
+  <div class="sec-sub">Trusted by 500+ local businesses across India</div>
   <div class="ind-grid mw">
-    <div class="ind-card"><div class="ind-ico">&#x1F4E6;</div><div><div class="ind-name">Courier & Logistics</div><div class="ind-desc">Pickup & delivery notifications</div></div></div>
-    <div class="ind-card"><div class="ind-ico">&#x1F6D2;</div><div><div class="ind-name">E-commerce & D2C</div><div class="ind-desc">Order updates & flash sales</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F4E6;</div><div><div class="ind-name">Courier & Logistics</div><div class="ind-desc">Pickup & delivery alerts</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F6D2;</div><div><div class="ind-name">E-commerce & D2C</div><div class="ind-desc">Order updates & sales</div></div></div>
     <div class="ind-card"><div class="ind-ico">&#x1F374;</div><div><div class="ind-name">Restaurant & Food</div><div class="ind-desc">Daily specials & offers</div></div></div>
-    <div class="ind-card"><div class="ind-ico">&#x1F3E0;</div><div><div class="ind-name">Real Estate</div><div class="ind-desc">Property listings & follow-ups</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F3E0;</div><div><div class="ind-name">Real Estate</div><div class="ind-desc">Listings & follow-ups</div></div></div>
     <div class="ind-card"><div class="ind-ico">&#x1F527;</div><div><div class="ind-name">Repair & Service</div><div class="ind-desc">Job status & ready alerts</div></div></div>
     <div class="ind-card"><div class="ind-ico">&#x26A1;</div><div><div class="ind-name">Electrician & Plumber</div><div class="ind-desc">Work order confirmations</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F487;</div><div><div class="ind-name">Salon & Beauty</div><div class="ind-desc">Appointment & reminders</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F4AA;</div><div><div class="ind-name">Gym & Fitness</div><div class="ind-desc">Membership & class alerts</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F3E5;</div><div><div class="ind-name">Clinic & Doctor</div><div class="ind-desc">Appointment confirmations</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F4DA;</div><div><div class="ind-name">Coaching & Tuition</div><div class="ind-desc">Class & fee reminders</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F697;</div><div><div class="ind-name">Car Wash & Auto</div><div class="ind-desc">Service ready alerts</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F382;</div><div><div class="ind-name">Bakery & Cake Shop</div><div class="ind-desc">Order & delivery updates</div></div></div>
   </div>
 </section>
 
@@ -451,8 +462,8 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
     </div>
     <div class="testi">
       <div class="testi-stars">&#x2B50;&#x2B50;&#x2B50;&#x2B50;&#x2B50;</div>
-      <div class="testi-text">"I was sending messages manually to 200 customers daily. Now I upload Excel and send in 5 minutes. Saved hours every day!"</div>
-      <div class="testi-author"><div class="testi-av">P</div><div><div class="testi-name">Priya Joshi</div><div class="testi-biz">Fashion Boutique, Pune</div></div></div>
+      <div class="testi-text">"I run a salon and customers love getting appointment reminders on WhatsApp. No-show rate dropped to almost zero. Best investment ever!"</div>
+      <div class="testi-author"><div class="testi-av">P</div><div><div class="testi-name">Priya Joshi</div><div class="testi-biz">Beauty Salon, Pune</div></div></div>
     </div>
   </div>
 </section>
@@ -547,7 +558,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
     </div>
     <div class="faq">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">What is the Shop Dashboard / Service Plan?</div>
-      <div class="faq-a">It's a complete job management system for repair shops, service centers and similar businesses. Create jobs, assign technicians, send auto WhatsApp updates to customers, generate invoices — all in one place.</div>
+      <div class="faq-a">It's a complete job management system for salons, repair shops, service centers, clinics, gyms, and similar businesses. Create jobs/appointments, send auto WhatsApp updates to customers, generate invoices — all in one place.</div>
     </div>
     <div class="faq">
       <div class="faq-q" onclick="this.parentElement.classList.toggle('open')">Is there a free trial?</div>
@@ -612,6 +623,13 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
         <option value="realty">&#x1F3E0; Real Estate</option>
         <option value="repair">&#x1F527; Repair Services</option>
         <option value="electric">&#x26A1; Electrician / Plumber</option>
+        <option value="salon">&#x1F487; Salon / Beauty Parlour</option>
+        <option value="gym">&#x1F4AA; Gym / Fitness</option>
+        <option value="clinic">&#x1F3E5; Clinic / Doctor</option>
+        <option value="coaching">&#x1F4DA; Coaching / Tuition</option>
+        <option value="carwash">&#x1F697; Car Wash / Auto Service</option>
+        <option value="bakery">&#x1F382; Bakery / Cake Shop</option>
+        <option value="other">&#x1F3E2; Other Business</option>
       </select>
     </div>
     <div class="mfield"><label>Email *</label><input type="email" id="s-email" placeholder="you@example.com"></div>
