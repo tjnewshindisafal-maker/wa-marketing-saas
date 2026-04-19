@@ -295,7 +295,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
           <div class="panel-title" id="pt-recent">🕒 Recent Jobs</div>
           <button class="abtn ab-pri" onclick="showSection('sec-jobs')">View All →</button>
         </div>
-        <table><thead><tr><th>Job ID</th><th>Customer</th><th>Service</th><th>Status</th><th>Action</th></tr></thead>
+        <table><thead><tr><th>ID</th><th id="th-recent-customer">Customer</th><th>Service</th><th>Status</th><th>Action</th></tr></thead>
         <tbody id="recentJobsTb"></tbody></table>
       </div>
     </div>
@@ -322,7 +322,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
           </div>
         </div>
         <table>
-          <thead><tr><th>Job ID</th><th>Customer</th><th>Device</th><th>Service</th><th>Technician</th><th>Status</th><th>Cost</th><th>Reminder</th><th>Actions</th></tr></thead>
+          <thead><tr><th>ID</th><th id="th-jobs-customer">Customer</th><th id="th-jobs-device">Device</th><th>Service</th><th id="th-jobs-tech">Technician</th><th>Status</th><th id="th-jobs-cost">Cost</th><th>Reminder</th><th>Actions</th></tr></thead>
           <tbody id="allJobsTb"></tbody>
         </table>
       </div>
@@ -437,7 +437,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
           <button class="abtn ab-pri" id="addStaffTopBtn" onclick="document.getElementById('techModal').classList.add('open')">+ Add</button>
         </div>
         <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>Skill</th><th>Active Jobs</th><th>Total Done</th><th>Action</th></tr></thead>
+          <thead><tr><th>Name</th><th>Phone</th><th id="th-staff-skill">Skill</th><th id="th-staff-active">Active Jobs</th><th>Total Done</th><th>Action</th></tr></thead>
           <tbody id="techsTb"></tbody>
         </table>
       </div>
@@ -451,7 +451,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
           <input class="search-in" id="custSearch" placeholder="Search customer...">
         </div>
         <table>
-          <thead><tr><th>Name</th><th>Phone</th><th>Total Jobs</th><th>Last Service</th><th>Action</th></tr></thead>
+          <thead><tr><th>Name</th><th>Phone</th><th id="th-cust-total">Total Jobs</th><th>Last Service</th><th>Action</th></tr></thead>
           <tbody id="custTb"></tbody>
         </table>
       </div>
@@ -486,10 +486,10 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
   <div class="modal">
     <h3 id="staffModalTitle">Add Technician</h3>
     <div class="m-grid">
-      <div class="mf"><label>Name *</label><input type="text" id="t-name" placeholder="Suresh Kumar"></div>
+      <div class="mf"><label>Name *</label><input type="text" id="t-name" placeholder="Full name"></div>
       <div class="mf"><label>Phone *</label><input type="tel" id="t-phone" placeholder="9876543210"></div>
     </div>
-    <div class="mf"><label id="t-skill-label">Skill / Specialization</label><input type="text" id="t-skill" placeholder="TV, AC, Mobile"></div>
+    <div class="mf"><label id="t-skill-label">Skill / Specialization</label><input type="text" id="t-skill" placeholder="Skill"></div>
     <div class="modal-btns">
       <button class="btn-save" id="addStaffBtn">Add Technician</button>
       <button class="btn-cancel" onclick="document.getElementById('techModal').classList.remove('open')">Cancel</button>
@@ -500,10 +500,10 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
 <!-- COST MODAL -->
 <div class="overlay" id="costModal">
   <div class="modal">
-    <h3>💰 Set Repair Cost</h3>
+    <h3 id="costModalTitle">💰 Set Service Cost</h3>
     <input type="hidden" id="cm-jobId">
     <div class="mf"><label>Cost Amount (₹) *</label><input type="number" id="cm-cost" placeholder="e.g. 1500"></div>
-    <div class="mf"><label>Note for Customer</label><textarea id="cm-note" placeholder="Parts replaced: Capacitor + Service charge"></textarea></div>
+    <div class="mf"><label id="cm-note-label">Note for Customer</label><textarea id="cm-note" placeholder="Service details / parts used..."></textarea></div>
     <div class="modal-btns">
       <button class="btn-save" id="saveCostBtn">Send to Customer via WA</button>
       <button class="btn-cancel" onclick="document.getElementById('costModal').classList.remove('open')">Cancel</button>
@@ -708,10 +708,28 @@ function applyIndustry(){
   document.getElementById('addStaffBtn').textContent = 'Add '+data.staffWord;
   document.getElementById('addStaffTopBtn').textContent = '+ Add '+data.staffWord;
 
+  // Cost modal
+  var costTitle = currentIndustry==='clinic' ? '💰 Set Consultation Fee'
+                : currentIndustry==='salon'  ? '💰 Set Service Price'
+                : currentIndustry==='auto'   ? '💰 Set Service Cost'
+                : '💰 Set Repair Cost';
+  document.getElementById('costModalTitle').textContent = costTitle;
+  document.getElementById('cm-note-label').textContent = 'Note for '+data.customerWord;
+
+  // Table headers (Recent Jobs, All Jobs, Staff, Customers)
+  var thRecent = document.getElementById('th-recent-customer'); if(thRecent) thRecent.textContent = data.customerWord;
+  var thJC = document.getElementById('th-jobs-customer'); if(thJC) thJC.textContent = data.customerWord;
+  var thJD = document.getElementById('th-jobs-device'); if(thJD) thJD.textContent = data.deviceLabel;
+  var thJT = document.getElementById('th-jobs-tech'); if(thJT) thJT.textContent = data.staffWord;
+  var thJCost = document.getElementById('th-jobs-cost'); if(thJCost) thJCost.style.display = data.showCost ? '' : 'none';
+  var thSS = document.getElementById('th-staff-skill'); if(thSS) thSS.textContent = (currentIndustry==='clinic'?'Specialization':currentIndustry==='salon'?'Service':'Skill');
+  var thSA = document.getElementById('th-staff-active'); if(thSA) thSA.textContent = 'Active '+data.jobWordPlural;
+  var thCT = document.getElementById('th-cust-total'); if(thCT) thCT.textContent = 'Total '+data.jobWordPlural;
+
   // WhatsApp section labels
   if(document.getElementById('nb-pickup-title')){
     document.getElementById('nb-pickup-title').textContent = data.showPickup ? 'Ready for Pickup' : 'Service Complete';
-    document.getElementById('nb-pickup-sub').textContent = data.showPickup ? 'Inform completed job customers' : 'Tell '+data.customerWordPlural.toLowerCase()+' service is done';
+    document.getElementById('nb-pickup-sub').textContent = data.showPickup ? 'Inform '+data.customerWordPlural.toLowerCase()+' to collect' : 'Tell '+data.customerWordPlural.toLowerCase()+' service is done';
   }
 
   updateReminderDays();
