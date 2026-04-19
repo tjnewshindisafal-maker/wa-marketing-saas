@@ -897,7 +897,7 @@ function updateServiceChart(jobs){
 function renderRecentJobs(jobs){
   document.getElementById('recentJobsTb').innerHTML=jobs.length?jobs.map(function(j){
     return '<tr><td style="font-family:monospace;font-size:12px;color:var(--accent);">'+j.jobId+'</td><td style="font-weight:600;color:var(--white);">'+j.customerName+'</td><td style="font-size:12px;color:var(--muted);">'+j.serviceType+'</td><td>'+statusTag(j.status)+'</td><td><button class="abtn ab-pri" onclick="openJob(\''+j.jobId+'\')">View</button></td></tr>';
-  }).join(''):'<tr class="empty"><td colspan="5">No jobs yet</td></tr>';
+  }).join(''):'<tr class="empty"><td colspan="5">No '+INDUSTRY_DATA[currentIndustry].jobWordPlural.toLowerCase()+' yet</td></tr>';
 }
 
 function filterJobs(status){ document.getElementById('statusFilter').value=status; showSection('sec-jobs'); renderAllJobs(allJobs,status); }
@@ -937,7 +937,7 @@ function renderAllJobs(jobs,filterStatus){
         +'<button class="abtn ab-gr" onclick="openInvoice(\''+j.jobId+'\')">Invoice</button>'
       +'</div></td>'
       +'</tr>';
-  }).join(''):'<tr class="empty"><td colspan="9">No jobs found</td></tr>';
+  }).join(''):'<tr class="empty"><td colspan="9">No '+INDUSTRY_DATA[currentIndustry].jobWordPlural.toLowerCase()+' found</td></tr>';
 }
 
 function renderPickup(jobs){
@@ -962,7 +962,7 @@ function loadTechs(){
     sel.innerHTML='<option value="">Not assigned</option>'+allTechs.map(function(t){ return '<option value="'+t._id+'">'+t.name+' ('+t.skill+')</option>'; }).join('');
     document.getElementById('techsTb').innerHTML=allTechs.length?allTechs.map(function(t){
       return '<tr><td style="font-weight:600;color:var(--white);">'+t.name+'</td><td style="font-size:12px;color:var(--muted);">+'+t.phone+'</td><td style="font-size:12px;">'+t.skill+'</td><td>'+allJobs.filter(function(j){return j.technicianId===t._id.toString()&&j.status==='in_progress';}).length+'</td><td style="color:var(--green);">'+t.jobsCompleted+'</td><td><button class="abtn ab-del" onclick="deleteTech(\''+t._id+'\')">Delete</button></td></tr>';
-    }).join(''):'<tr class="empty"><td colspan="6">No technicians added</td></tr>';
+    }).join(''):'<tr class="empty"><td colspan="6">No '+INDUSTRY_DATA[currentIndustry].staffWordPlural.toLowerCase()+' added</td></tr>';
   });
 }
 
@@ -978,7 +978,7 @@ function renderCustomers(custs,q){
   var filtered=custs.filter(function(c){ return !q||c.name.toLowerCase().includes(q)||c.phone.includes(q); });
   document.getElementById('custTb').innerHTML=filtered.length?filtered.map(function(c){
     return '<tr><td style="font-weight:600;color:var(--white);">'+c.name+'</td><td style="font-size:12px;color:var(--muted);">+'+c.phone+'</td><td style="color:var(--accent);font-weight:700;">'+c.totalJobs+'</td><td style="font-size:12px;color:var(--muted);">'+fmtDate(c.lastJob)+'</td><td><button class="abtn ab-wa" onclick="msgCustomer(\''+c.phone+'\',\''+c.name+'\')">📱 WA</button></td></tr>';
-  }).join(''):'<tr class="empty"><td colspan="5">No customers</td></tr>';
+  }).join(''):'<tr class="empty"><td colspan="5">No '+INDUSTRY_DATA[currentIndustry].customerWordPlural.toLowerCase()+'</td></tr>';
 }
 
 document.getElementById('jobSearch').addEventListener('input',function(){ renderAllJobs(allJobs); });
