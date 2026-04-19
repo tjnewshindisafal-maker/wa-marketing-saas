@@ -190,16 +190,17 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
 <nav class="nav">
   <div class="nav-logo">⚡ Service <span>Hub</span></div>
   <div class="nav-right">
-    <!-- INDUSTRY SELECTOR (NEW) -->
-    <div class="industry-bar">
-      <select id="industrySelect" onchange="changeIndustry()">
-        <option value="repair">🔧 Repair Shop</option>
-        <option value="salon">💇 Salon / Beauty</option>
-        <option value="auto">🚗 Automobile</option>
-        <option value="clinic">🏥 Clinic / Doctor</option>
+    <!-- INDUSTRY SELECTOR (hidden — auto-set from signup) -->
+    <div class="industry-bar" style="display:none;">
+      <select id="industrySelect">
+        <option value="repair">Repair</option>
+        <option value="salon">Salon</option>
+        <option value="auto">Auto</option>
+        <option value="clinic">Clinic</option>
       </select>
     </div>
     <div class="wa-status"><div class="ws-dot no" id="wsDot"></div><span id="wsText">Not Connected</span></div>
+    <div style="font-size:11px;font-weight:700;color:var(--accent);background:var(--a3);padding:5px 10px;border-radius:14px;border:1px solid rgba(108,99,255,.2);" id="industryBadge">—</div>
     <div style="font-size:13px;font-weight:600;color:var(--white);" id="navBiz">Loading...</div>
     <button class="btn-lo" id="logoutBtn">Logout</button>
   </div>
@@ -210,12 +211,12 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
   <!-- SIDEBAR -->
   <div class="sidebar">
     <button class="sb-btn on" data-sec="sec-overview"><span class="sb-ico">📊</span>Overview</button>
-    <button class="sb-btn" data-sec="sec-jobs"><span class="sb-ico">🔧</span>All Jobs <span class="sb-badge" id="pendingBadge">0</span></button>
-    <button class="sb-btn" data-sec="sec-new-job"><span class="sb-ico">➕</span>New Job</button>
-    <button class="sb-btn" data-sec="sec-pickup"><span class="sb-ico">📦</span>Ready Pickup</button>
+    <button class="sb-btn" data-sec="sec-jobs" id="sb-jobs"><span class="sb-ico">🔧</span>All Jobs <span class="sb-badge" id="pendingBadge">0</span></button>
+    <button class="sb-btn" data-sec="sec-new-job" id="sb-newjob"><span class="sb-ico">➕</span>New Job</button>
+    <button class="sb-btn" data-sec="sec-pickup" id="sb-pickup"><span class="sb-ico">📦</span>Ready Pickup</button>
     <button class="sb-btn" data-sec="sec-whatsapp"><span class="sb-ico">💬</span>WhatsApp</button>
-    <button class="sb-btn" data-sec="sec-technicians"><span class="sb-ico">👨‍🔧</span>Technicians</button>
-    <button class="sb-btn" data-sec="sec-customers"><span class="sb-ico">👥</span>Customers</button>
+    <button class="sb-btn" data-sec="sec-technicians" id="sb-staff"><span class="sb-ico">👤</span>Technicians</button>
+    <button class="sb-btn" data-sec="sec-customers" id="sb-customers"><span class="sb-ico">👥</span>Customers</button>
     <button class="sb-btn" data-sec="sec-activity"><span class="sb-ico">📋</span>Activity Log</button>
   </div>
 
@@ -227,29 +228,29 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
         <div class="stat-card sc-blue" onclick="filterJobs('pending')">
           <div class="stat-ico">⏳</div>
           <div class="stat-val" id="st-pending">0</div>
-          <div class="stat-lbl">Pending Jobs</div>
+          <div class="stat-lbl" id="lbl-pending">Pending Jobs</div>
         </div>
         <div class="stat-card sc-acc" onclick="filterJobs('in_progress')">
           <div class="stat-ico">🔧</div>
           <div class="stat-val" id="st-inprog">0</div>
-          <div class="stat-lbl">In Progress</div>
+          <div class="stat-lbl" id="lbl-inprog">In Progress</div>
         </div>
         <div class="stat-card sc-green" onclick="filterJobs('completed')">
           <div class="stat-ico">✅</div>
           <div class="stat-val" id="st-done">0</div>
-          <div class="stat-lbl">Completed</div>
+          <div class="stat-lbl" id="lbl-done">Completed</div>
         </div>
         <div class="stat-card sc-wa" onclick="filterJobs('delivered')">
           <div class="stat-ico">📦</div>
           <div class="stat-val" id="st-delivered">0</div>
-          <div class="stat-lbl">Delivered</div>
+          <div class="stat-lbl" id="lbl-delivered">Delivered</div>
         </div>
         <div class="stat-card sc-yellow">
           <div class="stat-ico">💰</div>
           <div class="stat-val" id="st-revenue">₹0</div>
           <div class="stat-lbl">Total Revenue</div>
         </div>
-        <div class="stat-card sc-red" onclick="filterJobs('cost_sent')">
+        <div class="stat-card sc-red" onclick="filterJobs('cost_sent')" id="st-approval-card">
           <div class="stat-ico">💸</div>
           <div class="stat-val" id="st-approval">0</div>
           <div class="stat-lbl">Awaiting Approval</div>
@@ -262,7 +263,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
         <div class="stat-card sc-blue">
           <div class="stat-ico">👥</div>
           <div class="stat-val" id="st-customers">0</div>
-          <div class="stat-lbl">Total Customers</div>
+          <div class="stat-lbl" id="lbl-customers">Total Customers</div>
         </div>
       </div>
 
@@ -291,7 +292,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
       <!-- RECENT JOBS -->
       <div class="panel">
         <div class="panel-head">
-          <div class="panel-title">🕒 Recent Jobs</div>
+          <div class="panel-title" id="pt-recent">🕒 Recent Jobs</div>
           <button class="abtn ab-pri" onclick="showSection('sec-jobs')">View All →</button>
         </div>
         <table><thead><tr><th>Job ID</th><th>Customer</th><th>Service</th><th>Status</th><th>Action</th></tr></thead>
@@ -303,7 +304,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
     <div class="section" id="sec-jobs">
       <div class="panel">
         <div class="panel-head">
-          <div class="panel-title">🔧 All Jobs</div>
+          <div class="panel-title" id="pt-jobs">🔧 All Jobs</div>
           <div class="panel-acts">
             <input class="search-in" id="jobSearch" placeholder="Search job/customer...">
             <select class="filter-sel" id="statusFilter">
@@ -317,7 +318,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
               <option value="delivered">Delivered</option>
               <option value="cancelled">Cancelled</option>
             </select>
-            <button class="abtn ab-pri" onclick="showSection('sec-new-job')">+ New Job</button>
+            <button class="abtn ab-pri" onclick="showSection('sec-new-job')" id="newJobBtnTop">+ New Job</button>
           </div>
         </div>
         <table>
@@ -330,11 +331,11 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
     <!-- NEW JOB -->
     <div class="section" id="sec-new-job">
       <div class="panel" style="max-width:600px;">
-        <div class="panel-head"><div class="panel-title">➕ Create New Job</div></div>
+        <div class="panel-head"><div class="panel-title" id="pt-newjob">➕ Create New Job</div></div>
         <div style="padding:20px;">
           <div class="m-grid">
-            <div class="mf"><label>Customer Name *</label><input type="text" id="nj-cname" placeholder="Ramesh Kumar"></div>
-            <div class="mf"><label>Customer Phone *</label><input type="tel" id="nj-cphone" placeholder="9876543210"></div>
+            <div class="mf"><label id="lbl-cname">Customer Name *</label><input type="text" id="nj-cname" placeholder="Customer Name"></div>
+            <div class="mf"><label id="lbl-cphone">Customer Phone *</label><input type="tel" id="nj-cphone" placeholder="9876543210"></div>
           </div>
           <div class="m-grid">
             <div class="mf"><label>Service Type * <span style="color:var(--accent);" id="nj-industry-label"></span></label>
@@ -348,12 +349,18 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
             <div class="mf"><label>Priority</label>
               <select id="nj-priority"><option value="normal">Normal</option><option value="urgent">Urgent</option><option value="vip">VIP</option></select>
             </div>
-            <div class="mf"><label>Assign Technician</label>
+            <div class="mf"><label id="lbl-tech">Assign Technician</label>
               <select id="nj-tech"><option value="">Not assigned</option></select>
             </div>
           </div>
 
-          <!-- REMINDER BOX (NEW) -->
+          <!-- TIME SLOT (only Salon & Clinic) -->
+          <div class="mf" id="nj-timeslot-wrap" style="display:none;">
+            <label>📅 Appointment Date & Time</label>
+            <input type="datetime-local" id="nj-timeslot">
+          </div>
+
+          <!-- REMINDER BOX -->
           <div class="reminder-box">
             <div class="reminder-box-title">🔔 Auto Reminder</div>
             <div class="reminder-row">
@@ -368,7 +375,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
             <div class="reminder-info" id="nj-reminder-info">Customer will get a follow-up WhatsApp on the set date.</div>
           </div>
 
-          <div class="mf"><label>Problem Description / Notes</label><textarea id="nj-desc" placeholder="Customer says TV not turning on..."></textarea></div>
+          <div class="mf"><label>Description / Notes</label><textarea id="nj-desc" placeholder="Add any notes about this service..."></textarea></div>
           <div style="display:flex;gap:10px;margin-top:6px;">
             <button class="btn-save" id="createJobBtn">✅ Create Job & Send WA</button>
             <button class="btn-cancel" onclick="showSection('sec-jobs')">Cancel</button>
@@ -413,21 +420,21 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
           <!-- Send bulk msg -->
           <div style="font-size:13px;font-weight:700;color:var(--white);margin-bottom:10px;">📤 Send Bulk Message</div>
           <div class="notify-grid">
-            <div class="notify-btn" onclick="sendBulkByStatus('pending')"><div class="nb-ico">⏳</div><div class="nb-title">Notify Pending Customers</div><div class="nb-sub">Send update to all pending jobs</div></div>
+            <div class="notify-btn" onclick="sendBulkByStatus('pending')"><div class="nb-ico">⏳</div><div class="nb-title">Notify Pending</div><div class="nb-sub">Send update to all pending</div></div>
             <div class="notify-btn" onclick="sendBulkByStatus('in_progress')"><div class="nb-ico">🔧</div><div class="nb-title">In Progress Updates</div><div class="nb-sub">Tell customers work is ongoing</div></div>
-            <div class="notify-btn" onclick="sendBulkByStatus('completed')"><div class="nb-ico">✅</div><div class="nb-title">Ready for Pickup</div><div class="nb-sub">Inform completed job customers</div></div>
+            <div class="notify-btn" onclick="sendBulkByStatus('completed')"><div class="nb-ico">✅</div><div class="nb-title" id="nb-pickup-title">Ready for Pickup</div><div class="nb-sub" id="nb-pickup-sub">Inform completed job customers</div></div>
             <div class="notify-btn" onclick="openCustomMsg()"><div class="nb-ico">✏️</div><div class="nb-title">Custom Message</div><div class="nb-sub">Write your own message</div></div>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- TECHNICIANS -->
+    <!-- TECHNICIANS / STAFF -->
     <div class="section" id="sec-technicians">
       <div class="panel">
         <div class="panel-head">
-          <div class="panel-title">👨‍🔧 Technicians</div>
-          <button class="abtn ab-pri" onclick="document.getElementById('techModal').classList.add('open')">+ Add</button>
+          <div class="panel-title" id="pt-staff">👤 Technicians</div>
+          <button class="abtn ab-pri" id="addStaffTopBtn" onclick="document.getElementById('techModal').classList.add('open')">+ Add</button>
         </div>
         <table>
           <thead><tr><th>Name</th><th>Phone</th><th>Skill</th><th>Active Jobs</th><th>Total Done</th><th>Action</th></tr></thead>
@@ -436,11 +443,11 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
       </div>
     </div>
 
-    <!-- CUSTOMERS -->
+    <!-- CUSTOMERS / CLIENTS / PATIENTS -->
     <div class="section" id="sec-customers">
       <div class="panel">
         <div class="panel-head">
-          <div class="panel-title">👥 Customer History</div>
+          <div class="panel-title" id="pt-customers">👥 Customer History</div>
           <input class="search-in" id="custSearch" placeholder="Search customer...">
         </div>
         <table>
@@ -474,17 +481,17 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
   </div>
 </div>
 
-<!-- TECHNICIAN MODAL -->
+<!-- TECHNICIAN / STAFF MODAL -->
 <div class="overlay" id="techModal">
   <div class="modal">
-    <h3>Add Technician</h3>
+    <h3 id="staffModalTitle">Add Technician</h3>
     <div class="m-grid">
       <div class="mf"><label>Name *</label><input type="text" id="t-name" placeholder="Suresh Kumar"></div>
       <div class="mf"><label>Phone *</label><input type="tel" id="t-phone" placeholder="9876543210"></div>
     </div>
-    <div class="mf"><label>Skill / Specialization</label><input type="text" id="t-skill" placeholder="TV, AC, Mobile"></div>
+    <div class="mf"><label id="t-skill-label">Skill / Specialization</label><input type="text" id="t-skill" placeholder="TV, AC, Mobile"></div>
     <div class="modal-btns">
-      <button class="btn-save" id="addTechBtn">Add Technician</button>
+      <button class="btn-save" id="addStaffBtn">Add Technician</button>
       <button class="btn-cancel" onclick="document.getElementById('techModal').classList.remove('open')">Cancel</button>
     </div>
   </div>
@@ -514,12 +521,23 @@ var allTechs = [];
 var socket = io();
 var waConnected = false;
 
-// ── INDUSTRY DATA (NEW) ───────────────────────────────────────────────────────
+// ── INDUSTRY DATA (full config with labels & features) ─────────────────────
 var INDUSTRY_DATA = {
   repair: {
     label: 'Repair Shop',
+    icon: '🔧',
     deviceLabel: 'Device / Model',
     devicePlaceholder: 'Samsung 55 inch',
+    jobWord: 'Job',
+    jobWordPlural: 'Jobs',
+    customerWord: 'Customer',
+    customerWordPlural: 'Customers',
+    staffWord: 'Technician',
+    staffWordPlural: 'Technicians',
+    staffSkillPlaceholder: 'TV, AC, Mobile',
+    showPickup: true,
+    showCost: true,
+    showTimeSlot: false,
     services: [
       {name:'TV Repair', days:90},
       {name:'AC Service', days:180},
@@ -535,8 +553,19 @@ var INDUSTRY_DATA = {
   },
   salon: {
     label: 'Salon / Beauty',
-    deviceLabel: 'Service Details',
+    icon: '💇',
+    deviceLabel: 'Service Notes',
     devicePlaceholder: 'Hair length / Style preference',
+    jobWord: 'Appointment',
+    jobWordPlural: 'Appointments',
+    customerWord: 'Client',
+    customerWordPlural: 'Clients',
+    staffWord: 'Staff',
+    staffWordPlural: 'Staff',
+    staffSkillPlaceholder: 'Hair Stylist, Beautician',
+    showPickup: false,
+    showCost: true,
+    showTimeSlot: true,
     services: [
       {name:'Hair Cut', days:30},
       {name:'Hair Treatment', days:30},
@@ -551,9 +580,20 @@ var INDUSTRY_DATA = {
     ]
   },
   auto: {
-    label: 'Automobile',
+    label: 'Auto Service',
+    icon: '🚗',
     deviceLabel: 'Vehicle / Model',
-    devicePlaceholder: 'Honda City 2020',
+    devicePlaceholder: 'Honda City 2020 (MH-12-AB-1234)',
+    jobWord: 'Service Order',
+    jobWordPlural: 'Service Orders',
+    customerWord: 'Customer',
+    customerWordPlural: 'Customers',
+    staffWord: 'Mechanic',
+    staffWordPlural: 'Mechanics',
+    staffSkillPlaceholder: 'Engine, AC, Tyres',
+    showPickup: true,
+    showCost: true,
+    showTimeSlot: false,
     services: [
       {name:'Oil Change', days:90},
       {name:'Full Service', days:180},
@@ -569,8 +609,19 @@ var INDUSTRY_DATA = {
   },
   clinic: {
     label: 'Clinic / Doctor',
+    icon: '🏥',
     deviceLabel: 'Patient Details',
     devicePlaceholder: 'Age / Brief history',
+    jobWord: 'Visit',
+    jobWordPlural: 'Visits',
+    customerWord: 'Patient',
+    customerWordPlural: 'Patients',
+    staffWord: 'Doctor',
+    staffWordPlural: 'Doctors',
+    staffSkillPlaceholder: 'General, Dental, Physiotherapy',
+    showPickup: false,
+    showCost: true,
+    showTimeSlot: true,
     services: [
       {name:'General Checkup', days:180},
       {name:'Dental Cleaning', days:180},
@@ -585,7 +636,7 @@ var INDUSTRY_DATA = {
   }
 };
 
-var currentIndustry = localStorage.getItem('wa_industry') || 'repair';
+var currentIndustry = 'repair'; // default, will be overwritten by user.industry from signup
 
 function changeIndustry(){
   currentIndustry = document.getElementById('industrySelect').value;
@@ -596,19 +647,73 @@ function changeIndustry(){
 
 function applyIndustry(){
   var data = INDUSTRY_DATA[currentIndustry];
-  // Update industry selector
+
+  // Navbar badge
+  document.getElementById('industryBadge').textContent = data.icon+' '+data.label;
+  // Hidden selector sync
   document.getElementById('industrySelect').value = currentIndustry;
-  // Update label tag near "Service Type"
+
+  // ── SIDEBAR — show/hide items + rename ──────────────────────────────
+  document.getElementById('sb-jobs').innerHTML = '<span class="sb-ico">'+data.icon+'</span>All '+data.jobWordPlural+' <span class="sb-badge" id="pendingBadge">0</span>';
+  document.getElementById('sb-newjob').innerHTML = '<span class="sb-ico">➕</span>New '+data.jobWord;
+  document.getElementById('sb-pickup').style.display = data.showPickup ? 'flex' : 'none';
+  document.getElementById('sb-staff').innerHTML = '<span class="sb-ico">👤</span>'+data.staffWordPlural;
+  document.getElementById('sb-customers').innerHTML = '<span class="sb-ico">👥</span>'+data.customerWordPlural;
+
+  // ── PANEL TITLES ─────────────────────────────────────────────────────
+  document.getElementById('pt-jobs').textContent = data.icon+' All '+data.jobWordPlural;
+  document.getElementById('pt-newjob').textContent = '➕ Create New '+data.jobWord;
+  document.getElementById('pt-recent').textContent = '🕒 Recent '+data.jobWordPlural;
+  document.getElementById('pt-staff').textContent = '👤 '+data.staffWordPlural;
+  document.getElementById('pt-customers').textContent = '👥 '+data.customerWord+' History';
+  document.getElementById('createJobBtn').innerHTML = '✅ Create '+data.jobWord+(' & Send WA');
+  document.getElementById('newJobBtnTop').innerHTML = '+ New '+data.jobWord;
+
+  // ── STATS LABELS ─────────────────────────────────────────────────────
+  document.getElementById('lbl-pending').textContent = 'Pending '+data.jobWordPlural;
+  document.getElementById('lbl-inprog').textContent = 'In Progress';
+  document.getElementById('lbl-done').textContent = 'Completed';
+  document.getElementById('lbl-delivered').textContent = data.showPickup ? 'Delivered' : 'Closed';
+  document.getElementById('lbl-customers').textContent = 'Total '+data.customerWordPlural;
+
+  // ── COST FEATURE ─────────────────────────────────────────────────────
+  document.getElementById('st-approval-card').style.display = data.showCost ? 'block' : 'none';
+
+  // ── NEW JOB FORM — labels & placeholders ────────────────────────────
+  document.getElementById('lbl-cname').innerHTML = data.customerWord+' Name *';
+  document.getElementById('lbl-cphone').innerHTML = data.customerWord+' Phone *';
+  document.getElementById('nj-cname').placeholder = (currentIndustry==='clinic'?'Patient Name':data.customerWord+' Name');
   document.getElementById('nj-industry-label').textContent = '('+data.label+')';
-  // Update device label + placeholder
   document.getElementById('nj-device-label').textContent = data.deviceLabel;
   document.getElementById('nj-device').placeholder = data.devicePlaceholder;
-  // Populate Service Type dropdown
+  document.getElementById('lbl-tech').textContent = 'Assign '+data.staffWord;
+
+  // Time slot field (only Salon & Clinic)
+  document.getElementById('nj-timeslot-wrap').style.display = data.showTimeSlot ? 'block' : 'none';
+
+  // Search placeholders
+  document.getElementById('jobSearch').placeholder = 'Search '+data.jobWord.toLowerCase()+' / '+data.customerWord.toLowerCase()+'...';
+  document.getElementById('custSearch').placeholder = 'Search '+data.customerWord.toLowerCase()+'...';
+
+  // Service Type dropdown
   var sel = document.getElementById('nj-service');
   sel.innerHTML = data.services.map(function(s){
     return '<option value="'+s.name+'" data-days="'+s.days+'">'+s.name+'</option>';
   }).join('');
-  // Set default reminder days based on first service
+
+  // Staff modal
+  document.getElementById('staffModalTitle').textContent = 'Add '+data.staffWord;
+  document.getElementById('t-skill-label').textContent = 'Skill / Specialization';
+  document.getElementById('t-skill').placeholder = data.staffSkillPlaceholder;
+  document.getElementById('addStaffBtn').textContent = 'Add '+data.staffWord;
+  document.getElementById('addStaffTopBtn').textContent = '+ Add '+data.staffWord;
+
+  // WhatsApp section labels
+  if(document.getElementById('nb-pickup-title')){
+    document.getElementById('nb-pickup-title').textContent = data.showPickup ? 'Ready for Pickup' : 'Service Complete';
+    document.getElementById('nb-pickup-sub').textContent = data.showPickup ? 'Inform completed job customers' : 'Tell '+data.customerWordPlural.toLowerCase()+' service is done';
+  }
+
   updateReminderDays();
 }
 
@@ -661,10 +766,16 @@ fetch('/api/me',{headers:{'x-token':token}}).then(function(r){return r.json();})
   if(!d.ok){ localStorage.removeItem('wa_token'); window.location.href='/'; return; }
   currentUser=d.user;
   document.getElementById('navBiz').textContent=d.user.business||d.user.name;
-  // Auto-detect industry from user signup if available
-  if(d.user.industry && INDUSTRY_DATA[d.user.industry]){
-    currentIndustry = d.user.industry;
-    localStorage.setItem('wa_industry', currentIndustry);
+  // Auto-detect industry from user signup
+  // Map signup industry codes -> dashboard industry keys
+  var indMap = {
+    repair:'repair', electric:'repair',
+    salon:'salon',
+    carwash:'auto', auto:'auto',
+    clinic:'clinic'
+  };
+  if(d.user.industry && indMap[d.user.industry]){
+    currentIndustry = indMap[d.user.industry];
   }
   applyIndustry();
   loadAll();
@@ -1027,7 +1138,7 @@ function sendBulkByStatus(status){
 function openCustomMsg(){ showSection('sec-whatsapp'); window.location.href='/client'; }
 function msgCustomer(phone,name){ window.open('https://wa.me/91'+phone,'_blank'); }
 
-document.getElementById('addTechBtn').addEventListener('click',function(){
+document.getElementById('addStaffBtn').addEventListener('click',function(){
   var name=document.getElementById('t-name').value.trim();
   var phone=document.getElementById('t-phone').value.trim();
   var skill=document.getElementById('t-skill').value.trim();
@@ -1035,7 +1146,7 @@ document.getElementById('addTechBtn').addEventListener('click',function(){
   fetch('/api/technicians',{method:'POST',headers:{'x-token':token,'Content-Type':'application/json'},body:JSON.stringify({name,phone,skill})})
   .then(function(r){return r.json();}).then(function(d){
     if(!d.ok){ toast(d.msg,'err'); return; }
-    toast('Technician added!','ok');
+    toast(INDUSTRY_DATA[currentIndustry].staffWord+' added!','ok');
     document.getElementById('techModal').classList.remove('open');
     ['t-name','t-phone','t-skill'].forEach(function(id){ document.getElementById(id).value=''; });
     loadTechs();
