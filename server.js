@@ -10,7 +10,7 @@ const fs         = require('fs');
 const qrcode     = require('qrcode');
 const { MongoClient, ObjectId } = require('mongodb');
 
-const MONGO_URI = 'mongodb+srv://waadmin:Waadmin2025@cluster0.0krvn5v.mongodb.net/wamarketing';
+const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://waadmin:Waadmin2025@cluster0.0krvn5v.mongodb.net/wamarketing';
 let db;
 
 async function connectDB() {
