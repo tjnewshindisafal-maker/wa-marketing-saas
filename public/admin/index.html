@@ -76,6 +76,24 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
 .abtn-plan{background:var(--a3);color:var(--accent);border:1px solid rgba(108,99,255,.25);}
 .abtn-add{background:var(--accent);color:#fff;border:none;padding:7px 14px;font-size:12px;}
 
+/* SYSTEM WA */
+.sys-wa-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;padding:20px;}
+.sys-wa-info{display:flex;flex-direction:column;gap:14px;}
+.sys-wa-status{padding:16px;background:var(--s2);border:1px solid var(--border);border-radius:10px;}
+.sys-wa-status .lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;}
+.sys-wa-status .val{font-size:15px;font-weight:700;color:var(--white);display:flex;align-items:center;gap:8px;}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;}
+.dot-green{background:var(--green);box-shadow:0 0 8px var(--green);}
+.dot-yellow{background:var(--yellow);box-shadow:0 0 8px var(--yellow);}
+.dot-red{background:var(--red);}
+.sys-wa-qr{display:flex;align-items:center;justify-content:center;padding:20px;background:var(--s2);border:1px solid var(--border);border-radius:10px;min-height:280px;}
+.sys-wa-qr img{max-width:100%;height:auto;background:#fff;padding:10px;border-radius:8px;}
+.sys-wa-empty{color:var(--muted);font-size:13px;text-align:center;}
+.sys-wa-btns{display:flex;gap:8px;}
+.btn-connect{flex:1;padding:10px;background:var(--wa);color:#fff;border:none;border-radius:8px;font-weight:700;cursor:pointer;font-family:var(--font);font-size:13px;}
+.btn-disconnect{flex:1;padding:10px;background:rgba(239,68,68,.1);color:var(--red);border:1px solid rgba(239,68,68,.3);border-radius:8px;font-weight:700;cursor:pointer;font-family:var(--font);font-size:13px;}
+.sys-wa-note{background:rgba(108,99,255,.05);border:1px solid rgba(108,99,255,.2);border-radius:8px;padding:12px;font-size:12px;color:var(--text);line-height:1.5;}
+
 /* MODAL */
 .overlay{display:none;position:fixed;inset:0;z-index:200;background:rgba(0,0,0,.78);backdrop-filter:blur(12px);align-items:center;justify-content:center;}
 .overlay.open{display:flex;}
@@ -113,6 +131,10 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
 .lfield input::placeholder{color:var(--muted);}
 .btn-lgo{width:100%;padding:13px;border:none;border-radius:10px;cursor:pointer;font-family:var(--font);font-size:15px;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;}
 #lerr{color:var(--red);font-size:13px;margin-top:8px;display:none;}
+
+@media (max-width:768px){
+  .sys-wa-grid{grid-template-columns:1fr;}
+}
 </style>
 </head>
 <body>
@@ -142,6 +164,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
       <button class="sb-btn" id="nav-users"><span class="sb-ico">&#x1F465;</span>All Clients</button>
       <button class="sb-btn" id="nav-pending"><span class="sb-ico">&#x23F3;</span>Pending <span id="pendCount" style="background:var(--yellow);color:#000;border-radius:20px;padding:1px 7px;font-size:10px;margin-left:4px;">0</span></button>
       <button class="sb-btn" id="nav-add"><span class="sb-ico">&#x2795;</span>Add Client</button>
+      <button class="sb-btn" id="nav-syswa"><span class="sb-ico">&#x1F4F1;</span>System WhatsApp</button>
     </div>
     <div class="sb-foot">
       <button class="sb-btn" id="nav-logout"><span class="sb-ico">&#x1F6AA;</span>Logout</button>
@@ -216,12 +239,44 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
             <div class="mfield"><label>Plan</label>
               <select id="an-plan">
                 <option value="starter">Starter — 50 msg/day</option>
-<option value="pro">Pro — 200 msg/day</option>
-<option value="service">Service Pro — Jobs + Tracking</option>
-<option value="business">Business — 500 msg/day</option>
+                <option value="pro">Pro — 200 msg/day</option>
+                <option value="service">Service Pro — Jobs + Tracking</option>
+                <option value="business">Business — 500 msg/day</option>
               </select>
             </div>
             <button class="abtn abtn-add" style="padding:11px 24px;font-size:13px;border-radius:9px;width:100%;cursor:pointer;font-family:var(--font);font-weight:700;margin-top:6px;" id="addClientBtn">&#x2795; Create Client Account</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- SYSTEM WHATSAPP -->
+      <div class="section" id="sec-syswa">
+        <div class="panel">
+          <div class="panel-head">
+            <div class="panel-title">&#x1F4F1; System WhatsApp (for OTPs)</div>
+            <button class="abtn abtn-plan" id="syswaRefresh" style="font-size:12px;">&#x1F504; Refresh</button>
+          </div>
+          <div class="sys-wa-grid">
+            <div class="sys-wa-info">
+              <div class="sys-wa-status">
+                <div class="lbl">Connection Status</div>
+                <div class="val" id="syswaStatus"><span class="dot dot-red"></span> Checking...</div>
+              </div>
+              <div class="sys-wa-status">
+                <div class="lbl">Connected Number</div>
+                <div class="val" id="syswaNumber" style="font-size:14px;">—</div>
+              </div>
+              <div class="sys-wa-btns">
+                <button class="btn-connect" id="syswaConnect">&#x1F4F2; Connect / Get QR</button>
+                <button class="btn-disconnect" id="syswaDisconnect">&#x274C; Disconnect</button>
+              </div>
+              <div class="sys-wa-note">
+                <strong>&#x2139;&#xFE0F; Info:</strong> This is a dedicated WhatsApp number for sending password reset OTPs to users. Use a separate number (not your personal WhatsApp). Once connected, it will auto-send OTPs when users forget passwords.
+              </div>
+            </div>
+            <div class="sys-wa-qr" id="syswaQrBox">
+              <div class="sys-wa-empty">Click "Connect" to get QR code</div>
+            </div>
           </div>
         </div>
       </div>
@@ -255,6 +310,7 @@ td{padding:10px 14px;font-size:13px;border-top:1px solid rgba(255,255,255,.04);v
 <script>
 var token = localStorage.getItem('wa_admin_token') || localStorage.getItem('wa_token') || '';
 var changingPlanId = null;
+var syswaPollInterval = null;
 
 function authH(){ return { 'x-token': token, 'Content-Type':'application/json' }; }
 function toast(msg,type){
@@ -309,8 +365,8 @@ if(token){
 }
 
 // NAV
-var navMap={'nav-dash':'sec-dash','nav-users':'sec-users','nav-pending':'sec-pending','nav-add':'sec-add'};
-var titles={'nav-dash':'Dashboard','nav-users':'All Clients','nav-pending':'Pending Approvals','nav-add':'Add Client'};
+var navMap={'nav-dash':'sec-dash','nav-users':'sec-users','nav-pending':'sec-pending','nav-add':'sec-add','nav-syswa':'sec-syswa'};
+var titles={'nav-dash':'Dashboard','nav-users':'All Clients','nav-pending':'Pending Approvals','nav-add':'Add Client','nav-syswa':'System WhatsApp'};
 Object.keys(navMap).forEach(function(id){
   document.getElementById(id).addEventListener('click',function(){
     document.querySelectorAll('.sb-btn').forEach(function(b){ b.classList.remove('on'); });
@@ -321,6 +377,7 @@ Object.keys(navMap).forEach(function(id){
     if(id==='nav-users') renderUsers('');
     if(id==='nav-pending') renderPending();
     if(id==='nav-dash') loadStats();
+    if(id==='nav-syswa'){ loadSyswaStatus(); startSyswaPolling(); } else { stopSyswaPolling(); }
   });
 });
 
@@ -487,6 +544,63 @@ document.getElementById('addClientBtn').addEventListener('click',function(){
       }
     }
     loadUsers();
+  });
+});
+
+// ═════ SYSTEM WHATSAPP ═════
+function loadSyswaStatus(){
+  fetch('/api/admin/system-wa-status',{headers:authH()})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(!d.ok) return;
+    var statusEl=document.getElementById('syswaStatus');
+    var numEl=document.getElementById('syswaNumber');
+    var qrBox=document.getElementById('syswaQrBox');
+
+    if(d.status==='connected'){
+      statusEl.innerHTML='<span class="dot dot-green"></span> Connected';
+      numEl.textContent=d.number?('+'+d.number):'Connected';
+      qrBox.innerHTML='<div style="text-align:center;color:var(--green);"><div style="font-size:48px;">&#x2705;</div><div style="margin-top:10px;font-weight:600;">WhatsApp Connected</div><div style="color:var(--muted);font-size:12px;margin-top:4px;">Ready to send OTPs</div></div>';
+    } else if(d.status==='qr' && d.qr){
+      statusEl.innerHTML='<span class="dot dot-yellow"></span> Scan QR Code';
+      numEl.textContent='—';
+      qrBox.innerHTML='<img src="'+d.qr+'" alt="QR Code">';
+    } else if(d.status==='connecting'){
+      statusEl.innerHTML='<span class="dot dot-yellow"></span> Connecting...';
+      numEl.textContent='—';
+      qrBox.innerHTML='<div class="sys-wa-empty">Generating QR code, please wait...</div>';
+    } else {
+      statusEl.innerHTML='<span class="dot dot-red"></span> Disconnected';
+      numEl.textContent='—';
+      qrBox.innerHTML='<div class="sys-wa-empty">Click "Connect" to get QR code</div>';
+    }
+  })
+  .catch(function(){});
+}
+
+function startSyswaPolling(){
+  stopSyswaPolling();
+  syswaPollInterval=setInterval(loadSyswaStatus, 3000);
+}
+function stopSyswaPolling(){
+  if(syswaPollInterval){ clearInterval(syswaPollInterval); syswaPollInterval=null; }
+}
+
+document.getElementById('syswaRefresh').addEventListener('click', loadSyswaStatus);
+document.getElementById('syswaConnect').addEventListener('click', function(){
+  fetch('/api/admin/system-wa-connect',{method:'POST',headers:authH()})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.ok){ toast('Initiating connection...','ok'); setTimeout(loadSyswaStatus, 2000); }
+    else { toast(d.msg||'Failed','err'); }
+  });
+});
+document.getElementById('syswaDisconnect').addEventListener('click', function(){
+  if(!confirm('Disconnect System WhatsApp? OTPs will stop working.')) return;
+  fetch('/api/admin/system-wa-disconnect',{method:'POST',headers:authH()})
+  .then(function(r){ return r.json(); })
+  .then(function(d){
+    if(d.ok){ toast('Disconnected','ok'); loadSyswaStatus(); }
   });
 });
 </script>
