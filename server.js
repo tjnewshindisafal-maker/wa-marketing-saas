@@ -22,6 +22,7 @@ async function connectDB() {
     await initAdmin();
     startScheduler();
     startTrialChecker();
+    startReminderChecker();
   } catch(e) { console.error('MongoDB error:', e.message); }
 }
 
@@ -39,9 +40,31 @@ async function initAdmin() {
   } catch(e) { console.log('initAdmin error:', e.message); }
 }
 
+// ── INDUSTRY CONFIG ───────────────────────────────────────────────────────────
+const INDUSTRY_MAP = {
+  repair:'repair', electric:'repair',
+  salon:'salon',
+  carwash:'auto', auto:'auto',
+  clinic:'clinic',
+  courier:'other', ecom:'other', food:'other', realty:'other',
+  gym:'other', coaching:'other', bakery:'other', general:'other', other:'other'
+};
+
+const INDUSTRY_WORDS = {
+  repair: { job:'Job', customer:'Customer', device:'Device', hasPickup:true },
+  salon:  { job:'Appointment', customer:'Client', device:'Service', hasPickup:false },
+  auto:   { job:'Service Order', customer:'Customer', device:'Vehicle', hasPickup:true },
+  clinic: { job:'Visit', customer:'Patient', device:'Patient', hasPickup:false },
+  other:  { job:'Job', customer:'Customer', device:'Item', hasPickup:true }
+};
+
+function getIndustryCategory(userIndustry){
+  if(!userIndustry) return 'other';
+  return INDUSTRY_MAP[userIndustry] || 'other';
+}
+
 // ── TRIAL CHECKER ─────────────────────────────────────────────────────────────
 function startTrialChecker() {
-  // Every hour, downgrade expired trials to starter
   setInterval(async () => {
     try {
       const now = new Date();
@@ -51,8 +74,57 @@ function startTrialChecker() {
       );
       if(result.modifiedCount > 0) console.log('Trial expired for', result.modifiedCount, 'users');
     } catch(e){ console.log('Trial check error:', e.message); }
-  }, 60*60*1000); // Every hour
+  }, 60*60*1000);
   console.log('Trial checker started');
+}
+
+// ── REMINDER CHECKER (NEW) ────────────────────────────────────────────────────
+function startReminderChecker() {
+  setInterval(async () => {
+    try {
+      const now = new Date();
+      const jobs = await db.collection('jobs').find({
+        reminderDate: { $lte: now },
+        reminderSent: { $ne: true },
+        reminderDays: { $gt: 0 }
+      }).limit(50).toArray();
+
+      for(const job of jobs){
+        try {
+          const user = await db.collection('users').findOne({ _id: new ObjectId(job.clientId) });
+          if(!user) continue;
+          const s = sessions[job.clientId];
+          if(!s || s.status !== 'connected') continue;
+
+          const business = user.business || user.name;
+          const industry = getIndustryCategory(job.industry || user.industry);
+          const words = INDUSTRY_WORDS[industry];
+
+          const msg = `Hi *${job.customerName}*! 🔔\n\n`
+            + `Friendly reminder from *${business}*.\n\n`
+            + `It's been a while since your last *${job.serviceType}*. `
+            + `We'd love to see you again!\n\n`
+            + `📞 Reply to book your next ${words.job.toLowerCase()}.\n\n`
+            + `— ${business}`;
+
+          let ph = String(job.customerPhone).replace(/\D/g,'');
+          if(ph.length===10) ph = '91'+ph;
+          const jid = ph+'@s.whatsapp.net';
+
+          await s.sock.sendMessage(jid, { text: msg });
+
+          await db.collection('jobs').updateOne(
+            { _id: job._id },
+            { $set: { reminderSent: true, reminderSentAt: new Date() } }
+          );
+          await db.collection('users').updateOne({ _id: user._id }, { $inc: { msgCount: 1 } });
+          console.log('Reminder sent for job:', job.jobId);
+          await new Promise(r => setTimeout(r, 2000));
+        } catch(e){ console.log('Reminder send error:', e.message); }
+      }
+    } catch(e){ console.log('Reminder checker error:', e.message); }
+  }, 60*60*1000);
+  console.log('Reminder checker started');
 }
 
 // ── SCHEDULER ─────────────────────────────────────────────────────────────────
@@ -107,11 +179,10 @@ function startScheduler() {
         } catch(e){ console.log('Task error:', e.message); }
       }
     } catch(e){ console.log('Scheduler error:', e.message); }
-  }, 60000); // Check every minute
+  }, 60000);
   console.log('Scheduler started');
 }
 
-// ── Job ID Generator ──────────────────────────────────────────────────────────
 async function generateJobId(clientId) {
   const count = await db.collection('jobs').countDocuments({ clientId });
   return 'JOB-'+String(count+1001).padStart(4,'0');
@@ -138,7 +209,6 @@ fs.mkdirSync('auth',{recursive:true});
 const sessions = {};
 function genToken(id){ return Buffer.from(id+':'+Date.now()+':'+Math.random().toString(36)).toString('base64'); }
 
-// ── PLAN FEATURES ─────────────────────────────────────────────────────────────
 const PLAN_FEATURES = {
   starter:  { msgLimit:50,  scheduler:false, analytics:false, jobs:false },
   pro:      { msgLimit:200, scheduler:true,  analytics:true,  jobs:false },
@@ -160,7 +230,7 @@ app.post('/api/signup', async (req,res) => {
     const isPaidPlan = planFinal !== 'starter';
     await db.collection('users').insertOne({
       name, email, pass, phone, business:business||name,
-      industry:industry||'General', plan:planFinal,
+      industry:industry||'general', plan:planFinal,
       role:'user', status:'active', token,
       isTrial: isPaidPlan,
       trialEnds: isPaidPlan ? new Date(Date.now()+7*24*60*60*1000) : null,
@@ -178,16 +248,14 @@ app.post('/api/login', async (req,res) => {
     if(user.status==='blocked') return res.json({ ok:false, msg:'Account suspended.' });
     const token = genToken(user._id.toString());
     await db.collection('users').updateOne({ _id:user._id }, { $set:{ token, lastLogin:new Date() } });
-    res.json({ ok:true, token, name:user.name, role:user.role, plan:user.plan, business:user.business });
+    res.json({ ok:true, token, name:user.name, role:user.role, plan:user.plan, business:user.business, industry:user.industry });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// ── GOOGLE LOGIN ──────────────────────────────────────────────────────────────
 app.post('/api/google-login', async (req,res) => {
   try {
     const { credential } = req.body;
     if(!credential) return res.json({ ok:false, msg:'No credential' });
-    // Decode Google JWT (client-side token)
     const payload = JSON.parse(Buffer.from(credential.split('.')[1],'base64').toString());
     if(!payload.email) return res.json({ ok:false, msg:'Invalid token' });
     const email = payload.email.toLowerCase();
@@ -195,15 +263,15 @@ app.post('/api/google-login', async (req,res) => {
 
     let user = await db.collection('users').findOne({ email });
     if(!user){
-      // New user — auto signup with selected plan + 7-day trial if paid
       const token = genToken(email);
       const plan = (req.body.plan || 'starter').toString();
       const phone = (req.body.phone || '').toString();
       const business = (req.body.business || name).toString();
+      const industry = (req.body.industry || 'general').toString();
       const isPaidPlan = plan !== 'starter';
       const doc = {
         name, email, pass:'', phone, business,
-        industry:'General', plan,
+        industry, plan,
         role:'user', status:'active', token, googleAuth:true,
         isTrial: isPaidPlan,
         trialEnds: isPaidPlan ? new Date(Date.now()+7*24*60*60*1000) : null,
@@ -217,7 +285,7 @@ app.post('/api/google-login', async (req,res) => {
       await db.collection('users').updateOne({ _id:user._id }, { $set:{ token, lastLogin:new Date(), googleAuth:true } });
       user.token = token;
     }
-    res.json({ ok:true, token:user.token, name:user.name, role:user.role||'user', plan:user.plan, business:user.business, email:user.email, isTrial:user.isTrial||false });
+    res.json({ ok:true, token:user.token, name:user.name, role:user.role||'user', plan:user.plan, business:user.business, email:user.email, industry:user.industry, isTrial:user.isTrial||false });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
@@ -227,12 +295,10 @@ app.get('/api/me', async (req,res) => {
     const user = await db.collection('users').findOne({ token });
     if(!user) return res.json({ ok:false, msg:'Invalid token' });
 
-    // Check trial expiry on-the-fly
     let trialStatus = null;
     if(user.isTrial && user.trialEnds){
       const msLeft = new Date(user.trialEnds).getTime() - Date.now();
       if(msLeft <= 0){
-        // Trial expired - downgrade to starter
         await db.collection('users').updateOne(
           { _id:user._id },
           { $set:{ plan:'starter', isTrial:false, trialExpired:true, trialExpiredAt:new Date() } }
@@ -248,14 +314,13 @@ app.get('/api/me', async (req,res) => {
     const features = PLAN_FEATURES[user.plan] || PLAN_FEATURES.starter;
     res.json({ ok:true, user:{
       id:user._id, name:user.name, email:user.email, role:user.role,
-      plan:user.plan, business:user.business, industry:user.industry,
+      plan:user.plan, business:user.business, industry:user.industry || 'general',
       msgCount:user.msgCount||0, jobCount:user.jobCount||0, features,
       trial: trialStatus, trialExpired: user.trialExpired || false
     }});
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// ── MIDDLEWARE ────────────────────────────────────────────────────────────────
 async function adminAuth(req,res,next){
   const user = await db.collection('users').findOne({ token:req.headers['x-token'], role:'admin' });
   if(!user) return res.json({ ok:false, msg:'Unauthorized' });
@@ -325,7 +390,6 @@ app.post('/api/admin/block/:id', adminAuth, async (req,res) => {
 
 app.post('/api/admin/plan/:id', adminAuth, async (req,res) => {
   try {
-    // When admin manually sets plan, clear trial status (make it permanent)
     await db.collection('users').updateOne(
       { _id:new ObjectId(req.params.id) },
       { $set:{ plan:req.body.plan, isTrial:false, trialEnds:null, trialExpired:false } }
@@ -357,42 +421,20 @@ app.get('/api/analytics', clientAuth, async (req,res) => {
     const userId = req.user._id.toString();
     const { days=7 } = req.query;
     const since = new Date(Date.now() - days*24*60*60*1000);
-
-    const logs = await db.collection('msg_logs').find({
-      userId, createdAt:{ $gte:since }
-    }).toArray();
-
-    const total   = logs.length;
-    const sent    = logs.filter(l => l.status==='sent').length;
-    const failed  = logs.filter(l => l.status==='failed').length;
-    const rate    = total ? Math.round((sent/total)*100) : 0;
-
-    // Group by day
-    const byDay = {};
-    logs.forEach(l => {
-      const day = new Date(l.createdAt).toLocaleDateString('en-IN');
-      if(!byDay[day]) byDay[day] = { sent:0, failed:0 };
-      byDay[day][l.status] = (byDay[day][l.status]||0)+1;
-    });
-
-    // Best hour to send
-    const byHour = {};
-    logs.filter(l => l.status==='sent').forEach(l => {
-      const hr = new Date(l.createdAt).getHours();
-      byHour[hr] = (byHour[hr]||0)+1;
-    });
-    const bestHour = Object.keys(byHour).sort((a,b) => byHour[b]-byHour[a])[0];
-
-    // Scheduled stats
-    const scheduledTotal  = await db.collection('scheduled_msgs').countDocuments({ userId });
-    const scheduledPending= await db.collection('scheduled_msgs').countDocuments({ userId, status:'pending' });
-    const scheduledSent   = await db.collection('scheduled_msgs').countDocuments({ userId, status:'sent' });
-
+    const logs = await db.collection('msg_logs').find({ userId, createdAt:{ $gte:since } }).toArray();
+    const total=logs.length, sent=logs.filter(l=>l.status==='sent').length, failed=logs.filter(l=>l.status==='failed').length;
+    const rate=total?Math.round((sent/total)*100):0;
+    const byDay={}; logs.forEach(l=>{const day=new Date(l.createdAt).toLocaleDateString('en-IN');if(!byDay[day])byDay[day]={sent:0,failed:0};byDay[day][l.status]=(byDay[day][l.status]||0)+1;});
+    const byHour={}; logs.filter(l=>l.status==='sent').forEach(l=>{const hr=new Date(l.createdAt).getHours();byHour[hr]=(byHour[hr]||0)+1;});
+    const bestHour=Object.keys(byHour).sort((a,b)=>byHour[b]-byHour[a])[0];
+    const scheduledTotal=await db.collection('scheduled_msgs').countDocuments({userId});
+    const scheduledPending=await db.collection('scheduled_msgs').countDocuments({userId,status:'pending'});
+    const scheduledSent=await db.collection('scheduled_msgs').countDocuments({userId,status:'sent'});
     res.json({ ok:true, stats:{ total, sent, failed, rate, byDay, bestHour, scheduledTotal, scheduledPending, scheduledSent, totalMsgCount:req.user.msgCount||0 } });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// ── SCHEDULER ─────────────────────────────────────────────────────────────────
+// ── SCHEDULER ROUTES ──────────────────────────────────────────────────────────
 app.get('/api/scheduler', clientAuth, async (req,res) => {
   try {
     if(!hasFeature(req.user.plan,'scheduler')) return res.json({ ok:false, msg:'Upgrade to Pro plan' });
@@ -410,13 +452,10 @@ app.post('/api/scheduler', clientAuth, upload.single('image'), async (req,res) =
     const task = {
       userId: req.user._id.toString(),
       title: title||'Scheduled Campaign',
-      contacts: list,
-      message,
+      contacts: list, message,
       scheduledAt: new Date(scheduledAt),
       imageUrl: req.file ? req.file.path : null,
-      status: 'pending',
-      createdAt: new Date(),
-      sentCount: 0
+      status: 'pending', createdAt: new Date(), sentCount: 0
     };
     await db.collection('scheduled_msgs').insertOne(task);
     res.json({ ok:true, task });
@@ -430,20 +469,35 @@ app.delete('/api/scheduler/:id', clientAuth, async (req,res) => {
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// ── JOB MANAGEMENT ────────────────────────────────────────────────────────────
+// ── JOB MANAGEMENT (UPDATED) ──────────────────────────────────────────────────
 app.post('/api/jobs', clientAuth, async (req,res) => {
   try {
     if(!hasFeature(req.user.plan,'jobs')) return res.json({ ok:false, msg:'Upgrade to Service plan' });
-    const { customerName,customerPhone,serviceType,description,deviceModel,priority } = req.body;
+    const { customerName,customerPhone,serviceType,description,deviceModel,priority,
+            industry, reminderDays, reminderDate, timeSlot } = req.body;
     const jobId = await generateJobId(req.user._id.toString());
+    const jobIndustry = industry || req.user.industry || 'general';
+    let finalReminderDate = null;
+    if(reminderDate){
+      finalReminderDate = new Date(reminderDate);
+    } else if(reminderDays && parseInt(reminderDays) > 0){
+      finalReminderDate = new Date();
+      finalReminderDate.setDate(finalReminderDate.getDate() + parseInt(reminderDays));
+    }
     const job = {
       jobId, clientId:req.user._id.toString(), clientName:req.user.business||req.user.name,
       customerName, customerPhone, serviceType:serviceType||'General',
       description, deviceModel, priority:priority||'normal',
+      industry: jobIndustry,
       status:'pending',
-      statusHistory:[{ status:'pending', time:new Date(), note:'Job created' }],
+      statusHistory:[{ status:'pending', time:new Date(), note:'Created' }],
       cost:null, costApproved:null, technicianId:null, technicianName:null,
-      images:[], createdAt:new Date(), updatedAt:new Date()
+      images:[],
+      reminderDays: reminderDays ? parseInt(reminderDays) : 0,
+      reminderDate: finalReminderDate,
+      reminderSent: false,
+      timeSlot: timeSlot ? new Date(timeSlot) : null,
+      createdAt:new Date(), updatedAt:new Date()
     };
     await db.collection('jobs').insertOne(job);
     await db.collection('users').updateOne({ _id:req.user._id }, { $inc:{ jobCount:1 } });
@@ -466,7 +520,7 @@ app.get('/api/jobs', clientAuth, async (req,res) => {
 app.get('/api/jobs/:id', clientAuth, async (req,res) => {
   try {
     const job = await db.collection('jobs').findOne({ jobId:req.params.id, clientId:req.user._id.toString() });
-    if(!job) return res.json({ ok:false, msg:'Job not found' });
+    if(!job) return res.json({ ok:false, msg:'Not found' });
     res.json({ ok:true, job });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
@@ -496,9 +550,26 @@ app.put('/api/jobs/:id/cost', clientAuth, async (req,res) => {
 app.put('/api/jobs/:id/technician', clientAuth, async (req,res) => {
   try {
     const tech = await db.collection('technicians').findOne({ _id:new ObjectId(req.body.technicianId) });
-    if(!tech) return res.json({ ok:false, msg:'Technician not found' });
+    if(!tech) return res.json({ ok:false, msg:'Staff not found' });
     await db.collection('jobs').updateOne({ jobId:req.params.id }, { $set:{ technicianId:req.body.technicianId, technicianName:tech.name, technicianPhone:tech.phone, updatedAt:new Date() } });
     res.json({ ok:true, technician:tech });
+  } catch(e){ res.json({ ok:false, msg:e.message }); }
+});
+
+// NEW: Update reminder settings
+app.put('/api/jobs/:id/reminder', clientAuth, async (req,res) => {
+  try {
+    const days = parseInt(req.body.reminderDays || 0);
+    let reminderDate = null;
+    if(days > 0){
+      reminderDate = new Date();
+      reminderDate.setDate(reminderDate.getDate() + days);
+    }
+    await db.collection('jobs').updateOne(
+      { jobId:req.params.id, clientId:req.user._id.toString() },
+      { $set:{ reminderDays:days, reminderDate, reminderSent:false, updatedAt:new Date() } }
+    );
+    res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
@@ -514,8 +585,8 @@ app.post('/api/jobs/:id/images', clientAuth, upload.array('images',5), async (re
 app.get('/api/track/:jobId', async (req,res) => {
   try {
     const job = await db.collection('jobs').findOne({ jobId:req.params.jobId });
-    if(!job) return res.json({ ok:false, msg:'Job not found' });
-    res.json({ ok:true, job:{ jobId:job.jobId, customerName:job.customerName, serviceType:job.serviceType, deviceModel:job.deviceModel, status:job.status, statusHistory:job.statusHistory, clientName:job.clientName, cost:job.costApproved?job.cost:job.status==='cost_sent'?job.cost:null, costNote:job.costNote, costApproved:job.costApproved, technicianName:job.technicianName, createdAt:job.createdAt, updatedAt:job.updatedAt } });
+    if(!job) return res.json({ ok:false, msg:'Not found' });
+    res.json({ ok:true, job:{ jobId:job.jobId, customerName:job.customerName, serviceType:job.serviceType, deviceModel:job.deviceModel, status:job.status, statusHistory:job.statusHistory, clientName:job.clientName, cost:job.costApproved?job.cost:job.status==='cost_sent'?job.cost:null, costNote:job.costNote, costApproved:job.costApproved, technicianName:job.technicianName, industry:job.industry, timeSlot:job.timeSlot, createdAt:job.createdAt, updatedAt:job.updatedAt } });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
@@ -523,12 +594,12 @@ app.post('/api/track/:jobId/approve', async (req,res) => {
   try {
     const { approved } = req.body;
     const status = approved?'approved':'cancelled';
-    await db.collection('jobs').updateOne({ jobId:req.params.jobId }, { $set:{ costApproved:approved, status, updatedAt:new Date() }, $push:{ statusHistory:{ status, time:new Date(), note:approved?'Customer approved cost':'Customer rejected cost' } } });
+    await db.collection('jobs').updateOne({ jobId:req.params.jobId }, { $set:{ costApproved:approved, status, updatedAt:new Date() }, $push:{ statusHistory:{ status, time:new Date(), note:approved?'Customer approved':'Customer rejected' } } });
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// ── TECHNICIANS ───────────────────────────────────────────────────────────────
+// ── TECHNICIANS / STAFF ───────────────────────────────────────────────────────
 app.get('/api/technicians', clientAuth, async (req,res) => {
   const techs = await db.collection('technicians').find({ clientId:req.user._id.toString() }).toArray();
   res.json({ ok:true, technicians:techs });
@@ -549,7 +620,6 @@ app.delete('/api/technicians/:id', clientAuth, async (req,res) => {
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// ── CUSTOMERS ─────────────────────────────────────────────────────────────────
 app.get('/api/customers', clientAuth, async (req,res) => {
   try {
     const { search } = req.query;
@@ -624,7 +694,6 @@ app.post('/api/wa/send', upload.single('image'), clientAuth, async (req,res) => 
       }
       logs.push({ userId, phone:c.phone, name:c.name, status, createdAt:new Date() });
     }
-    // Save analytics logs
     if(logs.length) await db.collection('msg_logs').insertMany(logs);
     await db.collection('users').updateOne({ _id:req.user._id }, { $inc:{ msgCount:sent } });
     if(req.file) try{ fs.unlinkSync(req.file.path); }catch(e){}
@@ -632,7 +701,7 @@ app.post('/api/wa/send', upload.single('image'), clientAuth, async (req,res) => 
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// Send job WA notification
+// ── JOB WA NOTIFICATION — INDUSTRY-WISE (UPDATED) ─────────────────────────────
 app.post('/api/wa/notify-job', clientAuth, async (req,res) => {
   try {
     const { jobId, type } = req.body;
@@ -640,21 +709,62 @@ app.post('/api/wa/notify-job', clientAuth, async (req,res) => {
     const s = sessions[userId];
     if(!s||s.status!=='connected') return res.json({ ok:false, msg:'WhatsApp not connected' });
     const job = await db.collection('jobs').findOne({ jobId, clientId:userId });
-    if(!job) return res.json({ ok:false, msg:'Job not found' });
+    if(!job) return res.json({ ok:false, msg:'Record not found' });
+
     const trackUrl = `https://wa-marketing-saas-1.onrender.com/track/${jobId}`;
     const business = req.user.business||req.user.name;
-    const msgs = {
-     created:`Hi *${job.customerName}*! 👋\n\n*${business}* has received your service request.\n\n🔖 *Job ID:* ${jobId}\n🛠 *Service:* ${job.serviceType}\n📱 *Device:* ${job.deviceModel||'N/A'}\n📊 *Status:* Pending\n\n🔗 Track live:\n${trackUrl}\n\n— ${business}`,
-      in_progress:`Hi *${job.customerName}*! 🔧\n\n*${business}* — Your work has started!\n\n🔖 *Job ID:* ${jobId}\n👨‍🔧 *Technician:* ${job.technicianName||'Assigned'}\n📊 *Status:* In Progress\n\n🔗 Track: ${trackUrl}\n\n— ${business}`,
-      cost:`Hi *${job.customerName}*! 💰\n\n*${business}* — Repair estimate is ready.\n\n🔖 *Job ID:* ${jobId}\n💵 *Estimated Cost:* ₹${job.cost}\n📝 *Note:* ${job.costNote||''}\n\n✅ Approve/Reject:\n${trackUrl}\n\n— ${business}`,
-      completed:`Hi *${job.customerName}*! ✅\n\n*${business}* — Your service is complete!\n\n🔖 *Job ID:* ${jobId}\n💵 *Amount:* ₹${job.cost||'0'}\n\nPlease collect your device.\n\n⭐ Feedback: ${trackUrl}\n\n— ${business}`,
-      ready:`Hi *${job.customerName}*! 📦\n\n*${business}* — Your device is ready! Please come to collect it.\n\n🔖 Job ID: ${jobId}\n\n— ${business}`
-    };
+    const industry = getIndustryCategory(job.industry || req.user.industry);
+
+    let timeSlotStr = '';
+    if(job.timeSlot){
+      try { timeSlotStr = new Date(job.timeSlot).toLocaleString('en-IN', { day:'numeric', month:'short', hour:'2-digit', minute:'2-digit' }); } catch(e){}
+    }
+
+    let msgs = {};
+
+    if(industry === 'salon'){
+      msgs = {
+        created:`Hi *${job.customerName}*! 💇\n\nYour appointment at *${business}* is confirmed! ✨\n\n🔖 *Booking ID:* ${jobId}\n💅 *Service:* ${job.serviceType}\n${timeSlotStr?'📅 *Date/Time:* '+timeSlotStr+'\n':''}📊 *Status:* Confirmed\n\n🔗 View: ${trackUrl}\n\nSee you soon! — ${business}`,
+        in_progress:`Hi *${job.customerName}*! ✨\n\n*${business}* — Your service has started.\n\n🔖 ${jobId}\n💅 ${job.serviceType}\n${job.technicianName?'👤 Stylist: '+job.technicianName+'\n':''}\nRelax and enjoy!\n\n— ${business}`,
+        cost:`Hi *${job.customerName}*! 💰\n\n*${business}* — Service price:\n\n🔖 ${jobId}\n💅 ${job.serviceType}\n💵 *Amount:* ₹${job.cost}\n${job.costNote?'📝 '+job.costNote+'\n':''}\nView: ${trackUrl}\n\n— ${business}`,
+        completed:`Hi *${job.customerName}*! ✅\n\nThank you for visiting *${business}*!\n\n🔖 ${jobId}\n💅 ${job.serviceType}\n💵 Amount: ₹${job.cost||'0'}\n\nWe hope you loved it! ✨\n\n⭐ Share feedback: ${trackUrl}\n\n— ${business}`,
+        ready:`Hi *${job.customerName}*! ✨\n\nLooking forward to your visit at *${business}*.\n\n${timeSlotStr?'📅 '+timeSlotStr+'\n':''}🔖 ${jobId}\n\n— ${business}`
+      };
+    }
+    else if(industry === 'clinic'){
+      msgs = {
+        created:`Hi *${job.customerName}*! 🏥\n\nYour appointment at *${business}* is booked.\n\n🔖 *Appointment ID:* ${jobId}\n🩺 *Service:* ${job.serviceType}\n${timeSlotStr?'📅 *Date/Time:* '+timeSlotStr+'\n':''}\nPlease arrive 10 min early.\n\n🔗 ${trackUrl}\n\n— ${business}`,
+        in_progress:`Hi *${job.customerName}*! 🩺\n\n*${business}* — Your consultation is in progress.\n\n🔖 ${jobId}\n${job.technicianName?'👨‍⚕️ Doctor: '+job.technicianName+'\n':''}\n— ${business}`,
+        cost:`Hi *${job.customerName}*! 💰\n\n*${business}* — Fee details:\n\n🔖 ${jobId}\n🩺 ${job.serviceType}\n💵 *Consultation Fee:* ₹${job.cost}\n${job.costNote?'📝 '+job.costNote+'\n':''}\n— ${business}`,
+        completed:`Hi *${job.customerName}*! ✅\n\nThank you for visiting *${business}*.\n\n🔖 ${jobId}\n🩺 ${job.serviceType}\n\nPlease follow the prescription. Take care! 💚\n\n— ${business}`,
+        ready:`Hi *${job.customerName}*! 🏥\n\nReminder: Your appointment at *${business}*.\n\n${timeSlotStr?'📅 '+timeSlotStr+'\n':''}🔖 ${jobId}\n\n— ${business}`
+      };
+    }
+    else if(industry === 'auto'){
+      msgs = {
+        created:`Hi *${job.customerName}*! 🚗\n\n*${business}* has received your service request.\n\n🔖 *Service Order:* ${jobId}\n🚙 *Vehicle:* ${job.deviceModel||'N/A'}\n🔧 *Service:* ${job.serviceType}\n📊 *Status:* Pending\n\n🔗 Track: ${trackUrl}\n\n— ${business}`,
+        in_progress:`Hi *${job.customerName}*! 🔧\n\n*${business}* — Work on your vehicle has started.\n\n🔖 ${jobId}\n🚙 ${job.deviceModel||'Your vehicle'}\n${job.technicianName?'👨‍🔧 Mechanic: '+job.technicianName+'\n':''}\n🔗 ${trackUrl}\n\n— ${business}`,
+        cost:`Hi *${job.customerName}*! 💰\n\n*${business}* — Service estimate ready.\n\n🔖 ${jobId}\n🚙 ${job.deviceModel||''}\n💵 *Estimated Cost:* ₹${job.cost}\n${job.costNote?'📝 '+job.costNote+'\n':''}\n✅ Approve: ${trackUrl}\n\n— ${business}`,
+        completed:`Hi *${job.customerName}*! ✅\n\n*${business}* — Your vehicle is ready!\n\n🔖 ${jobId}\n🚙 ${job.deviceModel||''}\n💵 Amount: ₹${job.cost||'0'}\n\nPlease visit to collect.\n\n⭐ Feedback: ${trackUrl}\n\n— ${business}`,
+        ready:`Hi *${job.customerName}*! 🚗\n\n*${business}* — Your vehicle is ready for pickup!\n\n🔖 ${jobId}\n\n— ${business}`
+      };
+    }
+    else {
+      msgs = {
+        created:`Hi *${job.customerName}*! 👋\n\n*${business}* has received your service request.\n\n🔖 *Job ID:* ${jobId}\n🛠 *Service:* ${job.serviceType}\n📱 *Device:* ${job.deviceModel||'N/A'}\n📊 *Status:* Pending\n\n🔗 Track: ${trackUrl}\n\n— ${business}`,
+        in_progress:`Hi *${job.customerName}*! 🔧\n\n*${business}* — Your work has started!\n\n🔖 ${jobId}\n${job.technicianName?'👨‍🔧 Technician: '+job.technicianName+'\n':''}📊 Status: In Progress\n\n🔗 ${trackUrl}\n\n— ${business}`,
+        cost:`Hi *${job.customerName}*! 💰\n\n*${business}* — Repair estimate ready.\n\n🔖 ${jobId}\n💵 *Estimated Cost:* ₹${job.cost}\n${job.costNote?'📝 '+job.costNote+'\n':''}\n✅ Approve: ${trackUrl}\n\n— ${business}`,
+        completed:`Hi *${job.customerName}*! ✅\n\n*${business}* — Your service is complete!\n\n🔖 ${jobId}\n💵 Amount: ₹${job.cost||'0'}\n\nPlease collect your device.\n\n⭐ Feedback: ${trackUrl}\n\n— ${business}`,
+        ready:`Hi *${job.customerName}*! 📦\n\n*${business}* — Your device is ready! Please collect it.\n\n🔖 ${jobId}\n\n— ${business}`
+      };
+    }
+
     const msg = msgs[type];
     if(!msg) return res.json({ ok:false, msg:'Invalid notification type' });
     let ph = String(job.customerPhone).replace(/\D/g,'');
     if(ph.length===10) ph='91'+ph;
     await s.sock.sendMessage(ph+'@s.whatsapp.net',{ text:msg });
+    await db.collection('users').updateOne({ _id:req.user._id }, { $inc:{ msgCount:1 } });
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
@@ -679,7 +789,6 @@ async function createSession(userId, socket) {
   } catch(e){ console.log('Session error:',e.message); if(sessions[userId]) sessions[userId].status='error'; }
 }
 
-// ── SOCKET.IO ─────────────────────────────────────────────────────────────────
 io.on('connection', (socket) => {
   socket.on('join_wa', (userId) => {
     socket.join('wa_'+userId);
@@ -698,7 +807,6 @@ io.on('connection', (socket) => {
   });
 });
 
-// ── HEALTH + STATIC ───────────────────────────────────────────────────────────
 app.get('/health', (req,res) => res.json({ ok:true, sessions:Object.keys(sessions).length }));
 app.get('/track/:jobId', (req,res) => res.sendFile(path.join(__dirname,'track.html')));
 app.get('/shop',  (req,res) => res.sendFile(path.join(__dirname,'shop.html')));
@@ -706,7 +814,6 @@ app.get('/shop/', (req,res) => res.sendFile(path.join(__dirname,'shop.html')));
 app.get('/invoice', (req,res) => res.sendFile(path.join(__dirname,'invoice.html')));
 app.use('/uploads', express.static('uploads'));
 
-// ── PAGES ─────────────────────────────────────────────────────────────────────
 app.get('/',        (req,res) => res.sendFile(path.join(__dirname,'public','index.html')));
 app.get('/admin',   (req,res) => res.sendFile(path.join(__dirname,'public','admin','index.html')));
 app.get('/admin/',  (req,res) => res.sendFile(path.join(__dirname,'public','admin','index.html')));
