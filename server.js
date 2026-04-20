@@ -60,6 +60,69 @@ async function verifyPassword(plain, hash){
 }
 
 // ── DB CONNECTION ─────────────────────────────────────────────────────────────
+// ── SYSTEM WA (dedicated number for OTPs) ─────────────────────────────────────
+let systemWA = { sock: null, status: 'disconnected', qr: null };
+
+async function createSystemWA() {
+  try {
+    const { default:makeWASocket, useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion } = await import('@whiskeysockets/baileys');
+    const pino = require('pino');
+    const authDir = path.join('auth', '_system');
+    fs.mkdirSync(authDir, { recursive:true });
+    const { state, saveCreds } = await useMultiFileAuthState(authDir);
+    const { version } = await fetchLatestBaileysVersion();
+    const sock = makeWASocket({
+      version, auth:state, printQRInTerminal:false,
+      logger: pino({ level:'silent' }),
+      browser: ['WA System OTP','Chrome','1.0'],
+      connectTimeoutMs: 60000
+    });
+    systemWA.sock = sock;
+    systemWA.status = 'connecting';
+    sock.ev.on('creds.update', saveCreds);
+    sock.ev.on('connection.update', async ({ connection, lastDisconnect, qr }) => {
+      if(qr){
+        systemWA.qr = await qrcode.toDataURL(qr);
+        systemWA.status = 'qr';
+        console.log('System WA: QR generated');
+      }
+      if(connection === 'open'){
+        systemWA.status = 'connected';
+        systemWA.qr = null;
+        console.log('✅ System WA connected:', sock.user?.id);
+      }
+      if(connection === 'close'){
+        const code = lastDisconnect?.error?.output?.statusCode;
+        systemWA.status = 'disconnected';
+        if(code !== DisconnectReason.loggedOut){
+          setTimeout(() => createSystemWA(), 5000);
+        } else {
+          fs.rmSync(authDir, { recursive:true, force:true });
+          systemWA.sock = null;
+        }
+      }
+    });
+  } catch(e){
+    console.log('System WA error:', e.message);
+    systemWA.status = 'error';
+  }
+}
+
+async function sendOTPViaSystemWA(phone, otp){
+  if(!systemWA.sock || systemWA.status !== 'connected'){
+    throw new Error('System WhatsApp not connected. Contact admin.');
+  }
+  let ph = String(phone).replace(/\D/g,'');
+  if(ph.length === 10) ph = '91' + ph;
+  const jid = ph + '@s.whatsapp.net';
+  const msg = `🔐 *Wadigit Password Reset*\n\nYour OTP is: *${otp}*\n\nValid for 10 minutes.\nDo not share this code with anyone.\n\nIf you did not request this, ignore this message.\n\n— Wadigit Team`;
+  await systemWA.sock.sendMessage(jid, { text: msg });
+}
+
+function generateOTP(){
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
 async function connectDB() {
   try {
     const client = new MongoClient(MONGO_URI, { serverSelectionTimeoutMS:30000, socketTimeoutMS:75000, family:4 });
@@ -1124,7 +1187,223 @@ io.on('connection', (socket) => {
 });
 
 // ── STATIC / PAGES ────────────────────────────────────────────────────────────
-app.get('/health', (req,res) => res.json({ ok:true, sessions:Object.keys(sessions).length }));
+// ── PASSWORD RESET (WhatsApp OTP) ─────────────────────────────────────────────
+const otpLimiter = rateLimit({
+  windowMs: 60*60*1000, // 1 hour
+  max: 5,
+  message: { ok:false, msg:'Too many OTP requests. Try again in 1 hour.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Step 1: Send OTP via WhatsApp
+app.post('/api/forgot-password', otpLimiter, async (req,res) => {
+  try {
+    const phone = sanitizeStr(req.body.phone, 15);
+    if(!phone || phone.length < 10) return res.json({ ok:false, msg:'Valid phone number required' });
+
+    // Normalize phone (strip non-digits, add 91 if 10 digits)
+    let ph = phone.replace(/\D/g,'');
+    if(ph.length === 10) ph = '91' + ph;
+
+    // Find user by phone
+    const user = await db.collection('users').findOne({
+      phone: { $regex: ph.slice(-10) + '$' },
+      role: { $ne: 'admin' }
+    });
+
+    if(!user){
+      // Security: don't reveal if phone exists — but log for admin
+      console.log('OTP requested for unknown phone:', ph);
+      return res.json({ ok:true, msg:'If this number is registered, OTP has been sent.' });
+    }
+
+    if(user.status === 'blocked'){
+      return res.json({ ok:false, msg:'Account suspended. Contact support.' });
+    }
+
+    // Check system WA status
+    if(systemWA.status !== 'connected'){
+      return res.json({ ok:false, msg:'OTP service temporarily unavailable. Contact admin.' });
+    }
+
+    // Generate OTP
+    const otp = generateOTP();
+    const otpHash = await bcrypt.hash(otp, BCRYPT_ROUNDS);
+    const expiresAt = new Date(Date.now() + 10*60*1000); // 10 minutes
+
+    // Delete old OTPs for this user
+    await db.collection('otps').deleteMany({ userId: user._id.toString() });
+
+    // Save OTP
+    await db.collection('otps').insertOne({
+      userId: user._id.toString(),
+      phone: ph,
+      otpHash,
+      expiresAt,
+      attempts: 0,
+      verified: false,
+      createdAt: new Date()
+    });
+
+    // Send via WhatsApp
+    try {
+      await sendOTPViaSystemWA(ph, otp);
+      console.log('OTP sent to:', ph);
+    } catch(err){
+      console.log('OTP send failed:', err.message);
+      return res.json({ ok:false, msg:'Failed to send OTP. Try again later.' });
+    }
+
+    res.json({ ok:true, msg:'OTP sent to your WhatsApp. Valid for 10 minutes.' });
+  } catch(e){
+    console.log('Forgot password error:', e.message);
+    res.json({ ok:false, msg:'Something went wrong' });
+  }
+});
+
+// Step 2: Verify OTP
+app.post('/api/verify-otp', async (req,res) => {
+  try {
+    const phone = sanitizeStr(req.body.phone, 15);
+    const otp = sanitizeStr(req.body.otp, 10);
+    if(!phone || !otp) return res.json({ ok:false, msg:'Phone and OTP required' });
+
+    let ph = phone.replace(/\D/g,'');
+    if(ph.length === 10) ph = '91' + ph;
+
+    const otpDoc = await db.collection('otps').findOne({ phone: ph });
+    if(!otpDoc) return res.json({ ok:false, msg:'Invalid or expired OTP' });
+
+    // Check expiry
+    if(new Date() > new Date(otpDoc.expiresAt)){
+      await db.collection('otps').deleteOne({ _id: otpDoc._id });
+      return res.json({ ok:false, msg:'OTP expired. Request a new one.' });
+    }
+
+    // Check attempts
+    if(otpDoc.attempts >= 5){
+      await db.collection('otps').deleteOne({ _id: otpDoc._id });
+      return res.json({ ok:false, msg:'Too many wrong attempts. Request new OTP.' });
+    }
+
+    // Verify OTP
+    const valid = await bcrypt.compare(otp, otpDoc.otpHash);
+    if(!valid){
+      await db.collection('otps').updateOne(
+        { _id: otpDoc._id },
+        { $inc: { attempts: 1 } }
+      );
+      return res.json({ ok:false, msg:'Wrong OTP. Try again.' });
+    }
+
+    // Mark verified + generate reset token
+    const resetToken = jwt.sign(
+      { uid: otpDoc.userId, purpose: 'reset' },
+      JWT_SECRET,
+      { expiresIn: '15m' }
+    );
+
+    await db.collection('otps').updateOne(
+      { _id: otpDoc._id },
+      { $set: { verified: true, resetToken } }
+    );
+
+    res.json({ ok:true, resetToken, msg:'OTP verified. Set new password.' });
+  } catch(e){
+    console.log('Verify OTP error:', e.message);
+    res.json({ ok:false, msg:'Something went wrong' });
+  }
+});
+
+// Step 3: Reset Password
+app.post('/api/reset-password', async (req,res) => {
+  try {
+    const { resetToken, newPassword } = req.body;
+    if(!resetToken || !newPassword) return res.json({ ok:false, msg:'Reset token and new password required' });
+
+    if(!isStrongPassword(newPassword)){
+      return res.json({ ok:false, msg:'Password must be at least 6 characters' });
+    }
+
+    // Verify reset token
+    let decoded;
+    try { decoded = jwt.verify(resetToken, JWT_SECRET); }
+    catch(e){ return res.json({ ok:false, msg:'Reset token expired. Start over.' }); }
+
+    if(decoded.purpose !== 'reset') return res.json({ ok:false, msg:'Invalid token' });
+
+    // Check OTP record
+    const otpDoc = await db.collection('otps').findOne({
+      userId: decoded.uid,
+      resetToken,
+      verified: true
+    });
+
+    if(!otpDoc) return res.json({ ok:false, msg:'Invalid or used token. Start over.' });
+
+    // Hash new password
+    const hashedPass = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+
+    // Update user password + invalidate all sessions
+    await db.collection('users').updateOne(
+      { _id: new ObjectId(decoded.uid) },
+      { $set: {
+          pass: hashedPass,
+          passwordChangedAt: new Date(),
+          failedLoginAttempts: 0,
+          lockedUntil: null
+      }}
+    );
+
+    // Delete OTP record
+    await db.collection('otps').deleteMany({ userId: decoded.uid });
+
+    console.log('Password reset successful for user:', decoded.uid);
+    res.json({ ok:true, msg:'Password reset successful. Please login with new password.' });
+  } catch(e){
+    console.log('Reset password error:', e.message);
+    res.json({ ok:false, msg:'Something went wrong' });
+  }
+});
+
+// ── ADMIN: SYSTEM WA MANAGEMENT ───────────────────────────────────────────────
+app.get('/api/admin/system-wa-status', adminAuth, async (req,res) => {
+  res.json({
+    ok: true,
+    status: systemWA.status,
+    qr: systemWA.qr,
+    number: systemWA.sock?.user?.id?.split(':')[0] || null
+  });
+});
+
+app.post('/api/admin/system-wa-connect', adminAuth, async (req,res) => {
+  try {
+    if(systemWA.status === 'connected'){
+      return res.json({ ok:true, status:'connected' });
+    }
+    if(!systemWA.sock || systemWA.status === 'disconnected' || systemWA.status === 'error'){
+      await createSystemWA();
+    }
+    res.json({ ok:true, status: systemWA.status, qr: systemWA.qr });
+  } catch(e){ res.json({ ok:false, msg:e.message }); }
+});
+
+app.post('/api/admin/system-wa-disconnect', adminAuth, async (req,res) => {
+  try {
+    if(systemWA.sock){
+      try { await systemWA.sock.logout(); } catch(e){}
+    }
+    try { fs.rmSync(path.join('auth','_system'), { recursive:true, force:true }); } catch(e){}
+    systemWA = { sock: null, status: 'disconnected', qr: null };
+    res.json({ ok:true });
+  } catch(e){ res.json({ ok:false, msg:e.message }); }
+});
+
+// Serve forgot-password page
+app.get('/forgot-password', (req,res) => res.sendFile(path.join(__dirname,'public','forgot-password.html')));
+
+
 app.get('/track/:jobId', (req,res) => res.sendFile(path.join(__dirname,'track.html')));
 app.get('/shop',  (req,res) => res.sendFile(path.join(__dirname,'shop.html')));
 app.get('/shop/', (req,res) => res.sendFile(path.join(__dirname,'shop.html')));
@@ -1138,4 +1417,9 @@ app.get('/client',  (req,res) => res.sendFile(path.join(__dirname,'public','clie
 app.get('/client/', (req,res) => res.sendFile(path.join(__dirname,'public','client','index.html')));
 
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, async () => { await connectDB(); console.log('🔒 WA Marketing Server (Secured) on port', PORT); });
+server.listen(PORT, async () => {
+  await connectDB();
+  console.log('🔒 WA Marketing Server (Secured) on port', PORT);
+  // Auto-start System WA for OTPs
+  createSystemWA().catch(e => console.log('System WA start error:', e.message));
+});
