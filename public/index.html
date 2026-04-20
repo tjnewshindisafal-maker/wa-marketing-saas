@@ -678,6 +678,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:32
 function handleGoogleLogin(response){
   var phone = document.getElementById('s-phone') ? document.getElementById('s-phone').value.trim() : '';
   var business = document.getElementById('s-biz') ? document.getElementById('s-biz').value.trim() : '';
+  var industry = document.getElementById('s-ind') ? document.getElementById('s-ind').value : 'general';
   fetch('/api/google-login',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -685,7 +686,8 @@ function handleGoogleLogin(response){
       credential: response.credential,
       plan: selectedPlan,
       phone: phone,
-      business: business
+      business: business,
+      industry: industry
     })
   })
   .then(function(r){return r.json();})
