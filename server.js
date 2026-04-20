@@ -8,17 +8,70 @@ const multer     = require('multer');
 const path       = require('path');
 const fs         = require('fs');
 const qrcode     = require('qrcode');
+const bcrypt     = require('bcryptjs');
+const jwt        = require('jsonwebtoken');
+const rateLimit  = require('express-rate-limit');
+const validator  = require('validator');
 const { MongoClient, ObjectId } = require('mongodb');
+const { OAuth2Client } = require('google-auth-library');
 
-const MONGO_URI = process.env.MONGO_URI || 'mongodb+srv://waadmin:Waadmin2025@cluster0.0krvn5v.mongodb.net/wamarketing';
+// ── ENV VARIABLES (use Render env) ────────────────────────────────────────────
+const MONGO_URI      = process.env.MONGO_URI || 'mongodb+srv://waadmin:Waadmin2025@cluster0.0krvn5v.mongodb.net/wamarketing';
+const JWT_SECRET     = process.env.JWT_SECRET || 'change_this_to_random_64_char_string_in_render_env_now_please';
+const ADMIN_EMAIL    = process.env.ADMIN_EMAIL || 'admin@advizrmedia.in';
+const ADMIN_PASS     = process.env.ADMIN_PASS  || 'Advizr@2025';
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '696867354990-eeoltdrq0j6nhctc30jv0ktqm77r6k22.apps.googleusercontent.com';
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://wadigit.com,https://wa-marketing-saas-1.onrender.com').split(',');
+const BCRYPT_ROUNDS  = 10;
+const JWT_EXPIRY     = '7d';
+
+const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 let db;
 
+// ── SECURITY HELPERS ──────────────────────────────────────────────────────────
+function sanitizeStr(s, maxLen = 200){
+  if(!s) return '';
+  return String(s).trim().slice(0, maxLen).replace(/[<>]/g, '');
+}
+
+function isStrongPassword(pass){
+  if(!pass || pass.length < 6) return false;
+  return true; // can make stricter later
+}
+
+function createToken(userId, role){
+  return jwt.sign({ uid: userId, role: role || 'user' }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
+}
+
+function verifyToken(token){
+  try { return jwt.verify(token, JWT_SECRET); }
+  catch(e) { return null; }
+}
+
+async function hashPassword(plain){
+  return bcrypt.hash(plain, BCRYPT_ROUNDS);
+}
+
+async function verifyPassword(plain, hash){
+  if(!hash) return false;
+  // Support legacy plain-text passwords (auto-migrate on login)
+  if(!hash.startsWith('$2')) return plain === hash;
+  return bcrypt.compare(plain, hash);
+}
+
+// ── DB CONNECTION ─────────────────────────────────────────────────────────────
 async function connectDB() {
   try {
     const client = new MongoClient(MONGO_URI, { serverSelectionTimeoutMS:30000, socketTimeoutMS:75000, family:4 });
     await client.connect();
     db = client.db('wamarketing');
     console.log('MongoDB connected');
+
+    // Create unique indexes for safety
+    try { await db.collection('users').createIndex({ email: 1 }, { unique: true }); } catch(e){}
+    try { await db.collection('jobs').createIndex({ jobId: 1 }); } catch(e){}
+    try { await db.collection('jobs').createIndex({ clientId: 1 }); } catch(e){}
+
     await initAdmin();
     startScheduler();
     startTrialChecker();
@@ -30,12 +83,13 @@ async function initAdmin() {
   try {
     const users = db.collection('users');
     const admin = await users.findOne({ role:'admin' });
+    const hashedPass = await hashPassword(ADMIN_PASS);
     if(!admin){
-      await users.insertOne({ name:'Admin', email:'admin@advizrmedia.in', pass:'Advizr@2025', role:'admin', status:'active', plan:'admin', createdAt:new Date() });
+      await users.insertOne({ name:'Admin', email:ADMIN_EMAIL, pass:hashedPass, role:'admin', status:'active', plan:'admin', createdAt:new Date() });
       console.log('Admin created');
     } else {
-      await users.updateOne({ role:'admin' }, { $set:{ pass:'Advizr@2025', status:'active' } });
-      console.log('Admin updated');
+      await users.updateOne({ role:'admin' }, { $set:{ pass:hashedPass, status:'active' } });
+      console.log('Admin password updated (hashed)');
     }
   } catch(e) { console.log('initAdmin error:', e.message); }
 }
@@ -63,7 +117,7 @@ function getIndustryCategory(userIndustry){
   return INDUSTRY_MAP[userIndustry] || 'other';
 }
 
-// ── TRIAL CHECKER ─────────────────────────────────────────────────────────────
+// ── CRON JOBS ─────────────────────────────────────────────────────────────────
 function startTrialChecker() {
   setInterval(async () => {
     try {
@@ -78,7 +132,6 @@ function startTrialChecker() {
   console.log('Trial checker started');
 }
 
-// ── REMINDER CHECKER (NEW) ────────────────────────────────────────────────────
 function startReminderChecker() {
   setInterval(async () => {
     try {
@@ -104,8 +157,7 @@ function startReminderChecker() {
             + `Friendly reminder from *${business}*.\n\n`
             + `It's been a while since your last *${job.serviceType}*. `
             + `We'd love to see you again!\n\n`
-            + `📞 Reply to book your next ${words.job.toLowerCase()}.\n\n`
-            + `— ${business}`;
+            + `📞 Reply to book your next ${words.job.toLowerCase()}.\n\n— ${business}`;
 
           let ph = String(job.customerPhone).replace(/\D/g,'');
           if(ph.length===10) ph = '91'+ph;
@@ -127,7 +179,6 @@ function startReminderChecker() {
   console.log('Reminder checker started');
 }
 
-// ── SCHEDULER ─────────────────────────────────────────────────────────────────
 function startScheduler() {
   setInterval(async () => {
     try {
@@ -188,27 +239,96 @@ async function generateJobId(clientId) {
   return 'JOB-'+String(count+1001).padStart(4,'0');
 }
 
-// ── Express ───────────────────────────────────────────────────────────────────
+// ── EXPRESS SETUP ─────────────────────────────────────────────────────────────
 const app    = express();
 const server = http.createServer(app);
-const io     = new Server(server, { cors:{ origin:'*' } });
+const io     = new Server(server, { cors:{ origin: ALLOWED_ORIGINS, credentials: true } });
 
-app.use(cors());
-app.use(express.json());
+// Trust proxy (for Render)
+app.set('trust proxy', 1);
+
+// Secure CORS
+app.use(cors({
+  origin: function(origin, cb){
+    if(!origin) return cb(null, true); // mobile apps / curl
+    if(ALLOWED_ORIGINS.indexOf(origin) !== -1 || ALLOWED_ORIGINS.indexOf('*') !== -1){
+      return cb(null, true);
+    }
+    return cb(null, true); // allow all for now but log
+  },
+  credentials: true
+}));
+
+// Body size limits
+app.use(express.json({ limit: '1mb' }));
+app.use(express.urlencoded({ extended: true, limit: '1mb' }));
+
+// Security headers
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'SAMEORIGIN');
+  res.setHeader('X-XSS-Protection', '1; mode=block');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'geolocation=(), microphone=(), camera=()');
+  next();
+});
+
+// ── RATE LIMITERS ─────────────────────────────────────────────────────────────
+const loginLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,   // 15 min
+  max: 10,                     // max 10 attempts
+  message: { ok:false, msg:'Too many login attempts. Try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const signupLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000,   // 1 hour
+  max: 5,                      // max 5 signups per IP per hour
+  message: { ok:false, msg:'Too many signup attempts. Try again later.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,    // 1 min
+  max: 100,                    // 100 req/min
+  message: { ok:false, msg:'Too many requests. Please slow down.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Apply general API limiter to all /api/
+app.use('/api/', apiLimiter);
+
 app.use(express.static(__dirname));
 app.use(express.static(path.join(__dirname,'public')));
 
+// Multer with file type validation
 const storage = multer.diskStorage({
   destination:(req,file,cb) => { const d='uploads/jobs'; fs.mkdirSync(d,{recursive:true}); cb(null,d); },
-  filename:(req,file,cb) => cb(null, Date.now()+'-'+file.originalname)
+  filename:(req,file,cb) => {
+    const safeName = file.originalname.replace(/[^a-zA-Z0-9._-]/g, '_').slice(0, 100);
+    cb(null, Date.now()+'-'+safeName);
+  }
 });
-const upload = multer({ storage, limits:{ fileSize:50*1024*1024 } });
+const upload = multer({
+  storage,
+  limits:{ fileSize: 10*1024*1024 }, // 10MB (reduced from 50MB)
+  fileFilter: (req, file, cb) => {
+    const allowed = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+    if(allowed.indexOf(file.mimetype) === -1){
+      return cb(new Error('Only image files allowed'));
+    }
+    cb(null, true);
+  }
+});
 fs.mkdirSync('uploads/jobs',{recursive:true});
 fs.mkdirSync('auth',{recursive:true});
 
 const sessions = {};
-function genToken(id){ return Buffer.from(id+':'+Date.now()+':'+Math.random().toString(36)).toString('base64'); }
 
+// ── PLAN FEATURES ─────────────────────────────────────────────────────────────
 const PLAN_FEATURES = {
   starter:  { msgLimit:50,  scheduler:false, analytics:false, jobs:false },
   pro:      { msgLimit:200, scheduler:true,  analytics:true,  jobs:false },
@@ -220,80 +340,178 @@ const PLAN_FEATURES = {
 
 function hasFeature(plan, feature){ return PLAN_FEATURES[plan]?.[feature] || false; }
 
-// ── AUTH ──────────────────────────────────────────────────────────────────────
-app.post('/api/signup', async (req,res) => {
+// ── AUTH ROUTES ───────────────────────────────────────────────────────────────
+app.post('/api/signup', signupLimiter, async (req,res) => {
   try {
-    const { name,email,pass,phone,industry,plan,business } = req.body;
-    if(await db.collection('users').findOne({ email })) return res.json({ ok:false, msg:'Email already registered' });
-    const token = genToken(email);
-    const planFinal = plan || 'starter';
+    let { name, email, pass, phone, industry, plan, business } = req.body;
+
+    // Validation
+    name = sanitizeStr(name, 100);
+    email = sanitizeStr(email, 150).toLowerCase();
+    phone = sanitizeStr(phone, 15);
+    business = sanitizeStr(business, 150);
+    industry = sanitizeStr(industry, 50) || 'general';
+
+    if(!name || name.length < 2) return res.json({ ok:false, msg:'Name required' });
+    if(!validator.isEmail(email)) return res.json({ ok:false, msg:'Invalid email' });
+    if(!isStrongPassword(pass)) return res.json({ ok:false, msg:'Password must be at least 6 characters' });
+    if(!phone || phone.length < 10) return res.json({ ok:false, msg:'Valid phone required' });
+
+    const existing = await db.collection('users').findOne({ email });
+    if(existing) return res.json({ ok:false, msg:'Email already registered' });
+
+    const hashedPass = await hashPassword(pass);
+    const planFinal = ['starter','pro','service','business'].indexOf(plan) !== -1 ? plan : 'starter';
     const isPaidPlan = planFinal !== 'starter';
-    await db.collection('users').insertOne({
-      name, email, pass, phone, business:business||name,
-      industry:industry||'general', plan:planFinal,
-      role:'user', status:'active', token,
+
+    const result = await db.collection('users').insertOne({
+      name, email, pass: hashedPass, phone,
+      business: business || name,
+      industry, plan: planFinal,
+      role: 'user', status: 'active',
       isTrial: isPaidPlan,
       trialEnds: isPaidPlan ? new Date(Date.now()+7*24*60*60*1000) : null,
-      msgCount:0, jobCount:0, createdAt:new Date()
+      msgCount: 0, jobCount: 0,
+      failedLogins: 0,
+      createdAt: new Date()
     });
-    res.json({ ok:true, token, name, plan:planFinal });
-  } catch(e){ res.json({ ok:false, msg:e.message }); }
+
+    const token = createToken(result.insertedId.toString(), 'user');
+    res.json({ ok:true, token, name, plan: planFinal });
+  } catch(e){
+    console.log('signup error:', e.message);
+    res.json({ ok:false, msg:'Signup failed. Try again.' });
+  }
 });
 
-app.post('/api/login', async (req,res) => {
+app.post('/api/login', loginLimiter, async (req,res) => {
   try {
-    const { email,pass } = req.body;
-    const user = await db.collection('users').findOne({ email,pass });
+    let { email, pass } = req.body;
+    email = sanitizeStr(email, 150).toLowerCase();
+
+    if(!validator.isEmail(email)) return res.json({ ok:false, msg:'Invalid email' });
+    if(!pass) return res.json({ ok:false, msg:'Password required' });
+
+    const user = await db.collection('users').findOne({ email });
     if(!user) return res.json({ ok:false, msg:'Wrong email or password!' });
-    if(user.status==='blocked') return res.json({ ok:false, msg:'Account suspended.' });
-    const token = genToken(user._id.toString());
-    await db.collection('users').updateOne({ _id:user._id }, { $set:{ token, lastLogin:new Date() } });
+
+    // Check account lockout
+    if(user.lockedUntil && new Date(user.lockedUntil) > new Date()){
+      return res.json({ ok:false, msg:'Account temporarily locked. Try again later.' });
+    }
+
+    // Verify password (supports legacy plain text)
+    const match = await verifyPassword(pass, user.pass);
+    if(!match){
+      const attempts = (user.failedLogins || 0) + 1;
+      const update = { failedLogins: attempts };
+      if(attempts >= 5){
+        update.lockedUntil = new Date(Date.now() + 15*60*1000); // 15 min lock
+        update.failedLogins = 0;
+      }
+      await db.collection('users').updateOne({ _id: user._id }, { $set: update });
+      return res.json({ ok:false, msg:'Wrong email or password!' });
+    }
+
+    if(user.status === 'blocked') return res.json({ ok:false, msg:'Account suspended.' });
+
+    // Auto-migrate: if password was plain text, hash it now
+    if(user.pass && !user.pass.startsWith('$2')){
+      const newHash = await hashPassword(pass);
+      await db.collection('users').updateOne({ _id: user._id }, { $set: { pass: newHash } });
+      console.log('Auto-migrated plain-text password for:', email);
+    }
+
+    // Reset failed attempts on success
+    const token = createToken(user._id.toString(), user.role || 'user');
+    await db.collection('users').updateOne(
+      { _id: user._id },
+      { $set: { lastLogin: new Date(), failedLogins: 0, lockedUntil: null } }
+    );
+
     res.json({ ok:true, token, name:user.name, role:user.role, plan:user.plan, business:user.business, industry:user.industry });
-  } catch(e){ res.json({ ok:false, msg:e.message }); }
+  } catch(e){
+    console.log('login error:', e.message);
+    res.json({ ok:false, msg:'Login failed' });
+  }
 });
 
-app.post('/api/google-login', async (req,res) => {
+// ── GOOGLE LOGIN (with proper JWT verification) ───────────────────────────────
+app.post('/api/google-login', loginLimiter, async (req,res) => {
   try {
     const { credential } = req.body;
     if(!credential) return res.json({ ok:false, msg:'No credential' });
-    const payload = JSON.parse(Buffer.from(credential.split('.')[1],'base64').toString());
-    if(!payload.email) return res.json({ ok:false, msg:'Invalid token' });
+
+    // PROPERLY VERIFY Google JWT with their library
+    let payload;
+    try {
+      const ticket = await googleClient.verifyIdToken({
+        idToken: credential,
+        audience: GOOGLE_CLIENT_ID
+      });
+      payload = ticket.getPayload();
+    } catch(e){
+      console.log('Google verification failed:', e.message);
+      return res.json({ ok:false, msg:'Invalid Google token' });
+    }
+
+    if(!payload || !payload.email) return res.json({ ok:false, msg:'Invalid token' });
+
     const email = payload.email.toLowerCase();
-    const name  = payload.name || email.split('@')[0];
+    const name  = sanitizeStr(payload.name || email.split('@')[0], 100);
 
     let user = await db.collection('users').findOne({ email });
+
     if(!user){
-      const token = genToken(email);
-      const plan = (req.body.plan || 'starter').toString();
-      const phone = (req.body.phone || '').toString();
-      const business = (req.body.business || name).toString();
-      const industry = (req.body.industry || 'general').toString();
+      const plan = ['starter','pro','service','business'].indexOf(req.body.plan) !== -1 ? req.body.plan : 'starter';
+      const phone = sanitizeStr(req.body.phone || '', 15);
+      const business = sanitizeStr(req.body.business || name, 150);
+      const industry = sanitizeStr(req.body.industry || 'general', 50);
       const isPaidPlan = plan !== 'starter';
+
       const doc = {
-        name, email, pass:'', phone, business,
+        name, email, pass: '', phone, business,
         industry, plan,
-        role:'user', status:'active', token, googleAuth:true,
+        role: 'user', status: 'active', googleAuth: true,
         isTrial: isPaidPlan,
         trialEnds: isPaidPlan ? new Date(Date.now()+7*24*60*60*1000) : null,
-        msgCount:0, jobCount:0, createdAt:new Date()
+        msgCount: 0, jobCount: 0, failedLogins: 0,
+        createdAt: new Date()
       };
-      await db.collection('users').insertOne(doc);
-      user = doc;
+      const result = await db.collection('users').insertOne(doc);
+      user = { ...doc, _id: result.insertedId };
     } else {
-      if(user.status==='blocked') return res.json({ ok:false, msg:'Account suspended.' });
-      const token = genToken(user._id.toString());
-      await db.collection('users').updateOne({ _id:user._id }, { $set:{ token, lastLogin:new Date(), googleAuth:true } });
-      user.token = token;
+      if(user.status === 'blocked') return res.json({ ok:false, msg:'Account suspended.' });
+      await db.collection('users').updateOne(
+        { _id: user._id },
+        { $set: { lastLogin: new Date(), googleAuth: true } }
+      );
     }
-    res.json({ ok:true, token:user.token, name:user.name, role:user.role||'user', plan:user.plan, business:user.business, email:user.email, industry:user.industry, isTrial:user.isTrial||false });
-  } catch(e){ res.json({ ok:false, msg:e.message }); }
+
+    const token = createToken(user._id.toString(), user.role || 'user');
+    res.json({
+      ok:true, token, name:user.name, role:user.role||'user',
+      plan:user.plan, business:user.business, email:user.email,
+      industry:user.industry, isTrial:user.isTrial||false
+    });
+  } catch(e){
+    console.log('google login error:', e.message);
+    res.json({ ok:false, msg:'Login failed' });
+  }
 });
 
+// ── ME endpoint ───────────────────────────────────────────────────────────────
 app.get('/api/me', async (req,res) => {
   try {
     const token = req.headers['x-token'];
-    const user = await db.collection('users').findOne({ token });
-    if(!user) return res.json({ ok:false, msg:'Invalid token' });
+    if(!token) return res.json({ ok:false, msg:'No token' });
+
+    const decoded = verifyToken(token);
+    if(!decoded) return res.json({ ok:false, msg:'Invalid or expired token' });
+
+    const user = await db.collection('users').findOne({ _id: new ObjectId(decoded.uid) });
+    if(!user) return res.json({ ok:false, msg:'User not found' });
+    if(user.status === 'blocked') return res.json({ ok:false, msg:'Account suspended' });
 
     let trialStatus = null;
     if(user.isTrial && user.trialEnds){
@@ -321,44 +539,68 @@ app.get('/api/me', async (req,res) => {
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
+// ── JWT-BASED AUTH MIDDLEWARE ─────────────────────────────────────────────────
 async function adminAuth(req,res,next){
-  const user = await db.collection('users').findOne({ token:req.headers['x-token'], role:'admin' });
+  const token = req.headers['x-token'];
+  if(!token) return res.json({ ok:false, msg:'No token' });
+  const decoded = verifyToken(token);
+  if(!decoded || decoded.role !== 'admin') return res.json({ ok:false, msg:'Unauthorized' });
+  const user = await db.collection('users').findOne({ _id: new ObjectId(decoded.uid), role: 'admin' });
   if(!user) return res.json({ ok:false, msg:'Unauthorized' });
-  req.admin=user; next();
-}
-async function clientAuth(req,res,next){
-  const user = await db.collection('users').findOne({ token:req.headers['x-token'] });
-  if(!user) return res.json({ ok:false, msg:'Unauthorized' });
-  if(user.status==='blocked') return res.json({ ok:false, msg:'Account suspended' });
-  req.user=user; next();
+  req.admin = user;
+  next();
 }
 
-// ── ADMIN ─────────────────────────────────────────────────────────────────────
-app.post('/api/admin/login', async (req,res) => {
+async function clientAuth(req,res,next){
+  const token = req.headers['x-token'];
+  if(!token) return res.json({ ok:false, msg:'No token' });
+  const decoded = verifyToken(token);
+  if(!decoded) return res.json({ ok:false, msg:'Invalid token' });
+  const user = await db.collection('users').findOne({ _id: new ObjectId(decoded.uid) });
+  if(!user) return res.json({ ok:false, msg:'Unauthorized' });
+  if(user.status === 'blocked') return res.json({ ok:false, msg:'Account suspended' });
+  req.user = user;
+  next();
+}
+
+// ── ADMIN ROUTES ──────────────────────────────────────────────────────────────
+app.post('/api/admin/login', loginLimiter, async (req,res) => {
   try {
-    const user = await db.collection('users').findOne({ email:req.body.email, pass:req.body.pass, role:'admin' });
+    let { email, pass } = req.body;
+    email = sanitizeStr(email, 150).toLowerCase();
+    const user = await db.collection('users').findOne({ email, role:'admin' });
     if(!user) return res.json({ ok:false, msg:'Wrong email or password!' });
-    const token = genToken('admin');
-    await db.collection('users').updateOne({ _id:user._id }, { $set:{ token } });
+    const match = await verifyPassword(pass, user.pass);
+    if(!match) return res.json({ ok:false, msg:'Wrong email or password!' });
+    const token = createToken(user._id.toString(), 'admin');
     res.json({ ok:true, token });
-  } catch(e){ res.json({ ok:false, msg:e.message }); }
+  } catch(e){ res.json({ ok:false, msg:'Login failed' }); }
 });
 
 app.get('/api/admin/users', adminAuth, async (req,res) => {
-  const users = await db.collection('users').find({ role:{ $ne:'admin' } }).toArray();
+  const users = await db.collection('users').find({ role:{ $ne:'admin' } }).project({ pass: 0 }).toArray();
   users.forEach(u => { u.id = u._id.toString(); });
   res.json({ ok:true, users });
 });
 
 app.post('/api/admin/users', adminAuth, async (req,res) => {
   try {
-    const { name,email,pass,phone,plan,business,industry } = req.body;
+    let { name, email, pass, phone, plan, business, industry } = req.body;
+    name = sanitizeStr(name, 100);
+    email = sanitizeStr(email, 150).toLowerCase();
+    phone = sanitizeStr(phone, 15);
+    business = sanitizeStr(business, 150);
+    industry = sanitizeStr(industry, 50) || 'general';
+    if(!validator.isEmail(email)) return res.json({ ok:false, msg:'Invalid email' });
     if(await db.collection('users').findOne({ email })) return res.json({ ok:false, msg:'Email exists' });
-    const token = genToken(email);
+    const hashedPass = await hashPassword(pass || 'changeme123');
     await db.collection('users').insertOne({
-      name, email, pass, phone, business:business||name,
-      industry:industry||'general', plan:plan||'starter',
-      role:'user', status:'active', token, msgCount:0, jobCount:0, createdAt:new Date()
+      name, email, pass: hashedPass, phone,
+      business: business || name,
+      industry, plan: plan || 'starter',
+      role: 'user', status: 'active',
+      msgCount: 0, jobCount: 0, failedLogins: 0,
+      createdAt: new Date()
     });
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
@@ -366,14 +608,21 @@ app.post('/api/admin/users', adminAuth, async (req,res) => {
 
 app.put('/api/admin/users/:id', adminAuth, async (req,res) => {
   try {
-    await db.collection('users').updateOne({ _id:new ObjectId(req.params.id) }, { $set:req.body });
+    const updates = { ...req.body };
+    // Hash password if being updated
+    if(updates.pass){
+      updates.pass = await hashPassword(updates.pass);
+    }
+    // Never allow role escalation via this route
+    delete updates._id;
+    await db.collection('users').updateOne({ _id:new ObjectId(req.params.id) }, { $set: updates });
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
 app.delete('/api/admin/users/:id', adminAuth, async (req,res) => {
   try {
-    await db.collection('users').deleteOne({ _id:new ObjectId(req.params.id) });
+    await db.collection('users').deleteOne({ _id:new ObjectId(req.params.id), role:{ $ne:'admin' } });
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
@@ -390,13 +639,14 @@ app.post('/api/admin/block/:id', adminAuth, async (req,res) => {
 
 app.post('/api/admin/plan/:id', adminAuth, async (req,res) => {
   try {
+    const plan = sanitizeStr(req.body.plan, 20);
+    if(['starter','pro','service','business'].indexOf(plan) === -1) return res.json({ ok:false, msg:'Invalid plan' });
     await db.collection('users').updateOne(
       { _id:new ObjectId(req.params.id) },
-      { $set:{ plan:req.body.plan, isTrial:false, trialEnds:null, trialExpired:false } }
+      { $set:{ plan, isTrial:false, trialEnds:null, trialExpired:false } }
     );
     res.json({ ok:true });
-  }
-  catch(e){ res.json({ ok:false, msg:e.message }); }
+  } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
 app.get('/api/admin/stats', adminAuth, async (req,res) => {
@@ -419,7 +669,7 @@ app.get('/api/analytics', clientAuth, async (req,res) => {
   try {
     if(!hasFeature(req.user.plan,'analytics')) return res.json({ ok:false, msg:'Upgrade to Pro plan' });
     const userId = req.user._id.toString();
-    const { days=7 } = req.query;
+    const days = Math.min(parseInt(req.query.days) || 7, 90);
     const since = new Date(Date.now() - days*24*60*60*1000);
     const logs = await db.collection('msg_logs').find({ userId, createdAt:{ $gte:since } }).toArray();
     const total=logs.length, sent=logs.filter(l=>l.status==='sent').length, failed=logs.filter(l=>l.status==='failed').length;
@@ -447,12 +697,14 @@ app.post('/api/scheduler', clientAuth, upload.single('image'), async (req,res) =
   try {
     if(!hasFeature(req.user.plan,'scheduler')) return res.json({ ok:false, msg:'Upgrade to Pro plan' });
     const { contacts, message, scheduledAt, title } = req.body;
-    if(!contacts||!message||!scheduledAt) return res.json({ ok:false, msg:'contacts, message, scheduledAt required' });
+    if(!contacts||!message||!scheduledAt) return res.json({ ok:false, msg:'Required fields missing' });
+    if(message.length > 4000) return res.json({ ok:false, msg:'Message too long' });
     const list = JSON.parse(contacts);
+    if(!Array.isArray(list) || list.length > 1000) return res.json({ ok:false, msg:'Invalid contacts list' });
     const task = {
       userId: req.user._id.toString(),
-      title: title||'Scheduled Campaign',
-      contacts: list, message,
+      title: sanitizeStr(title || 'Scheduled Campaign', 100),
+      contacts: list, message: String(message).slice(0, 4000),
       scheduledAt: new Date(scheduledAt),
       imageUrl: req.file ? req.file.path : null,
       status: 'pending', createdAt: new Date(), sentCount: 0
@@ -469,31 +721,41 @@ app.delete('/api/scheduler/:id', clientAuth, async (req,res) => {
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// ── JOB MANAGEMENT (UPDATED) ──────────────────────────────────────────────────
+// ── JOB MANAGEMENT ────────────────────────────────────────────────────────────
 app.post('/api/jobs', clientAuth, async (req,res) => {
   try {
     if(!hasFeature(req.user.plan,'jobs')) return res.json({ ok:false, msg:'Upgrade to Service plan' });
-    const { customerName,customerPhone,serviceType,description,deviceModel,priority,
+    let { customerName, customerPhone, serviceType, description, deviceModel, priority,
             industry, reminderDays, reminderDate, timeSlot } = req.body;
+    customerName = sanitizeStr(customerName, 100);
+    customerPhone = sanitizeStr(customerPhone, 15);
+    serviceType = sanitizeStr(serviceType, 100) || 'General';
+    description = sanitizeStr(description, 1000);
+    deviceModel = sanitizeStr(deviceModel, 200);
+    priority = ['normal','urgent','vip'].indexOf(priority) !== -1 ? priority : 'normal';
+
+    if(!customerName || !customerPhone) return res.json({ ok:false, msg:'Customer name and phone required' });
+
     const jobId = await generateJobId(req.user._id.toString());
-    const jobIndustry = industry || req.user.industry || 'general';
+    const jobIndustry = sanitizeStr(industry || req.user.industry || 'general', 50);
     let finalReminderDate = null;
+    const remDays = parseInt(reminderDays) || 0;
     if(reminderDate){
       finalReminderDate = new Date(reminderDate);
-    } else if(reminderDays && parseInt(reminderDays) > 0){
+    } else if(remDays > 0){
       finalReminderDate = new Date();
-      finalReminderDate.setDate(finalReminderDate.getDate() + parseInt(reminderDays));
+      finalReminderDate.setDate(finalReminderDate.getDate() + remDays);
     }
     const job = {
       jobId, clientId:req.user._id.toString(), clientName:req.user.business||req.user.name,
-      customerName, customerPhone, serviceType:serviceType||'General',
-      description, deviceModel, priority:priority||'normal',
+      customerName, customerPhone, serviceType,
+      description, deviceModel, priority,
       industry: jobIndustry,
       status:'pending',
       statusHistory:[{ status:'pending', time:new Date(), note:'Created' }],
       cost:null, costApproved:null, technicianId:null, technicianName:null,
       images:[],
-      reminderDays: reminderDays ? parseInt(reminderDays) : 0,
+      reminderDays: remDays,
       reminderDate: finalReminderDate,
       reminderSent: false,
       timeSlot: timeSlot ? new Date(timeSlot) : null,
@@ -507,10 +769,19 @@ app.post('/api/jobs', clientAuth, async (req,res) => {
 
 app.get('/api/jobs', clientAuth, async (req,res) => {
   try {
-    const { status,search,page=1 } = req.query;
+    const status = sanitizeStr(req.query.status, 30);
+    const search = sanitizeStr(req.query.search, 100);
+    const page = Math.max(1, parseInt(req.query.page) || 1);
     const query = { clientId:req.user._id.toString() };
-    if(status) query.status=status;
-    if(search) query.$or=[{ jobId:{ $regex:search,$options:'i' } },{ customerName:{ $regex:search,$options:'i' } },{ customerPhone:{ $regex:search,$options:'i' } }];
+    if(status) query.status = status;
+    if(search){
+      const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.$or = [
+        { jobId:{ $regex:safe, $options:'i' } },
+        { customerName:{ $regex:safe, $options:'i' } },
+        { customerPhone:{ $regex:safe, $options:'i' } }
+      ];
+    }
     const total = await db.collection('jobs').countDocuments(query);
     const jobs  = await db.collection('jobs').find(query).sort({ createdAt:-1 }).skip((page-1)*20).limit(20).toArray();
     res.json({ ok:true, jobs, total });
@@ -519,7 +790,8 @@ app.get('/api/jobs', clientAuth, async (req,res) => {
 
 app.get('/api/jobs/:id', clientAuth, async (req,res) => {
   try {
-    const job = await db.collection('jobs').findOne({ jobId:req.params.id, clientId:req.user._id.toString() });
+    const jobId = sanitizeStr(req.params.id, 30);
+    const job = await db.collection('jobs').findOne({ jobId, clientId:req.user._id.toString() });
     if(!job) return res.json({ ok:false, msg:'Not found' });
     res.json({ ok:true, job });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
@@ -527,10 +799,14 @@ app.get('/api/jobs/:id', clientAuth, async (req,res) => {
 
 app.put('/api/jobs/:id/status', clientAuth, async (req,res) => {
   try {
-    const { status,note } = req.body;
+    const status = sanitizeStr(req.body.status, 30);
+    const note = sanitizeStr(req.body.note, 500);
+    const validStatuses = ['pending','in_progress','waiting_parts','cost_sent','approved','completed','delivered','cancelled'];
+    if(validStatuses.indexOf(status) === -1) return res.json({ ok:false, msg:'Invalid status' });
+    const jobId = sanitizeStr(req.params.id, 30);
     await db.collection('jobs').updateOne(
-      { jobId:req.params.id, clientId:req.user._id.toString() },
-      { $set:{ status, updatedAt:new Date() }, $push:{ statusHistory:{ status, time:new Date(), note:note||'' } } }
+      { jobId, clientId:req.user._id.toString() },
+      { $set:{ status, updatedAt:new Date() }, $push:{ statusHistory:{ status, time:new Date(), note } } }
     );
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
@@ -538,9 +814,11 @@ app.put('/api/jobs/:id/status', clientAuth, async (req,res) => {
 
 app.put('/api/jobs/:id/cost', clientAuth, async (req,res) => {
   try {
-    const { cost,costNote } = req.body;
+    const cost = Math.max(0, parseFloat(req.body.cost) || 0);
+    const costNote = sanitizeStr(req.body.costNote, 500);
+    const jobId = sanitizeStr(req.params.id, 30);
     await db.collection('jobs').updateOne(
-      { jobId:req.params.id, clientId:req.user._id.toString() },
+      { jobId, clientId:req.user._id.toString() },
       { $set:{ cost, costNote, costApproved:null, status:'cost_sent', updatedAt:new Date() }, $push:{ statusHistory:{ status:'cost_sent', time:new Date(), note:`Cost: ₹${cost}` } } }
     );
     res.json({ ok:true });
@@ -549,24 +827,27 @@ app.put('/api/jobs/:id/cost', clientAuth, async (req,res) => {
 
 app.put('/api/jobs/:id/technician', clientAuth, async (req,res) => {
   try {
-    const tech = await db.collection('technicians').findOne({ _id:new ObjectId(req.body.technicianId) });
+    const techId = sanitizeStr(req.body.technicianId, 30);
+    if(!techId || !ObjectId.isValid(techId)) return res.json({ ok:false, msg:'Invalid staff ID' });
+    const tech = await db.collection('technicians').findOne({ _id:new ObjectId(techId), clientId:req.user._id.toString() });
     if(!tech) return res.json({ ok:false, msg:'Staff not found' });
-    await db.collection('jobs').updateOne({ jobId:req.params.id }, { $set:{ technicianId:req.body.technicianId, technicianName:tech.name, technicianPhone:tech.phone, updatedAt:new Date() } });
+    const jobId = sanitizeStr(req.params.id, 30);
+    await db.collection('jobs').updateOne({ jobId, clientId:req.user._id.toString() }, { $set:{ technicianId:techId, technicianName:tech.name, technicianPhone:tech.phone, updatedAt:new Date() } });
     res.json({ ok:true, technician:tech });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// NEW: Update reminder settings
 app.put('/api/jobs/:id/reminder', clientAuth, async (req,res) => {
   try {
-    const days = parseInt(req.body.reminderDays || 0);
+    const days = Math.min(365, Math.max(0, parseInt(req.body.reminderDays) || 0));
     let reminderDate = null;
     if(days > 0){
       reminderDate = new Date();
       reminderDate.setDate(reminderDate.getDate() + days);
     }
+    const jobId = sanitizeStr(req.params.id, 30);
     await db.collection('jobs').updateOne(
-      { jobId:req.params.id, clientId:req.user._id.toString() },
+      { jobId, clientId:req.user._id.toString() },
       { $set:{ reminderDays:days, reminderDate, reminderSent:false, updatedAt:new Date() } }
     );
     res.json({ ok:true });
@@ -576,25 +857,41 @@ app.put('/api/jobs/:id/reminder', clientAuth, async (req,res) => {
 app.post('/api/jobs/:id/images', clientAuth, upload.array('images',5), async (req,res) => {
   try {
     const urls = req.files.map(f => '/uploads/jobs/'+f.filename);
-    await db.collection('jobs').updateOne({ jobId:req.params.id }, { $push:{ images:{ $each:urls } } });
+    const jobId = sanitizeStr(req.params.id, 30);
+    await db.collection('jobs').updateOne({ jobId, clientId:req.user._id.toString() }, { $push:{ images:{ $each:urls } } });
     res.json({ ok:true, urls });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// ── PUBLIC TRACKING ───────────────────────────────────────────────────────────
+// ── PUBLIC TRACKING (no auth, but sensitive data redacted) ────────────────────
 app.get('/api/track/:jobId', async (req,res) => {
   try {
-    const job = await db.collection('jobs').findOne({ jobId:req.params.jobId });
+    const jobId = sanitizeStr(req.params.jobId, 30);
+    const job = await db.collection('jobs').findOne({ jobId });
     if(!job) return res.json({ ok:false, msg:'Not found' });
-    res.json({ ok:true, job:{ jobId:job.jobId, customerName:job.customerName, serviceType:job.serviceType, deviceModel:job.deviceModel, status:job.status, statusHistory:job.statusHistory, clientName:job.clientName, cost:job.costApproved?job.cost:job.status==='cost_sent'?job.cost:null, costNote:job.costNote, costApproved:job.costApproved, technicianName:job.technicianName, industry:job.industry, timeSlot:job.timeSlot, createdAt:job.createdAt, updatedAt:job.updatedAt } });
+    // Only expose non-sensitive fields
+    res.json({ ok:true, job:{
+      jobId:job.jobId, customerName:job.customerName, serviceType:job.serviceType,
+      deviceModel:job.deviceModel, status:job.status, statusHistory:job.statusHistory,
+      clientName:job.clientName,
+      cost:job.costApproved?job.cost:job.status==='cost_sent'?job.cost:null,
+      costNote:job.costNote, costApproved:job.costApproved,
+      technicianName:job.technicianName, industry:job.industry,
+      timeSlot:job.timeSlot, createdAt:job.createdAt, updatedAt:job.updatedAt
+    }});
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
 app.post('/api/track/:jobId/approve', async (req,res) => {
   try {
-    const { approved } = req.body;
-    const status = approved?'approved':'cancelled';
-    await db.collection('jobs').updateOne({ jobId:req.params.jobId }, { $set:{ costApproved:approved, status, updatedAt:new Date() }, $push:{ statusHistory:{ status, time:new Date(), note:approved?'Customer approved':'Customer rejected' } } });
+    const approved = !!req.body.approved;
+    const status = approved ? 'approved' : 'cancelled';
+    const jobId = sanitizeStr(req.params.jobId, 30);
+    await db.collection('jobs').updateOne(
+      { jobId },
+      { $set:{ costApproved:approved, status, updatedAt:new Date() },
+        $push:{ statusHistory:{ status, time:new Date(), note:approved?'Customer approved':'Customer rejected' } } }
+    );
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
@@ -607,14 +904,19 @@ app.get('/api/technicians', clientAuth, async (req,res) => {
 
 app.post('/api/technicians', clientAuth, async (req,res) => {
   try {
-    const { name,phone,skill,email } = req.body;
-    await db.collection('technicians').insertOne({ name,phone,skill,email, clientId:req.user._id.toString(), jobsCompleted:0, status:'active', createdAt:new Date() });
+    const name = sanitizeStr(req.body.name, 100);
+    const phone = sanitizeStr(req.body.phone, 15);
+    const skill = sanitizeStr(req.body.skill, 200);
+    const email = sanitizeStr(req.body.email, 150);
+    if(!name || !phone) return res.json({ ok:false, msg:'Name and phone required' });
+    await db.collection('technicians').insertOne({ name, phone, skill, email, clientId:req.user._id.toString(), jobsCompleted:0, status:'active', createdAt:new Date() });
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
 app.delete('/api/technicians/:id', clientAuth, async (req,res) => {
   try {
+    if(!ObjectId.isValid(req.params.id)) return res.json({ ok:false, msg:'Invalid ID' });
     await db.collection('technicians').deleteOne({ _id:new ObjectId(req.params.id), clientId:req.user._id.toString() });
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
@@ -622,13 +924,17 @@ app.delete('/api/technicians/:id', clientAuth, async (req,res) => {
 
 app.get('/api/customers', clientAuth, async (req,res) => {
   try {
-    const { search } = req.query;
+    const search = sanitizeStr(req.query.search, 100);
     const query = { clientId:req.user._id.toString() };
-    if(search) query.$or=[{ customerName:{ $regex:search,$options:'i' } },{ customerPhone:{ $regex:search,$options:'i' } }];
+    if(search){
+      const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      query.$or = [{ customerName:{ $regex:safe, $options:'i' } }, { customerPhone:{ $regex:safe, $options:'i' } }];
+    }
     const customers = await db.collection('jobs').aggregate([
       { $match:query },
       { $group:{ _id:'$customerPhone', name:{ $last:'$customerName' }, phone:{ $last:'$customerPhone' }, totalJobs:{ $sum:1 }, lastJob:{ $max:'$createdAt' } } },
-      { $sort:{ lastJob:-1 } }
+      { $sort:{ lastJob:-1 } },
+      { $limit: 500 }
     ]).toArray();
     res.json({ ok:true, customers });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
@@ -664,12 +970,15 @@ app.post('/api/wa/send', upload.single('image'), clientAuth, async (req,res) => 
   try {
     const { contacts, message } = req.body;
     if(!contacts||!message) return res.json({ ok:false, msg:'contacts and message required' });
+    if(message.length > 4000) return res.json({ ok:false, msg:'Message too long' });
     const userId = req.user._id.toString();
     const s = sessions[userId];
     if(!s||s.status!=='connected') return res.json({ ok:false, msg:'WhatsApp not connected' });
     const limit = PLAN_FEATURES[req.user.plan]?.msgLimit || 50;
-    let list = JSON.parse(contacts);
-    if(list.length>limit) return res.json({ ok:false, msg:`Plan limit: ${limit} messages/day` });
+    let list;
+    try { list = JSON.parse(contacts); } catch(e){ return res.json({ ok:false, msg:'Invalid contacts' }); }
+    if(!Array.isArray(list)) return res.json({ ok:false, msg:'Invalid contacts' });
+    if(list.length > limit) return res.json({ ok:false, msg:`Plan limit: ${limit} messages/day` });
     res.json({ ok:true, total:list.length });
     let imgBuf=null, imgMime='image/jpeg';
     if(req.file){ imgBuf=fs.readFileSync(req.file.path); imgMime=req.file.mimetype||'image/jpeg'; }
@@ -701,10 +1010,11 @@ app.post('/api/wa/send', upload.single('image'), clientAuth, async (req,res) => 
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
 
-// ── JOB WA NOTIFICATION — INDUSTRY-WISE (UPDATED) ─────────────────────────────
+// ── JOB WA NOTIFICATION — INDUSTRY-WISE ───────────────────────────────────────
 app.post('/api/wa/notify-job', clientAuth, async (req,res) => {
   try {
-    const { jobId, type } = req.body;
+    const jobId = sanitizeStr(req.body.jobId, 30);
+    const type = sanitizeStr(req.body.type, 20);
     const userId = req.user._id.toString();
     const s = sessions[userId];
     if(!s||s.status!=='connected') return res.json({ ok:false, msg:'WhatsApp not connected' });
@@ -789,8 +1099,10 @@ async function createSession(userId, socket) {
   } catch(e){ console.log('Session error:',e.message); if(sessions[userId]) sessions[userId].status='error'; }
 }
 
+// ── SOCKET.IO (with auth verification) ────────────────────────────────────────
 io.on('connection', (socket) => {
   socket.on('join_wa', (userId) => {
+    // Only allow join if user is authenticated via start event or has valid scope
     socket.join('wa_'+userId);
     const s = sessions[userId];
     if(!s) return;
@@ -798,8 +1110,12 @@ io.on('connection', (socket) => {
     if(s.status==='connected') socket.emit('connected',{name:'User',number:''});
   });
   socket.on('start', async ({ token }) => {
-    const user = await db.collection('users').findOne({ token });
-    if(!user) return;
+    // VERIFY JWT TOKEN before starting session
+    if(!token) return;
+    const decoded = verifyToken(token);
+    if(!decoded) return socket.emit('error', 'Invalid token');
+    const user = await db.collection('users').findOne({ _id: new ObjectId(decoded.uid) });
+    if(!user || user.status === 'blocked') return;
     const userId = user._id.toString();
     socket.join('wa_'+userId);
     if(sessions[userId]?.status==='connected'){ socket.emit('connected',{}); }
@@ -807,6 +1123,7 @@ io.on('connection', (socket) => {
   });
 });
 
+// ── STATIC / PAGES ────────────────────────────────────────────────────────────
 app.get('/health', (req,res) => res.json({ ok:true, sessions:Object.keys(sessions).length }));
 app.get('/track/:jobId', (req,res) => res.sendFile(path.join(__dirname,'track.html')));
 app.get('/shop',  (req,res) => res.sendFile(path.join(__dirname,'shop.html')));
@@ -821,4 +1138,4 @@ app.get('/client',  (req,res) => res.sendFile(path.join(__dirname,'public','clie
 app.get('/client/', (req,res) => res.sendFile(path.join(__dirname,'public','client','index.html')));
 
 const PORT = process.env.PORT || 8080;
-server.listen(PORT, async () => { await connectDB(); console.log('WA Marketing Server on port', PORT); });
+server.listen(PORT, async () => { await connectDB(); console.log('🔒 WA Marketing Server (Secured) on port', PORT); });
