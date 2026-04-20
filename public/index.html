@@ -215,7 +215,7 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
   </div>
   <div class="stats">
     <div><div class="stat-n">500+</div><div class="stat-l">Businesses</div></div>
-    <div><div class="stat-n">6</div><div class="stat-l">Industries</div></div>
+    <div><div class="stat-n">9</div><div class="stat-l">Industries</div></div>
     <div><div class="stat-n">0</div><div class="stat-l">API Cost</div></div>
     <div><div class="stat-n">100%</div><div class="stat-l">Your Name</div></div>
   </div>
@@ -247,6 +247,9 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
     <div class="ind-card"><div class="ind-ico">&#x1F3E0;</div><div><div class="ind-name">Real Estate</div><div class="ind-desc">Property listings & reminders</div></div></div>
     <div class="ind-card"><div class="ind-ico">&#x1F527;</div><div><div class="ind-name">Repair Services</div><div class="ind-desc">Job status & ready alerts</div></div></div>
     <div class="ind-card"><div class="ind-ico">&#x26A1;</div><div><div class="ind-name">Electrician & Plumber</div><div class="ind-desc">Work order confirmations</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F487;</div><div><div class="ind-name">Salon & Beauty</div><div class="ind-desc">Appointment reminders</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F3E5;</div><div><div class="ind-name">Clinic / Hospital</div><div class="ind-desc">Visit & medicine reminders</div></div></div>
+    <div class="ind-card"><div class="ind-ico">&#x1F697;</div><div><div class="ind-name">Auto & Car Wash</div><div class="ind-desc">Service order updates</div></div></div>
   </div>
 </section>
 
@@ -382,6 +385,9 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
         <option value="realty">🏠 Real Estate</option>
         <option value="repair">🔧 Repair Services</option>
         <option value="electric">⚡ Electrician / Plumber</option>
+        <option value="salon">💇 Salon / Beauty / Spa</option>
+        <option value="clinic">🏥 Clinic / Hospital</option>
+        <option value="auto">🚗 Auto / Car Wash / Garage</option>
       </select>
     </div>
     <div class="mfield"><label>Email *</label><input type="email" id="s-email" placeholder="you@example.com"></div>
@@ -403,7 +409,6 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
 
     <div class="upi-box">
       <div class="upi-qr">
-        <!-- UPI QR - replace src with your actual UPI QR image -->
         <div style="width:100%;height:100%;background:linear-gradient(135deg,#6c63ff,#4f46e5);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;text-align:center;padding:10px;">
           Upload your UPI QR image here
         </div>
@@ -430,10 +435,10 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
 <div id="toasts"></div>
 
 <script> 
-  // ── GOOGLE LOGIN ────────────────────────────────────────────────────────────
 function handleGoogleLogin(response){
   var phone = document.getElementById('s-phone') ? document.getElementById('s-phone').value.trim() : '';
   var business = document.getElementById('s-biz') ? document.getElementById('s-biz').value.trim() : '';
+  var industry = document.getElementById('s-ind') ? document.getElementById('s-ind').value : '';
   fetch('/api/google-login',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
@@ -441,7 +446,8 @@ function handleGoogleLogin(response){
       credential: response.credential,
       plan: selectedPlan,
       phone: phone,
-      business: business
+      business: business,
+      industry: industry
     })
   })
   .then(function(r){return r.json();})
@@ -468,7 +474,6 @@ var selectedPlan   = 'starter';
 var selectedAmount = 499;
 var pendingUser    = null;
 
-// Toast
 function toast(msg, type){
   var el = document.createElement('div');
   el.className = 'toast '+(type||'ok');
@@ -477,21 +482,17 @@ function toast(msg, type){
   setTimeout(function(){ el.remove(); }, 3500);
 }
 
-// Modal helpers
 function openModal(id){ document.getElementById('modal-'+id).classList.add('open'); }
 function closeModal(id){ document.getElementById('modal-'+id).classList.remove('open'); }
 
-// Nav buttons
 document.getElementById('nav-login').addEventListener('click', function(){ openModal('login'); });
 document.getElementById('nav-signup').addEventListener('click', function(){ openModal('signup'); });
 document.getElementById('hero-signup').addEventListener('click', function(){ openModal('signup'); });
 
-// Price buttons
 document.querySelectorAll('.btn-price').forEach(function(btn){
   btn.addEventListener('click', function(){
     selectedPlan   = this.getAttribute('data-plan');
     selectedAmount = this.getAttribute('data-amount');
-    // Pre-select plan in signup modal
     document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.remove('sel'); });
     document.querySelector('[data-plan="'+selectedPlan+'"]').classList.add('sel');
     closeModal('login');
@@ -499,7 +500,6 @@ document.querySelectorAll('.btn-price').forEach(function(btn){
   });
 });
 
-// Plan selector
 document.querySelectorAll('.plan-opt').forEach(function(opt){
   opt.addEventListener('click', function(){
     document.querySelectorAll('.plan-opt').forEach(function(o){ o.classList.remove('sel'); });
@@ -509,16 +509,13 @@ document.querySelectorAll('.plan-opt').forEach(function(opt){
   });
 });
 
-// Close modals
 document.getElementById('close-login').addEventListener('click', function(){ closeModal('login'); });
 document.getElementById('close-signup').addEventListener('click', function(){ closeModal('signup'); });
 document.getElementById('close-upi').addEventListener('click', function(){ closeModal('upi'); });
 
-// Switch modals
 document.getElementById('goto-signup').addEventListener('click', function(){ closeModal('login'); setTimeout(function(){ openModal('signup'); }, 150); });
 document.getElementById('goto-login2').addEventListener('click', function(){ closeModal('signup'); setTimeout(function(){ openModal('login'); }, 150); });
 
-// Login
 document.getElementById('do-login').addEventListener('click', function(){
   var email = document.getElementById('l-email').value.trim();
   var pass  = document.getElementById('l-pass').value.trim();
@@ -545,7 +542,6 @@ document.getElementById('do-login').addEventListener('click', function(){
 
 document.getElementById('l-pass').addEventListener('keydown', function(e){ if(e.key==='Enter') document.getElementById('do-login').click(); });
 
-// Signup
 document.getElementById('do-signup').addEventListener('click', function(){
   var name  = document.getElementById('s-name').value.trim();
   var biz   = document.getElementById('s-biz').value.trim();
@@ -569,33 +565,28 @@ document.getElementById('do-signup').addEventListener('click', function(){
     if(!d.ok){ toast(d.msg||'Login failed!','err'); return; }
     pendingUser = { name:name, email:email, phone:phone, plan:selectedPlan, amount:selectedAmount };
     closeModal('signup');
-    // Show UPI payment
     document.getElementById('upi-amount').textContent = '&#x20B9;'+selectedAmount;
     openModal('upi');
   })
   .catch(function(){ btn.textContent='Start 7-Day Free Trial'; btn.disabled=false; toast('Server error!','err'); });
 });
 
-// Copy UPI ID
 document.getElementById('copy-upi').addEventListener('click', function(){
   navigator.clipboard.writeText('advizrmedia@upi').then(function(){
     toast('UPI ID copied!','ok');
   }).catch(function(){});
 });
 
-// Send payment proof via WhatsApp
 document.getElementById('send-payment-proof').addEventListener('click', function(){
   if(!pendingUser) return;
   var msg = 'Hi Advizr Media!\n\nI have made payment for WA Marketing Pro.\n\nName: '+pendingUser.name+'\nEmail: '+pendingUser.email+'\nPhone: '+pendingUser.phone+'\nPlan: '+pendingUser.plan+' (Rs.'+pendingUser.amount+')\n\nPlease activate my account.\n\n[Attach payment screenshot]';
   window.open('https://wa.me/918087289267?text='+encodeURIComponent(msg), '_blank');
 });
 
-// Close overlays on backdrop click
 document.querySelectorAll('.overlay').forEach(function(o){
   o.addEventListener('click', function(e){ if(e.target===o) o.classList.remove('open'); });
 });
 
-// Check if already logged in
 var token = localStorage.getItem('wa_token');
 if(token){
   fetch('/api/auth/me', { headers:{'Authorization':'Bearer '+token} })
