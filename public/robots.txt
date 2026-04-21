@@ -1,0 +1,19 @@
+# WA Marketing Pro - robots.txt
+# https://wadigit.com
+
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /api/
+Disallow: /client/
+Disallow: /forgot-password.html
+
+# Block AI scrapers (optional - hatao agar chahiye to)
+User-agent: GPTBot
+Disallow: /
+
+User-agent: CCBot
+Disallow: /
+
+# Sitemap
+Sitemap: https://wadigit.com/sitemap.xml
