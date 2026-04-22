@@ -285,7 +285,7 @@
 </div><!-- /container -->
 
 <script>
-  const TOKEN = localStorage.getItem('token');
+  const TOKEN = localStorage.getItem('waToken') || localStorage.getItem('token');
   let selectedFile = null;
 
   // ── Init ──────────────────────────────────────────
