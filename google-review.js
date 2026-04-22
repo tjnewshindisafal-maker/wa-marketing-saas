@@ -58,7 +58,7 @@ async function getSettings(db, userId) {
   return s || {
     userId: userId.toString(),
     googleLink: '',
-    messageTemplate: 'Namaste {name}! Aapki service se hum bahut khush hain. Ek Google review zaroor dein: {link}',
+    messageTemplate: 'Hi {name}! Thank you for visiting us. We would love your feedback — please leave us a Google review: {link}',
     autoOnJobComplete: false,
     dailyLimit: 20,
     cooldownDays: 30
