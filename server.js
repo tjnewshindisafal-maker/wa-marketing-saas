@@ -7,6 +7,7 @@ const { Server } = require('socket.io');
 const multer     = require('multer');
 const path       = require('path');
 const fs         = require('fs');
+const { registerReviewRoutes } = require('./google-review');
 const qrcode     = require('qrcode');
 const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
@@ -139,8 +140,8 @@ async function connectDB() {
     startScheduler();
     startTrialChecker();
     startReminderChecker();
+    registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions);
   } catch(e) { console.error('MongoDB error:', e.message); }
-}
 
 async function initAdmin() {
   try {
@@ -393,14 +394,14 @@ const sessions = {};
 
 // ── PLAN FEATURES ─────────────────────────────────────────────────────────────
 const PLAN_FEATURES = {
-  starter:  { msgLimit:50,  scheduler:false, analytics:false, jobs:false },
-  pro:      { msgLimit:200, scheduler:true,  analytics:true,  jobs:false },
-  service:  { msgLimit:200, scheduler:true,  analytics:true,  jobs:true  },
-  business: { msgLimit:500, scheduler:true,  analytics:true,  jobs:true  },
-  trial:    { msgLimit:20,  scheduler:false, analytics:false, jobs:false },
-  admin:    { msgLimit:9999,scheduler:true,  analytics:true,  jobs:true  }
+  starter:  { msgLimit:50,  scheduler:false, analytics:false, jobs:false, reviews:false },
+  pro:      { msgLimit:200, scheduler:true,  analytics:true,  jobs:false, reviews:true  },
+  service:  { msgLimit:200, scheduler:true,  analytics:true,  jobs:true,  reviews:true  },
+  business: { msgLimit:500, scheduler:true,  analytics:true,  jobs:true,  reviews:true  },
+  review:   { msgLimit:20,  scheduler:false, analytics:false, jobs:false, reviews:true  },
+  trial:    { msgLimit:20,  scheduler:false, analytics:false, jobs:false, reviews:false },
+  admin:    { msgLimit:9999,scheduler:true,  analytics:true,  jobs:true,  reviews:true  }
 };
-
 function hasFeature(plan, feature){ return PLAN_FEATURES[plan]?.[feature] || false; }
 
 // ── AUTH ROUTES ───────────────────────────────────────────────────────────────
