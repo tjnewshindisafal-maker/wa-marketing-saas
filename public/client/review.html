@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Google Reviews — WA Marketing</title>
+  <link rel="icon" href="/favicon.ico" />
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; color: #222; }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: #075e54; color: #fff; padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100; box-shadow: 0 2px 8px rgba(0,0,0,.2);
+    }
+    .navbar h1 { font-size: 18px; font-weight: 700; }
+    .navbar .back-btn {
+      background: rgba(255,255,255,.15); border: none; color: #fff;
+      padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 14px;
+      text-decoration: none; display: inline-block;
+    }
+    .navbar .back-btn:hover { background: rgba(255,255,255,.25); }
+
+    /* ── Layout ── */
+    .container { max-width: 900px; margin: 24px auto; padding: 0 16px; }
+
+    /* ── Stat Cards ── */
+    .stats-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px,1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card {
+      background: #fff; border-radius: 14px; padding: 20px 16px;
+      text-align: center; box-shadow: 0 2px 10px rgba(0,0,0,.07);
+    }
+    .stat-card .num { font-size: 32px; font-weight: 700; color: #075e54; }
+    .stat-card .label { font-size: 13px; color: #777; margin-top: 4px; }
+
+    /* ── Card ── */
+    .card {
+      background: #fff; border-radius: 16px; padding: 22px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08); margin-bottom: 22px;
+    }
+    .card h2 { font-size: 16px; font-weight: 700; margin-bottom: 16px; color: #075e54; }
+
+    /* ── Form fields ── */
+    .form-group { margin-bottom: 14px; }
+    .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: #444; }
+    .form-group input, .form-group textarea, .form-group select {
+      width: 100%; padding: 10px 12px; border: 1.5px solid #ddd; border-radius: 10px;
+      font-size: 14px; outline: none; transition: border .2s;
+    }
+    .form-group input:focus, .form-group textarea:focus { border-color: #075e54; }
+    .form-group textarea { resize: vertical; min-height: 80px; }
+
+    /* ── Buttons ── */
+    .btn {
+      padding: 11px 22px; border: none; border-radius: 10px;
+      font-size: 14px; font-weight: 600; cursor: pointer; transition: .2s;
+    }
+    .btn-green  { background: #25d366; color: #fff; }
+    .btn-green:hover  { background: #1ebe59; }
+    .btn-blue   { background: #075e54; color: #fff; }
+    .btn-blue:hover   { background: #054d44; }
+    .btn-orange { background: #ff9800; color: #fff; }
+    .btn-orange:hover { background: #e68900; }
+    .btn:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Toggle ── */
+    .toggle-row { display: flex; align-items: center; gap: 12px; }
+    .toggle { position: relative; display: inline-block; width: 46px; height: 26px; }
+    .toggle input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute; inset: 0; background: #ccc; border-radius: 26px; cursor: pointer; transition: .3s;
+    }
+    .slider:before {
+      content: ''; position: absolute; left: 3px; bottom: 3px;
+      width: 20px; height: 20px; background: #fff; border-radius: 50%; transition: .3s;
+    }
+    input:checked + .slider { background: #25d366; }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    /* ── Alert ── */
+    .alert { padding: 12px 16px; border-radius: 10px; font-size: 14px; margin-bottom: 16px; display: none; }
+    .alert.success { background: #e8f5e9; color: #2e7d32; border-left: 4px solid #25d366; }
+    .alert.error   { background: #ffebee; color: #c62828; border-left: 4px solid #e53935; }
+    .alert.show    { display: block; }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { background: #f5f5f5; padding: 10px 12px; text-align: left; font-weight: 600; color: #555; }
+    td { padding: 10px 12px; border-bottom: 1px solid #f0f0f0; }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600;
+    }
+    .badge.sent    { background: #e8f5e9; color: #2e7d32; }
+    .badge.failed  { background: #ffebee; color: #c62828; }
+    .badge.skipped { background: #fff8e1; color: #e65100; }
+
+    /* ── Tabs ── */
+    .tabs { display: flex; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
+    .tab-btn {
+      padding: 9px 20px; border-radius: 20px; border: 2px solid #e0e0e0;
+      background: #fff; font-size: 14px; font-weight: 600; cursor: pointer; transition: .2s;
+    }
+    .tab-btn.active { background: #075e54; color: #fff; border-color: #075e54; }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    /* ── Upload zone ── */
+    .upload-zone {
+      border: 2px dashed #ccc; border-radius: 12px; padding: 30px;
+      text-align: center; cursor: pointer; transition: .2s; background: #fafafa;
+    }
+    .upload-zone:hover { border-color: #075e54; background: #f0fdf4; }
+    .upload-zone .icon { font-size: 36px; margin-bottom: 8px; }
+    .upload-zone p { font-size: 14px; color: #666; }
+    #fileInput { display: none; }
+
+    /* ── Progress bar ── */
+    .progress-wrap { background: #e0e0e0; border-radius: 10px; height: 8px; margin: 12px 0; display: none; }
+    .progress-bar  { background: #25d366; height: 8px; border-radius: 10px; transition: width .3s; }
+
+    /* ── Info box ── */
+    .info-box { background: #e3f2fd; border-left: 4px solid #1976d2; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #1565c0; margin-bottom: 16px; }
+
+    /* ── Mobile ── */
+    @media (max-width: 600px) {
+      .container { padding: 0 10px; }
+      .card { padding: 16px; }
+    }
+
+    /* ── Plan locked overlay ── */
+    #planLocked { display: none; text-align: center; padding: 60px 20px; }
+    #planLocked .lock-icon { font-size: 64px; }
+    #planLocked h2 { margin: 16px 0 8px; color: #e53935; }
+    #planLocked p { color: #666; font-size: 15px; max-width: 360px; margin: 0 auto; }
+  </style>
+</head>
+<body>
+
+<!-- Navbar -->
+<nav class="navbar">
+  <h1>⭐ Google Review Booster</h1>
+  <a href="/client/" class="back-btn">← Dashboard</a>
+</nav>
+
+<!-- Plan Locked Message -->
+<div id="planLocked">
+  <div class="lock-icon">🔒</div>
+  <h2>Pro Plan Required</h2>
+  <p>Google Review feature sirf Pro (₹999), Service Hub (₹1499), Business (₹2499) ya Review Booster (₹499) plan mein available hai.</p>
+  <br>
+  <a href="/client/" class="btn btn-blue">← Back to Dashboard</a>
+</div>
+
+<!-- Main Content -->
+<div class="container" id="mainContent">
+
+  <!-- Alert -->
+  <div class="alert" id="globalAlert"></div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="num" id="statToday">—</div>
+      <div class="label">Aaj Bheje</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statLimit">20</div>
+      <div class="label">Aaj ki Limit</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statTotal">—</div>
+      <div class="label">Total Bheje</div>
+    </div>
+    <div class="stat-card">
+      <div class="num" id="statLink">🔗</div>
+      <div class="label">Google Link Set</div>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('single')">📱 Single Send</button>
+    <button class="tab-btn" onclick="switchTab('bulk')">📊 Bulk Excel</button>
+    <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
+    <button class="tab-btn" onclick="switchTab('logs')">📋 Logs</button>
+  </div>
+
+  <!-- Tab: Single Send -->
+  <div class="tab-content active" id="tab-single">
+    <div class="card">
+      <h2>📱 Single Customer ko Review Request Bhejo</h2>
+      <div class="info-box">ℹ️ Sirf 10 AM – 8 PM ke beech messages bheje jaate hain. Ek customer ko 30 din mein sirf ek baar request jaayegi.</div>
+      <div class="form-group">
+        <label>Customer ka Phone Number (WhatsApp)</label>
+        <input type="tel" id="singlePhone" placeholder="91XXXXXXXXXX (country code ke saath)" />
+      </div>
+      <div class="form-group">
+        <label>Customer ka Naam (optional)</label>
+        <input type="text" id="singleName" placeholder="Jaise: Ramesh Ji" />
+      </div>
+      <button class="btn btn-green" id="btnSingle" onclick="sendSingle()">⭐ Review Request Bhejo</button>
+    </div>
+  </div>
+
+  <!-- Tab: Bulk Excel -->
+  <div class="tab-content" id="tab-bulk">
+    <div class="card">
+      <h2>📊 Bulk Excel se Review Requests Bhejo</h2>
+      <div class="info-box">
+        ℹ️ Excel file mein <strong>Phone</strong> aur <strong>Name</strong> columns hone chahiye.<br>
+        Cooldown, daily limit, aur time window sab automatically check hoga.
+      </div>
+
+      <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
+        <div class="icon">📂</div>
+        <p id="uploadLabel">Click karke Excel/CSV file select karein<br><small>(.xlsx, .xls, .csv — max 2MB)</small></p>
+      </div>
+      <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="fileSelected(this)" />
+
+      <div class="progress-wrap" id="progressWrap">
+        <div class="progress-bar" id="progressBar" style="width:0%"></div>
+      </div>
+
+      <br>
+      <button class="btn btn-orange" id="btnBulk" onclick="sendBulk()" disabled>📤 Bulk Bhejo</button>
+      <div id="bulkResult" style="margin-top:16px;"></div>
+    </div>
+  </div>
+
+  <!-- Tab: Settings -->
+  <div class="tab-content" id="tab-settings">
+    <div class="card">
+      <h2>⚙️ Review Settings</h2>
+      <div class="form-group">
+        <label>Google Review Link (aapka direct review link)</label>
+        <input type="url" id="googleLink" placeholder="https://g.page/r/..." />
+        <small style="color:#888;">Google My Business → Get more reviews → Copy link</small>
+      </div>
+      <div class="form-group">
+        <label>Message Template</label>
+        <textarea id="msgTemplate" rows="4" placeholder="Namaste {name}! Aapki service se khush hain toh review zaroor dein: {link}"></textarea>
+        <small style="color:#888;">{name} = customer name, {link} = Google link</small>
+      </div>
+      <div class="form-group">
+        <label>Auto-send on Job Complete?</label>
+        <div class="toggle-row">
+          <label class="toggle">
+            <input type="checkbox" id="autoToggle" onchange="toggleAuto(this)" />
+            <span class="slider"></span>
+          </label>
+          <span id="autoLabel" style="font-size:14px;color:#555;">Off</span>
+        </div>
+        <small style="color:#888;">Job "Complete" mark hone par automatically review request jaayegi</small>
+      </div>
+      <button class="btn btn-blue" onclick="saveSettings()">💾 Settings Save Karo</button>
+    </div>
+  </div>
+
+  <!-- Tab: Logs -->
+  <div class="tab-content" id="tab-logs">
+    <div class="card">
+      <h2>📋 Recent Logs (last 100)</h2>
+      <button class="btn btn-blue" onclick="loadLogs()" style="margin-bottom:16px;">🔄 Refresh</button>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Customer</th>
+              <th>Phone</th>
+              <th>Status</th>
+              <th>Date/Time</th>
+            </tr>
+          </thead>
+          <tbody id="logsBody">
+            <tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">Logs load ho rahe hain...</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div><!-- /container -->
+
+<script>
+  const TOKEN = localStorage.getItem('token');
+  let selectedFile = null;
+
+  // ── Init ──────────────────────────────────────────
+  window.onload = async () => {
+    if (!TOKEN) { window.location.href = '/client/'; return; }
+    await checkAccess();
+    await loadStats();
+    await loadSettings();
+    await loadLogs();
+  };
+
+  async function checkAccess() {
+    try {
+      const r = await apiFetch('/api/review/stats');
+      if (r.error && r.error.includes('Pro plan')) {
+        document.getElementById('mainContent').style.display = 'none';
+        document.getElementById('planLocked').style.display = 'block';
+      }
+    } catch {}
+  }
+
+  // ── Stats ─────────────────────────────────────────
+  async function loadStats() {
+    try {
+      const d = await apiFetch('/api/review/stats');
+      document.getElementById('statToday').textContent = d.todayCount ?? '—';
+      document.getElementById('statLimit').textContent = d.dailyLimit ?? 20;
+      document.getElementById('statTotal').textContent = d.totalSent ?? '—';
+      document.getElementById('statLink').textContent = d.googleLink ? '✅' : '❌';
+    } catch {}
+  }
+
+  // ── Settings ──────────────────────────────────────
+  async function loadSettings() {
+    try {
+      const d = await apiFetch('/api/review/settings');
+      document.getElementById('googleLink').value     = d.googleLink || '';
+      document.getElementById('msgTemplate').value   = d.messageTemplate || '';
+      const checked = !!d.autoOnJobComplete;
+      document.getElementById('autoToggle').checked  = checked;
+      document.getElementById('autoLabel').textContent = checked ? 'On ✅' : 'Off';
+    } catch {}
+  }
+
+  async function saveSettings() {
+    const body = {
+      googleLink:         document.getElementById('googleLink').value.trim(),
+      messageTemplate:    document.getElementById('msgTemplate').value.trim(),
+      autoOnJobComplete:  document.getElementById('autoToggle').checked
+    };
+    if (!body.googleLink) return showAlert('Google Review link required hai!', 'error');
+    const r = await apiFetch('/api/review/settings', 'POST', body);
+    if (r.success) { showAlert('Settings save ho gayi! ✅', 'success'); loadStats(); }
+    else showAlert(r.error || 'Error', 'error');
+  }
+
+  function toggleAuto(el) {
+    document.getElementById('autoLabel').textContent = el.checked ? 'On ✅' : 'Off';
+  }
+
+  // ── Single Send ───────────────────────────────────
+  async function sendSingle() {
+    const phone = document.getElementById('singlePhone').value.trim();
+    const name  = document.getElementById('singleName').value.trim();
+    if (!phone) return showAlert('Phone number required hai!', 'error');
+
+    const btn = document.getElementById('btnSingle');
+    btn.disabled = true; btn.textContent = '⏳ Bheji ja rahi hai...';
+
+    const r = await apiFetch('/api/review/send-single', 'POST', { phone, name });
+    btn.disabled = false; btn.textContent = '⭐ Review Request Bhejo';
+
+    if (r.success) {
+      showAlert(r.message || 'Request bheji gayi! ✅', 'success');
+      document.getElementById('singlePhone').value = '';
+      document.getElementById('singleName').value  = '';
+      loadStats(); loadLogs();
+    } else {
+      showAlert(r.error || 'Error aaya', 'error');
+    }
+  }
+
+  // ── Bulk Send ─────────────────────────────────────
+  function fileSelected(input) {
+    if (input.files && input.files[0]) {
+      selectedFile = input.files[0];
+      document.getElementById('uploadLabel').innerHTML =
+        `✅ <strong>${selectedFile.name}</strong> selected (${(selectedFile.size/1024).toFixed(1)} KB)<br><small>Click to change</small>`;
+      document.getElementById('btnBulk').disabled = false;
+    }
+  }
+
+  async function sendBulk() {
+    if (!selectedFile) return showAlert('Pehle file select karein', 'error');
+
+    const btn = document.getElementById('btnBulk');
+    btn.disabled = true; btn.textContent = '⏳ Processing...';
+    document.getElementById('progressWrap').style.display = 'block';
+    animateProgress();
+
+    const formData = new FormData();
+    formData.append('file', selectedFile);
+
+    try {
+      const r = await fetch('/api/review/send-bulk', {
+        method: 'POST',
+        headers: { 'Authorization': 'Bearer ' + TOKEN },
+        body: formData
+      }).then(res => res.json());
+
+      document.getElementById('progressBar').style.width = '100%';
+
+      if (r.success) {
+        document.getElementById('bulkResult').innerHTML = `
+          <div class="alert success show">
+            ✅ Bulk complete! &nbsp;|&nbsp;
+            Sent: <strong>${r.sent}</strong> &nbsp;|&nbsp;
+            Skipped: <strong>${r.skipped}</strong> &nbsp;|&nbsp;
+            Failed: <strong>${r.failed}</strong>
+          </div>`;
+        loadStats(); loadLogs();
+      } else {
+        showAlert(r.error || 'Bulk failed', 'error');
+      }
+    } catch (e) {
+      showAlert('Network error: ' + e.message, 'error');
+    }
+
+    btn.disabled = false; btn.textContent = '📤 Bulk Bhejo';
+    setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; document.getElementById('progressBar').style.width = '0%'; }, 3000);
+  }
+
+  function animateProgress() {
+    let p = 0;
+    const bar = document.getElementById('progressBar');
+    const iv = setInterval(() => {
+      if (p >= 85) { clearInterval(iv); return; }
+      p += Math.random() * 8;
+      bar.style.width = Math.min(p, 85) + '%';
+    }, 800);
+  }
+
+  // ── Logs ──────────────────────────────────────────
+  async function loadLogs() {
+    try {
+      const logs = await apiFetch('/api/review/logs');
+      const tbody = document.getElementById('logsBody');
+      if (!logs.length) {
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">Abhi tak koi log nahi</td></tr>';
+        return;
+      }
+      tbody.innerHTML = logs.map(l => `
+        <tr>
+          <td>${l.customerName || '—'}</td>
+          <td>${l.phone}</td>
+          <td><span class="badge ${l.status}">${l.status}</span></td>
+          <td>${new Date(l.sentAt).toLocaleString('hi-IN', { timeZone: 'Asia/Kolkata' })}</td>
+        </tr>`).join('');
+    } catch {}
+  }
+
+  // ── Tabs ──────────────────────────────────────────
+  function switchTab(name) {
+    document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.getElementById('tab-' + name).classList.add('active');
+    event.target.classList.add('active');
+    if (name === 'logs') loadLogs();
+  }
+
+  // ── Helpers ───────────────────────────────────────
+  async function apiFetch(url, method = 'GET', body = null) {
+    const opts = { method, headers: { 'Authorization': 'Bearer ' + TOKEN } };
+    if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
+    const r = await fetch(url, opts);
+    return r.json();
+  }
+
+  function showAlert(msg, type) {
+    const el = document.getElementById('globalAlert');
+    el.textContent = msg;
+    el.className = `alert ${type} show`;
+    setTimeout(() => el.classList.remove('show'), 4000);
+  }
+</script>
+</body>
+</html>
