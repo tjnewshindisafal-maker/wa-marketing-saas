@@ -241,7 +241,7 @@
       </div>
       <div class="form-group">
         <label>Message Template</label>
-        <textarea id="msgTemplate" rows="4" placeholder="Namaste {name}! Aapki service se khush hain toh review zaroor dein: {link}"></textarea>
+        <textarea id="msgTemplate" rows="4" placeholder="Hi {name}! Thank you for visiting us. Please leave us a Google review: {link}"></textarea>
         <small style="color:#888;">{name} = customer name, {link} = Google link</small>
       </div>
       <div class="form-group">
@@ -392,7 +392,7 @@
     try {
       const r = await fetch('/api/review/send-bulk', {
         method: 'POST',
-        headers: { 'Authorization': 'Bearer ' + TOKEN },
+        headers: { 'x-token': TOKEN },
         body: formData
       }).then(res => res.json());
 
@@ -458,7 +458,7 @@
 
   // ── Helpers ───────────────────────────────────────
   async function apiFetch(url, method = 'GET', body = null) {
-    const opts = { method, headers: { 'Authorization': 'Bearer ' + TOKEN } };
+    const opts = { method, headers: { 'x-token': TOKEN } };
     if (body) { opts.headers['Content-Type'] = 'application/json'; opts.body = JSON.stringify(body); }
     const r = await fetch(url, opts);
     return r.json();
