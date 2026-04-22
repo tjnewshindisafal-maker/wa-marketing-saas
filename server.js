@@ -156,8 +156,7 @@ async function initAdmin() {
       console.log('Admin password updated (hashed)');
     }
   } catch(e) { console.log('initAdmin error:', e.message); }
-  }
-
+ }
 // ── INDUSTRY CONFIG ───────────────────────────────────────────────────────────
 const INDUSTRY_MAP = {
   repair:'repair', electric:'repair',
