@@ -52,13 +52,105 @@ async function todaySentCount(db, userId) {
   });
 }
 
+// ─── Professional English templates (anti-spam, personalized) ────────────────
+const REVIEW_TEMPLATES = {
+  salon: `Hi {name}, hope you had a great experience at {business}! 💇
+
+If you enjoyed your visit, a quick Google review would mean the world to our team.
+
+{link}
+
+Thank you so much!
+— Team {business}`,
+
+  clinic: `Dear {name}, thank you for choosing {business} for your care.
+
+If you were satisfied with our service, we would truly appreciate a short Google review from you.
+
+{link}
+
+Your feedback helps others find quality healthcare.
+— {business}`,
+
+  auto: `Hi {name}, thanks for trusting {business} with your vehicle! 🚗
+
+If everything went well, would you mind sharing a quick Google review?
+
+{link}
+
+It really helps our team. Appreciate it!
+— {business}`,
+
+  repair: `Hi {name}, thank you for choosing {business} for the repair service! 🔧
+
+If you're happy with the work, a quick Google review would help us a lot.
+
+{link}
+
+Thanks for your support!
+— Team {business}`,
+
+  food: `Hi {name}, thank you for ordering from {business}! 🍽️
+
+Hope you enjoyed the meal. If you did, a short Google review would make our day.
+
+{link}
+
+Thanks a lot!
+— {business}`,
+
+  retail: `Hi {name}, thank you for shopping with {business}!
+
+If you had a great experience, we would love a quick Google review from you.
+
+{link}
+
+Your support means a lot to our small business.
+— Team {business}`,
+
+  gym: `Hi {name}, thanks for being part of {business}! 💪
+
+If you're enjoying your fitness journey with us, a Google review would really help.
+
+{link}
+
+Keep going strong!
+— Team {business}`,
+
+  general: `Hi {name}, thank you for choosing {business}!
+
+If you had a good experience, a quick Google review would mean a lot to our team.
+
+{link}
+
+Thanks for your support!
+— {business}`
+};
+
+function getTemplateForIndustry(industry){
+  const map = {
+    salon: 'salon', beauty: 'salon',
+    clinic: 'clinic', doctor: 'clinic', hospital: 'clinic', dental: 'clinic',
+    auto: 'auto', carwash: 'auto', garage: 'auto',
+    repair: 'repair', electric: 'repair',
+    food: 'food', restaurant: 'food', bakery: 'food', cafe: 'food',
+    retail: 'retail', shop: 'retail', ecom: 'retail', store: 'retail',
+    gym: 'gym', fitness: 'gym', coaching: 'gym',
+  };
+  const key = map[industry] || 'general';
+  return REVIEW_TEMPLATES[key];
+}
+
 // ─── Helper: Get user settings ───────────────────────────────────────────────
-async function getSettings(db, userId) {
+async function getSettings(db, userId, userIndustry) {
   const s = await db.collection('review_settings').findOne({ userId: userId.toString() });
-  return s || {
+  if(s) return s;
+
+  // Return sensible default based on user's industry
+  return {
     userId: userId.toString(),
     googleLink: '',
-    messageTemplate: 'Hi {name}! Thank you for visiting us. We would love your feedback — please leave us a Google review: {link}',
+    messageTemplate: getTemplateForIndustry(userIndustry || 'general'),
     autoOnJobComplete: false,
     dailyLimit: 20,
     cooldownDays: 30
@@ -66,10 +158,12 @@ async function getSettings(db, userId) {
 }
 
 // ─── Core: WhatsApp message bhejo ────────────────────────────────────────────
-async function sendReviewWA(sock, phone, name, settings) {
-  const msg = settings.messageTemplate
+async function sendReviewWA(sock, phone, name, settings, business) {
+  const msg = (settings.messageTemplate || REVIEW_TEMPLATES.general)
     .replace(/\{name\}/g, name || 'Customer')
-    .replace(/\{link\}/g,  settings.googleLink || 'https://g.page/r/YOUR_LINK');
+    .replace(/\{business\}/g, business || 'our business')
+    .replace(/\{store\}/g, business || 'our business')
+    .replace(/\{link\}/g,  settings.googleLink || '');
   const jid = phone.replace(/\D/g, '') + '@s.whatsapp.net';
   await sock.sendMessage(jid, { text: msg });
 }
@@ -89,8 +183,15 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
   // GET settings
   app.get('/api/review/settings', clientAuth, reviewAccess, async (req, res) => {
     try {
-      const s = await getSettings(db, req.user._id);
+      const s = await getSettings(db, req.user._id, req.user.industry);
       res.json({ ok: true, settings: s });
+    } catch (e) { res.json({ ok: false, msg: e.message }); }
+  });
+
+  // GET all available templates (for "Choose Template" dropdown)
+  app.get('/api/review/templates', clientAuth, reviewAccess, async (req, res) => {
+    try {
+      res.json({ ok: true, templates: REVIEW_TEMPLATES });
     } catch (e) { res.json({ ok: false, msg: e.message }); }
   });
 
@@ -110,7 +211,7 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
   // GET stats
   app.get('/api/review/stats', clientAuth, reviewAccess, async (req, res) => {
     try {
-      const settings   = await getSettings(db, req.user._id);
+      const settings   = await getSettings(db, req.user._id, req.user.industry);
       const todayCount = await todaySentCount(db, req.user._id);
       const totalSent  = await db.collection('review_logs').countDocuments({ userId: req.user._id.toString(), status: 'sent' });
       res.json({ ok: true, todayCount, totalSent, dailyLimit: settings.dailyLimit, googleLink: settings.googleLink });
@@ -126,7 +227,7 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
       const { phone, name } = req.body;
       if (!phone) return res.json({ ok: false, msg: 'Phone number required hai.' });
 
-      const settings = await getSettings(db, req.user._id);
+      const settings = await getSettings(db, req.user._id, req.user.industry);
       if (!settings.googleLink)
         return res.json({ ok: false, msg: 'Pehle Settings mein Google Review link set karein.' });
 
@@ -141,7 +242,8 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
       if (!s || s.status !== 'connected')
         return res.json({ ok: false, msg: 'WhatsApp connected nahi hai. Pehle QR scan karein.' });
 
-      await sendReviewWA(s.sock, phone, name, settings);
+      const businessName = req.user.business || req.user.name || 'our business';
+      await sendReviewWA(s.sock, phone, name, settings, businessName);
       await db.collection('review_logs').insertOne({
         userId: req.user._id.toString(), phone, customerName: name || '',
         status: 'sent', sentAt: new Date()
@@ -158,13 +260,15 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
 
       if (!req.file) return res.json({ ok: false, msg: 'Excel file required hai.' });
 
-      const settings = await getSettings(db, req.user._id);
+      const settings = await getSettings(db, req.user._id, req.user.industry);
       if (!settings.googleLink)
         return res.json({ ok: false, msg: 'Pehle Settings mein Google Review link set karein.' });
 
       const s = sessions[req.user._id.toString()];
       if (!s || s.status !== 'connected')
         return res.json({ ok: false, msg: 'WhatsApp connected nahi hai.' });
+
+      const businessName = req.user.business || req.user.name || 'our business';
 
       const workbook = XLSX.read(req.file.buffer, { type: 'buffer' });
       const sheet    = workbook.Sheets[workbook.SheetNames[0]];
@@ -189,7 +293,7 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
         }
 
         try {
-          await sendReviewWA(s.sock, phone, name, settings);
+          await sendReviewWA(s.sock, phone, name, settings, businessName);
           await db.collection('review_logs').insertOne({
             userId: req.user._id.toString(), phone, customerName: name,
             status: 'sent', sentAt: new Date()
@@ -240,7 +344,15 @@ async function triggerReviewOnJobComplete(db, sessions, userId, phone, customerN
     const s = sessions[userId.toString()];
     if (!s || s.status !== 'connected') return;
 
-    await sendReviewWA(s.sock, phone, customerName, settings);
+    // Fetch business name for personalization
+    const { ObjectId } = require('mongodb');
+    let businessName = 'our business';
+    try {
+      const user = await db.collection('users').findOne({ _id: new ObjectId(userId.toString()) });
+      if (user) businessName = user.business || user.name || 'our business';
+    } catch(e){}
+
+    await sendReviewWA(s.sock, phone, customerName, settings, businessName);
     await db.collection('review_logs').insertOne({
       userId: userId.toString(), phone, customerName: customerName || '',
       status: 'sent', sentAt: new Date()
