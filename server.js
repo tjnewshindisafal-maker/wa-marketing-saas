@@ -7,7 +7,7 @@ const { Server } = require('socket.io');
 const multer     = require('multer');
 const path       = require('path');
 const fs         = require('fs');
-const { registerReviewRoutes } = require('./google-review');
+const { registerReviewRoutes, triggerReviewOnJobComplete } = require('./google-review');
 const qrcode     = require('qrcode');
 const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
@@ -16,15 +16,27 @@ const validator  = require('validator');
 const { MongoClient, ObjectId } = require('mongodb');
 const { OAuth2Client } = require('google-auth-library');
 
-// ── ENV VARIABLES (use Render env) ────────────────────────────────────────────
-const MONGO_URI      = process.env.MONGO_URI || 'mongodb+srv://waadmin:Waadmin2025@cluster0.0krvn5v.mongodb.net/wamarketing';
-const JWT_SECRET     = process.env.JWT_SECRET || 'change_this_to_random_64_char_string_in_render_env_now_please';
-const ADMIN_EMAIL    = process.env.ADMIN_EMAIL || 'admin@advizrmedia.in';
-const ADMIN_PASS     = process.env.ADMIN_PASS  || 'Advizr@2025';
-const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '696867354990-eeoltdrq0j6nhctc30jv0ktqm77r6k22.apps.googleusercontent.com';
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://wadigit.com,https://wa-marketing-saas-1.onrender.com').split(',');
-const BCRYPT_ROUNDS  = 10;
-const JWT_EXPIRY     = '7d';
+// ── ENV VARIABLES (MANDATORY - set in Render dashboard) ──────────────────────
+const MONGO_URI       = process.env.MONGO_URI;
+const JWT_SECRET      = process.env.JWT_SECRET;
+const ADMIN_EMAIL     = process.env.ADMIN_EMAIL;
+const ADMIN_PASS      = process.env.ADMIN_PASS;
+const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://wadigit.com,https://wa-marketing-saas-1.onrender.com').split(',').map(s => s.trim());
+const BCRYPT_ROUNDS   = 10;
+const JWT_EXPIRY      = '7d';
+
+// Fail fast if critical secrets missing
+const _missing = [];
+if(!MONGO_URI)   _missing.push('MONGO_URI');
+if(!JWT_SECRET || JWT_SECRET.length < 32) _missing.push('JWT_SECRET (must be 32+ chars)');
+if(!ADMIN_EMAIL) _missing.push('ADMIN_EMAIL');
+if(!ADMIN_PASS)  _missing.push('ADMIN_PASS');
+if(_missing.length){
+  console.error('❌ FATAL: Missing required env vars:', _missing.join(', '));
+  console.error('   Set them in Render dashboard > Environment tab');
+  process.exit(1);
+}
 
 const googleClient = new OAuth2Client(GOOGLE_CLIENT_ID);
 let db;
@@ -147,13 +159,22 @@ async function initAdmin() {
   try {
     const users = db.collection('users');
     const admin = await users.findOne({ role:'admin' });
-    const hashedPass = await hashPassword(ADMIN_PASS);
     if(!admin){
+      const hashedPass = await hashPassword(ADMIN_PASS);
       await users.insertOne({ name:'Admin', email:ADMIN_EMAIL, pass:hashedPass, role:'admin', status:'active', plan:'admin', createdAt:new Date() });
       console.log('Admin created');
     } else {
-      await users.updateOne({ role:'admin' }, { $set:{ pass:hashedPass, status:'active' } });
-      console.log('Admin password updated (hashed)');
+      // Only update email if changed; never auto-reset password on restart
+      if(admin.email !== ADMIN_EMAIL){
+        await users.updateOne({ _id: admin._id }, { $set:{ email: ADMIN_EMAIL, status:'active' } });
+        console.log('Admin email updated');
+      }
+      // If RESET_ADMIN_PASS=true is set, force-reset password once
+      if(process.env.RESET_ADMIN_PASS === 'true'){
+        const hashedPass = await hashPassword(ADMIN_PASS);
+        await users.updateOne({ _id: admin._id }, { $set:{ pass:hashedPass, status:'active' } });
+        console.log('⚠️  Admin password RESET (remove RESET_ADMIN_PASS env var now)');
+      }
     }
   } catch(e) { console.log('initAdmin error:', e.message); }
  }
@@ -310,14 +331,15 @@ const io     = new Server(server, { cors:{ origin: ALLOWED_ORIGINS, credentials:
 // Trust proxy (for Render)
 app.set('trust proxy', 1);
 
-// Secure CORS
+// Strict CORS
 app.use(cors({
   origin: function(origin, cb){
-    if(!origin) return cb(null, true); // mobile apps / curl
+    if(!origin) return cb(null, true); // mobile apps / curl / server-to-server
     if(ALLOWED_ORIGINS.indexOf(origin) !== -1 || ALLOWED_ORIGINS.indexOf('*') !== -1){
       return cb(null, true);
     }
-    return cb(null, true); // allow all for now but log
+    console.log('CORS blocked origin:', origin);
+    return cb(new Error('Not allowed by CORS'));
   },
   credentials: true
 }));
@@ -871,6 +893,21 @@ app.put('/api/jobs/:id/status', clientAuth, async (req,res) => {
       { jobId, clientId:req.user._id.toString() },
       { $set:{ status, updatedAt:new Date() }, $push:{ statusHistory:{ status, time:new Date(), note } } }
     );
+
+    // Auto-trigger Google Review on completion (fires async, ignores errors)
+    if(status === 'completed' || status === 'delivered'){
+      try {
+        const job = await db.collection('jobs').findOne({ jobId, clientId:req.user._id.toString() });
+        if(job && job.customerPhone){
+          let ph = String(job.customerPhone).replace(/\D/g,'');
+          if(ph.length === 10) ph = '91' + ph;
+          // Fire and forget - don't block response
+          triggerReviewOnJobComplete(db, sessions, req.user._id.toString(), ph, job.customerName)
+            .catch(e => console.log('Auto review trigger error:', e.message));
+        }
+      } catch(e){ console.log('Review trigger lookup error:', e.message); }
+    }
+
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
