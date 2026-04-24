@@ -149,7 +149,7 @@
 <div id="planLocked">
   <div class="lock-icon">🔒</div>
   <h2>Pro Plan Required</h2>
-  <p>Google Review feature sirf Pro (₹999), Service Hub (₹1499), Business (₹2499) ya Review Booster (₹499) plan mein available hai.</p>
+  <p>Google Review feature is available only on Pro (₹999), Service Hub (₹1499), Business (₹2499), or Review Booster (₹499) plans.</p>
   <br>
   <a href="/client/" class="btn btn-blue">← Back to Dashboard</a>
 </div>
@@ -164,15 +164,15 @@
   <div class="stats-row">
     <div class="stat-card">
       <div class="num" id="statToday">—</div>
-      <div class="label">Aaj Bheje</div>
+      <div class="label">Sent Today</div>
     </div>
     <div class="stat-card">
       <div class="num" id="statLimit">20</div>
-      <div class="label">Aaj ki Limit</div>
+      <div class="label">Daily Limit</div>
     </div>
     <div class="stat-card">
       <div class="num" id="statTotal">—</div>
-      <div class="label">Total Bheje</div>
+      <div class="label">Total Sent</div>
     </div>
     <div class="stat-card">
       <div class="num" id="statLink">🔗</div>
@@ -191,32 +191,32 @@
   <!-- Tab: Single Send -->
   <div class="tab-content active" id="tab-single">
     <div class="card">
-      <h2>📱 Single Customer ko Review Request Bhejo</h2>
-      <div class="info-box">ℹ️ Sirf 10 AM – 8 PM ke beech messages bheje jaate hain. Ek customer ko 30 din mein sirf ek baar request jaayegi.</div>
+      <h2>📱 Send Review Request to a Single Customer</h2>
+      <div class="info-box">ℹ️ Messages are sent only between 10 AM – 8 PM. Each customer receives only one request every 30 days.</div>
       <div class="form-group">
-        <label>Customer ka Phone Number (WhatsApp)</label>
-        <input type="tel" id="singlePhone" placeholder="91XXXXXXXXXX (country code ke saath)" />
+        <label>Customer Phone Number (WhatsApp)</label>
+        <input type="tel" id="singlePhone" placeholder="91XXXXXXXXXX (with country code)" />
       </div>
       <div class="form-group">
-        <label>Customer ka Naam (optional)</label>
-        <input type="text" id="singleName" placeholder="Jaise: Ramesh Ji" />
+        <label>Customer Name (optional)</label>
+        <input type="text" id="singleName" placeholder="e.g. Ramesh" />
       </div>
-      <button class="btn btn-green" id="btnSingle" onclick="sendSingle()">⭐ Review Request Bhejo</button>
+      <button class="btn btn-green" id="btnSingle" onclick="sendSingle()">⭐ Send Review Request</button>
     </div>
   </div>
 
   <!-- Tab: Bulk Excel -->
   <div class="tab-content" id="tab-bulk">
     <div class="card">
-      <h2>📊 Bulk Excel se Review Requests Bhejo</h2>
+      <h2>📊 Send Bulk Review Requests via Excel</h2>
       <div class="info-box">
-        ℹ️ Excel file mein <strong>Phone</strong> aur <strong>Name</strong> columns hone chahiye.<br>
-        Cooldown, daily limit, aur time window sab automatically check hoga.
+        ℹ️ Excel file must contain <strong>Phone</strong> and <strong>Name</strong> columns.<br>
+        Cooldown, daily limit, and time window are checked automatically.
       </div>
 
       <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
         <div class="icon">📂</div>
-        <p id="uploadLabel">Click karke Excel/CSV file select karein<br><small>(.xlsx, .xls, .csv — max 2MB)</small></p>
+        <p id="uploadLabel">Click to select Excel/CSV file<br><small>(.xlsx, .xls, .csv — max 2MB)</small></p>
       </div>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="fileSelected(this)" />
 
@@ -225,7 +225,7 @@
       </div>
 
       <br>
-      <button class="btn btn-orange" id="btnBulk" onclick="sendBulk()" disabled>📤 Bulk Bhejo</button>
+      <button class="btn btn-orange" id="btnBulk" onclick="sendBulk()" disabled>📤 Send Bulk</button>
       <div id="bulkResult" style="margin-top:16px;"></div>
     </div>
   </div>
@@ -235,9 +235,9 @@
     <div class="card">
       <h2>⚙️ Review Settings</h2>
       <div class="form-group">
-        <label>Google Review Link (aapka direct review link)</label>
+        <label>Google Review Link (your direct review link)</label>
         <input type="url" id="googleLink" placeholder="https://g.page/r/..." />
-        <small style="color:#888;">Google My Business → Get more reviews → Copy link</small>
+        <small style="color:#888;">Google Business Profile → Get more reviews → Copy link</small>
       </div>
       <div class="form-group">
         <label>Choose a Template (industry-wise)</label>
@@ -268,9 +268,9 @@
           </label>
           <span id="autoLabel" style="font-size:14px;color:#555;">Off</span>
         </div>
-        <small style="color:#888;">Job "Complete" mark hone par automatically review request jaayegi</small>
+        <small style="color:#888;">Automatically send a review request when a job is marked "Complete"</small>
       </div>
-      <button class="btn btn-blue" onclick="saveSettings()">💾 Settings Save Karo</button>
+      <button class="btn btn-blue" onclick="saveSettings()">💾 Save Settings</button>
     </div>
   </div>
 
@@ -290,7 +290,7 @@
             </tr>
           </thead>
           <tbody id="logsBody">
-            <tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">Logs load ho rahe hain...</td></tr>
+            <tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">Loading logs...</td></tr>
           </tbody>
         </table>
       </div>
@@ -328,7 +328,7 @@
     const tpl = availableTemplates[key];
     if (tpl) {
       if (document.getElementById('msgTemplate').value.trim() &&
-          !confirm('Existing template replace karein?')) return;
+          !confirm('Replace existing template?')) return;
       document.getElementById('msgTemplate').value = tpl;
     }
   }
@@ -375,9 +375,9 @@
       messageTemplate:    document.getElementById('msgTemplate').value.trim(),
       autoOnJobComplete:  document.getElementById('autoToggle').checked
     };
-    if (!body.googleLink) return showAlert('Google Review link required hai!', 'error');
+    if (!body.googleLink) return showAlert('Google Review link is required!', 'error');
     const r = await apiFetch('/api/review/settings', 'POST', body);
-    if (r.ok) { showAlert('Settings save ho gayi! ✅', 'success'); loadStats(); }
+    if (r.ok) { showAlert('Settings saved! ✅', 'success'); loadStats(); }
     else showAlert(r.msg || 'Error', 'error');
   }
 
@@ -389,21 +389,21 @@
   async function sendSingle() {
     const phone = document.getElementById('singlePhone').value.trim();
     const name  = document.getElementById('singleName').value.trim();
-    if (!phone) return showAlert('Phone number required hai!', 'error');
+    if (!phone) return showAlert('Phone number is required!', 'error');
 
     const btn = document.getElementById('btnSingle');
-    btn.disabled = true; btn.textContent = '⏳ Bheji ja rahi hai...';
+    btn.disabled = true; btn.textContent = '⏳ Sending...';
 
     const r = await apiFetch('/api/review/send-single', 'POST', { phone, name });
-    btn.disabled = false; btn.textContent = '⭐ Review Request Bhejo';
+    btn.disabled = false; btn.textContent = '⭐ Send Review Request';
 
     if (r.ok) {
-      showAlert(r.msg || 'Request bheji gayi! ✅', 'success');
+      showAlert(r.msg || 'Request sent! ✅', 'success');
       document.getElementById('singlePhone').value = '';
       document.getElementById('singleName').value  = '';
       loadStats(); loadLogs();
     } else {
-      showAlert(r.msg || 'Error aaya', 'error');
+      showAlert(r.msg || 'Failed to send', 'error');
     }
   }
 
@@ -418,7 +418,7 @@
   }
 
   async function sendBulk() {
-    if (!selectedFile) return showAlert('Pehle file select karein', 'error');
+    if (!selectedFile) return showAlert('Please select a file first', 'error');
 
     const btn = document.getElementById('btnBulk');
     btn.disabled = true; btn.textContent = '⏳ Processing...';
@@ -453,7 +453,7 @@
       showAlert('Network error: ' + e.message, 'error');
     }
 
-    btn.disabled = false; btn.textContent = '📤 Bulk Bhejo';
+    btn.disabled = false; btn.textContent = '📤 Send Bulk';
     setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; document.getElementById('progressBar').style.width = '0%'; }, 3000);
   }
 
@@ -475,7 +475,7 @@
       const logs = r.logs || [];
       const tbody = document.getElementById('logsBody');
       if (!logs.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">Abhi tak koi log nahi</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">No logs yet</td></tr>';
         return;
       }
       tbody.innerHTML = logs.map(l => `
