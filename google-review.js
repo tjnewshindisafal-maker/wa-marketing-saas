@@ -235,18 +235,35 @@ Requirements:
 
 Return ONLY the message text. No explanation, no quotes, no markdown.`;
 
-      // Call Gemini 1.5 Flash (free tier)
-      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=' + apiKey, {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.8, maxOutputTokens: 200 }
-        })
-      });
-      const data = await r.json();
-      if (data.error) {
-        return res.json({ ok: false, msg: 'AI error: ' + (data.error.message || 'Unknown') });
+      // Try multiple models in order (newest first). Gemini deprecates models often.
+      const modelsToTry = [
+        process.env.GEMINI_MODEL,       // override via env if set
+        'gemini-2.5-flash',             // current stable free tier (as of 2026)
+        'gemini-2.5-flash-lite',        // fallback: lighter/faster
+        'gemini-2.0-flash',             // older fallback (deprecating June 2026)
+      ].filter(Boolean);
+
+      let data = null;
+      let lastErr = '';
+      for (const model of modelsToTry) {
+        try {
+          const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent?key=' + apiKey, {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({
+              contents: [{ parts: [{ text: prompt }] }],
+              generationConfig: { temperature: 0.8, maxOutputTokens: 200 }
+            })
+          });
+          data = await r.json();
+          if (!data.error) break; // success
+          lastErr = data.error.message || 'Unknown';
+          // If model not found, try next one; for other errors, stop
+          if (!/not found|not supported|NOT_FOUND/i.test(lastErr)) break;
+        } catch(e){ lastErr = e.message; }
+      }
+      if (!data || data.error) {
+        return res.json({ ok: false, msg: 'AI error: ' + (lastErr || 'failed') });
       }
       const text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts
         ? data.candidates[0].content.parts.map(p => p.text).join('').trim()
