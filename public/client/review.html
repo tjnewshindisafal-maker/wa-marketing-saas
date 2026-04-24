@@ -285,7 +285,7 @@
 </div><!-- /container -->
 
 <script>
-  const TOKEN = localStorage.getItem('waToken') || localStorage.getItem('token');
+  const TOKEN = localStorage.getItem('wa_token') || localStorage.getItem('waToken') || localStorage.getItem('token');
   let selectedFile = null;
 
   // ── Init ──────────────────────────────────────────
@@ -300,7 +300,7 @@
   async function checkAccess() {
     try {
       const r = await apiFetch('/api/review/stats');
-      if (r.error && r.error.includes('Pro plan')) {
+      if (!r.ok && r.msg && r.msg.toLowerCase().includes('pro plan')) {
         document.getElementById('mainContent').style.display = 'none';
         document.getElementById('planLocked').style.display = 'block';
       }
@@ -311,6 +311,7 @@
   async function loadStats() {
     try {
       const d = await apiFetch('/api/review/stats');
+      if (!d.ok) return;
       document.getElementById('statToday').textContent = d.todayCount ?? '—';
       document.getElementById('statLimit').textContent = d.dailyLimit ?? 20;
       document.getElementById('statTotal').textContent = d.totalSent ?? '—';
@@ -322,9 +323,11 @@
   async function loadSettings() {
     try {
       const d = await apiFetch('/api/review/settings');
-      document.getElementById('googleLink').value     = d.googleLink || '';
-      document.getElementById('msgTemplate').value   = d.messageTemplate || '';
-      const checked = !!d.autoOnJobComplete;
+      if (!d.ok || !d.settings) return;
+      const s = d.settings;
+      document.getElementById('googleLink').value     = s.googleLink || '';
+      document.getElementById('msgTemplate').value   = s.messageTemplate || '';
+      const checked = !!s.autoOnJobComplete;
       document.getElementById('autoToggle').checked  = checked;
       document.getElementById('autoLabel').textContent = checked ? 'On ✅' : 'Off';
     } catch {}
@@ -338,8 +341,8 @@
     };
     if (!body.googleLink) return showAlert('Google Review link required hai!', 'error');
     const r = await apiFetch('/api/review/settings', 'POST', body);
-    if (r.success) { showAlert('Settings save ho gayi! ✅', 'success'); loadStats(); }
-    else showAlert(r.error || 'Error', 'error');
+    if (r.ok) { showAlert('Settings save ho gayi! ✅', 'success'); loadStats(); }
+    else showAlert(r.msg || 'Error', 'error');
   }
 
   function toggleAuto(el) {
@@ -358,13 +361,13 @@
     const r = await apiFetch('/api/review/send-single', 'POST', { phone, name });
     btn.disabled = false; btn.textContent = '⭐ Review Request Bhejo';
 
-    if (r.success) {
-      showAlert(r.message || 'Request bheji gayi! ✅', 'success');
+    if (r.ok) {
+      showAlert(r.msg || 'Request bheji gayi! ✅', 'success');
       document.getElementById('singlePhone').value = '';
       document.getElementById('singleName').value  = '';
       loadStats(); loadLogs();
     } else {
-      showAlert(r.error || 'Error aaya', 'error');
+      showAlert(r.msg || 'Error aaya', 'error');
     }
   }
 
@@ -398,7 +401,7 @@
 
       document.getElementById('progressBar').style.width = '100%';
 
-      if (r.success) {
+      if (r.ok) {
         document.getElementById('bulkResult').innerHTML = `
           <div class="alert success show">
             ✅ Bulk complete! &nbsp;|&nbsp;
@@ -408,7 +411,7 @@
           </div>`;
         loadStats(); loadLogs();
       } else {
-        showAlert(r.error || 'Bulk failed', 'error');
+        showAlert(r.msg || 'Bulk failed', 'error');
       }
     } catch (e) {
       showAlert('Network error: ' + e.message, 'error');
@@ -431,7 +434,9 @@
   // ── Logs ──────────────────────────────────────────
   async function loadLogs() {
     try {
-      const logs = await apiFetch('/api/review/logs');
+      const r = await apiFetch('/api/review/logs');
+      if (!r.ok) return;
+      const logs = r.logs || [];
       const tbody = document.getElementById('logsBody');
       if (!logs.length) {
         tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">Abhi tak koi log nahi</td></tr>';
