@@ -157,6 +157,16 @@ async function getSettings(db, userId, userIndustry) {
   };
 }
 
+// ─── Helper: Normalize Indian phone number ───────────────────────────────────
+function normalizePhone(phone){
+  let ph = String(phone || '').replace(/\D/g, ''); // strip non-digits
+  // Remove leading 0 (common local format): 08087289267 → 8087289267
+  if(ph.length === 11 && ph.startsWith('0')) ph = ph.slice(1);
+  // Add 91 if 10-digit number
+  if(ph.length === 10) ph = '91' + ph;
+  return ph;
+}
+
 // ─── Core: WhatsApp message bhejo ────────────────────────────────────────────
 async function sendReviewWA(sock, phone, name, settings, business) {
   const msg = (settings.messageTemplate || REVIEW_TEMPLATES.general)
@@ -164,7 +174,9 @@ async function sendReviewWA(sock, phone, name, settings, business) {
     .replace(/\{business\}/g, business || 'our business')
     .replace(/\{store\}/g, business || 'our business')
     .replace(/\{link\}/g,  settings.googleLink || '');
-  const jid = phone.replace(/\D/g, '') + '@s.whatsapp.net';
+  const ph = normalizePhone(phone);
+  if(ph.length < 11) throw new Error('Invalid phone number format');
+  const jid = ph + '@s.whatsapp.net';
   await sock.sendMessage(jid, { text: msg });
 }
 
@@ -175,7 +187,7 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
   function reviewAccess(req, res, next) {
     const features = PLAN_FEATURES[req.user.plan] || PLAN_FEATURES.starter;
     if (!features.reviews) {
-      return res.json({ ok: false, msg: 'Google Review feature Pro plan (999) ya upar mein available hai.' });
+      return res.json({ ok: false, msg: 'Google Review feature is available on Pro plan (₹999) and above.' });
     }
     next();
   }
@@ -222,33 +234,46 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
   app.post('/api/review/send-single', clientAuth, reviewAccess, async (req, res) => {
     try {
       if (!isAllowedTime())
-        return res.json({ ok: false, msg: 'Sirf 10 AM - 8 PM ke beech messages bheje ja sakte hain.' });
+        return res.json({ ok: false, msg: 'Messages can only be sent between 10 AM and 8 PM.' });
 
-      const { phone, name } = req.body;
-      if (!phone) return res.json({ ok: false, msg: 'Phone number required hai.' });
+      let { phone, name } = req.body;
+      if (!phone) return res.json({ ok: false, msg: 'Phone number is required.' });
+
+      // Normalize phone early so cooldown/logs match
+      phone = normalizePhone(phone);
+      if (phone.length < 11)
+        return res.json({ ok: false, msg: 'Invalid phone number. Use 10-digit Indian number or with 91 country code.' });
 
       const settings = await getSettings(db, req.user._id, req.user.industry);
       if (!settings.googleLink)
-        return res.json({ ok: false, msg: 'Pehle Settings mein Google Review link set karein.' });
+        return res.json({ ok: false, msg: 'Please set your Google Review link in Settings first.' });
 
       if (await isOnCooldown(db, req.user._id, phone, settings.cooldownDays))
-        return res.json({ ok: false, msg: `Is customer ko ${settings.cooldownDays} din mein already request bheji ja chuki hai.` });
+        return res.json({ ok: false, msg: `This customer has already received a request in the last ${settings.cooldownDays} days.` });
 
       const todayCount = await todaySentCount(db, req.user._id);
       if (todayCount >= settings.dailyLimit)
-        return res.json({ ok: false, msg: `Aaj ka limit (${settings.dailyLimit}) poora ho gaya.` });
+        return res.json({ ok: false, msg: `Daily limit (${settings.dailyLimit}) reached.` });
 
       const s = sessions[req.user._id.toString()];
       if (!s || s.status !== 'connected')
-        return res.json({ ok: false, msg: 'WhatsApp connected nahi hai. Pehle QR scan karein.' });
+        return res.json({ ok: false, msg: 'WhatsApp is not connected. Please scan the QR code first.' });
 
       const businessName = req.user.business || req.user.name || 'our business';
-      await sendReviewWA(s.sock, phone, name, settings, businessName);
+      try {
+        await sendReviewWA(s.sock, phone, name, settings, businessName);
+      } catch(sendErr){
+        await db.collection('review_logs').insertOne({
+          userId: req.user._id.toString(), phone, customerName: name || '',
+          status: 'failed', skipReason: sendErr.message, sentAt: new Date()
+        });
+        return res.json({ ok: false, msg: 'Failed to send message: ' + sendErr.message });
+      }
       await db.collection('review_logs').insertOne({
         userId: req.user._id.toString(), phone, customerName: name || '',
         status: 'sent', sentAt: new Date()
       });
-      res.json({ ok: true, msg: 'Review request bheji gayi!' });
+      res.json({ ok: true, msg: 'Review request sent!' });
     } catch (e) { res.json({ ok: false, msg: e.message }); }
   });
 
@@ -256,17 +281,17 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
   app.post('/api/review/send-bulk', clientAuth, reviewAccess, reviewUpload.single('file'), async (req, res) => {
     try {
       if (!isAllowedTime())
-        return res.json({ ok: false, msg: 'Sirf 10 AM - 8 PM ke beech messages bheje ja sakte hain.' });
+        return res.json({ ok: false, msg: 'Messages can only be sent between 10 AM and 8 PM.' });
 
-      if (!req.file) return res.json({ ok: false, msg: 'Excel file required hai.' });
+      if (!req.file) return res.json({ ok: false, msg: 'Excel file is required.' });
 
       const settings = await getSettings(db, req.user._id, req.user.industry);
       if (!settings.googleLink)
-        return res.json({ ok: false, msg: 'Pehle Settings mein Google Review link set karein.' });
+        return res.json({ ok: false, msg: 'Please set your Google Review link in Settings first.' });
 
       const s = sessions[req.user._id.toString()];
       if (!s || s.status !== 'connected')
-        return res.json({ ok: false, msg: 'WhatsApp connected nahi hai.' });
+        return res.json({ ok: false, msg: 'WhatsApp is not connected.' });
 
       const businessName = req.user.business || req.user.name || 'our business';
 
@@ -277,9 +302,13 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
       let sent = 0, skipped = 0, failed = 0;
 
       for (const row of rows) {
-        const phone = String(row['Phone'] || row['phone'] || row['Mobile'] || row['mobile'] || '').trim();
+        let phone = String(row['Phone'] || row['phone'] || row['Mobile'] || row['mobile'] || '').trim();
         const name  = String(row['Name']  || row['name']  || row['Customer'] || '').trim();
         if (!phone) { skipped++; continue; }
+
+        // Normalize phone
+        phone = normalizePhone(phone);
+        if (phone.length < 11) { skipped++; continue; }
 
         const todayCount = await todaySentCount(db, req.user._id);
         if (todayCount >= settings.dailyLimit) { skipped++; break; }
