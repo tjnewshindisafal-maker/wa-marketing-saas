@@ -217,8 +217,23 @@
 <!-- Navbar -->
 <nav class="navbar">
   <h1>⭐ Google Review Booster</h1>
-  <a href="/client/" class="back-btn">← Dashboard</a>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+    <a href="/client/" class="back-btn">🏠 Home</a>
+    <a href="/shop" class="back-btn" id="navJobs" style="display:none;">🛠️ Jobs</a>
+  </div>
 </nav>
+<script>
+  // Show Jobs button only for service/business plans
+  (function(){
+    var tok = localStorage.getItem('wa_token') || localStorage.getItem('waToken') || '';
+    if(!tok) return;
+    fetch('/api/me',{headers:{'x-token':tok}}).then(r=>r.json()).then(d=>{
+      if(d && d.ok && d.user && (d.user.plan==='service' || d.user.plan==='business')){
+        var b=document.getElementById('navJobs'); if(b) b.style.display='inline-block';
+      }
+    }).catch(()=>{});
+  })();
+</script>
 
 <!-- Plan Locked Message -->
 <div id="planLocked">
@@ -331,6 +346,10 @@
       </div>
       <div class="form-group">
         <label>Message Template</label>
+        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
+          <button type="button" class="btn" onclick="openAiModal()" style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-size:13px;padding:9px 14px;">✨ Generate with AI</button>
+          <button type="button" class="btn btn-blue" onclick="applyTemplate(true)" style="font-size:13px;padding:9px 14px;">🔄 Reload Template</button>
+        </div>
         <textarea id="msgTemplate" rows="8" placeholder="Hi {name}, thank you for choosing {business}..."></textarea>
         <small style="color:#888;"><b>{name}</b> = customer name · <b>{business}</b> = your business name · <b>{link}</b> = Google review link</small>
       </div>
@@ -397,14 +416,19 @@
     } catch {}
   }
 
-  function applyTemplate() {
-    const key = document.getElementById('templateSelect').value;
+  function applyTemplate(forceReload) {
+    var key = document.getElementById('templateSelect').value;
+    if (!key && forceReload) {
+      alert('Please select a template from the dropdown first');
+      return;
+    }
     if (!key) return;
-    const tpl = availableTemplates[key];
+    var tpl = availableTemplates[key];
     if (tpl) {
-      if (document.getElementById('msgTemplate').value.trim() &&
+      if (!forceReload && document.getElementById('msgTemplate').value.trim() &&
           !confirm('Replace existing template?')) return;
       document.getElementById('msgTemplate').value = tpl;
+      if(forceReload) showAlert('Template reloaded','success');
     }
   }
 
@@ -587,5 +611,96 @@
     setTimeout(() => el.classList.remove('show'), 4000);
   }
 </script>
+<!-- AI Generate Modal -->
+<div id="aiModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;padding:20px;overflow-y:auto;align-items:flex-start;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:24px;max-width:480px;width:100%;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);margin-top:30px;">
+    <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;">✨ Generate Message with AI</h3>
+    <div class="form-group">
+      <label>Industry</label>
+      <select id="aiIndustry" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;">
+        <option value="salon">Salon / Beauty / Spa</option>
+        <option value="clinic">Clinic / Doctor / Dental</option>
+        <option value="auto">Auto / Car Wash / Garage</option>
+        <option value="repair">Repair / Electrical</option>
+        <option value="food">Restaurant / Food / Bakery</option>
+        <option value="retail">Retail / Shop / E-commerce</option>
+        <option value="gym">Gym / Fitness / Coaching</option>
+        <option value="general">General</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Tone</label>
+      <select id="aiTone" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;">
+        <option value="friendly">Friendly & Warm</option>
+        <option value="professional">Professional</option>
+        <option value="casual">Casual & Fun</option>
+        <option value="grateful">Grateful & Humble</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Language</label>
+      <select id="aiLanguage" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;">
+        <option value="english">English</option>
+        <option value="hindi">Hindi (Roman script)</option>
+        <option value="hinglish">Hinglish (Mix)</option>
+      </select>
+    </div>
+    <div id="aiPreview" style="display:none;margin:14px 0;padding:14px;background:#f9fafb;border-radius:10px;border:1px solid #e5e7eb;font-size:13px;white-space:pre-wrap;"></div>
+    <div id="aiError" style="display:none;margin:10px 0;padding:10px 14px;background:#fee2e2;color:#991b1b;border-radius:8px;font-size:13px;"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;">
+      <button type="button" class="btn" onclick="closeAiModal()" style="background:#f3f4f6;color:#374151;">Cancel</button>
+      <button type="button" class="btn" id="aiGenBtn" onclick="generateAi()" style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;">✨ Generate</button>
+      <button type="button" class="btn btn-green" id="aiUseBtn" onclick="useAiResult()" style="display:none;">Use this message ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+function openAiModal(){
+  document.getElementById('aiModal').style.display='flex';
+  document.getElementById('aiPreview').style.display='none';
+  document.getElementById('aiError').style.display='none';
+  document.getElementById('aiUseBtn').style.display='none';
+  document.getElementById('aiGenBtn').style.display='inline-flex';
+}
+function closeAiModal(){
+  document.getElementById('aiModal').style.display='none';
+}
+async function generateAi(){
+  var btn=document.getElementById('aiGenBtn');
+  var err=document.getElementById('aiError');
+  var prev=document.getElementById('aiPreview');
+  err.style.display='none';
+  btn.disabled=true;btn.textContent='⏳ Generating...';
+  try{
+    var r=await apiFetch('/api/review/generate','POST',{
+      industry:document.getElementById('aiIndustry').value,
+      tone:document.getElementById('aiTone').value,
+      language:document.getElementById('aiLanguage').value
+    });
+    btn.disabled=false;btn.innerHTML='✨ Regenerate';
+    if(r.ok && r.message){
+      prev.textContent=r.message;
+      prev.style.display='block';
+      document.getElementById('aiUseBtn').style.display='inline-flex';
+    } else {
+      err.textContent=r.msg || 'Failed to generate';
+      err.style.display='block';
+    }
+  }catch(e){
+    btn.disabled=false;btn.textContent='✨ Generate';
+    err.textContent='Error: '+e.message;
+    err.style.display='block';
+  }
+}
+function useAiResult(){
+  var msg=document.getElementById('aiPreview').textContent;
+  if(document.getElementById('msgTemplate').value.trim() && !confirm('Replace existing template?')) return;
+  document.getElementById('msgTemplate').value=msg;
+  closeAiModal();
+  showAlert('AI message applied! Remember to save settings.','success');
+}
+</script>
+
 </body>
 </html>
