@@ -207,6 +207,62 @@ function registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions) {
     } catch (e) { res.json({ ok: false, msg: e.message }); }
   });
 
+  // POST generate message with AI (Gemini free tier)
+  app.post('/api/review/generate', clientAuth, reviewAccess, async (req, res) => {
+    try {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey) {
+        return res.json({ ok: false, msg: 'AI not configured. Admin needs to set GEMINI_API_KEY.' });
+      }
+      const industry = (req.body.industry || req.user.industry || 'general').toLowerCase();
+      const tone = (req.body.tone || 'friendly').toLowerCase();
+      const language = (req.body.language || 'english').toLowerCase();
+      const businessName = req.user.business || req.user.name || 'our business';
+
+      const prompt = `Write a short, polite WhatsApp message (max 4 lines) asking a customer to leave a Google review.
+Industry: ${industry}
+Business name: ${businessName}
+Tone: ${tone}
+Language: ${language}
+
+Requirements:
+- Use these placeholders exactly: {name} for customer name, {business} for business name, {link} for Google review link
+- Keep under 50 words
+- Natural conversational tone (not spammy)
+- One emoji max
+- End with a brief thank you
+- No "FREE", "URGENT", "CLICK NOW" type spam words
+
+Return ONLY the message text. No explanation, no quotes, no markdown.`;
+
+      // Call Gemini 1.5 Flash (free tier)
+      const r = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=' + apiKey, {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.8, maxOutputTokens: 200 }
+        })
+      });
+      const data = await r.json();
+      if (data.error) {
+        return res.json({ ok: false, msg: 'AI error: ' + (data.error.message || 'Unknown') });
+      }
+      const text = data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts
+        ? data.candidates[0].content.parts.map(p => p.text).join('').trim()
+        : '';
+      if (!text) return res.json({ ok: false, msg: 'AI returned empty response. Try again.' });
+
+      // Ensure {link} is present (sometimes model drops it)
+      let finalText = text;
+      if (!/\{link\}/i.test(finalText)) finalText += '\n\n{link}';
+
+      res.json({ ok: true, message: finalText });
+    } catch (e) {
+      res.json({ ok: false, msg: 'Generate failed: ' + e.message });
+    }
+  });
+
   // POST save settings
   app.post('/api/review/settings', clientAuth, reviewAccess, async (req, res) => {
     try {
