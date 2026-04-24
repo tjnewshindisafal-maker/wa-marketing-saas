@@ -367,6 +367,7 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
 <body>
 
 <nav class="nav">
+  <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('on'); document.getElementById('sidebarOverlay') && document.getElementById('sidebarOverlay').classList.toggle('on')">☰</button>
   <div class="nav-logo">⚡ Service <span>Hub</span></div>
   <div class="nav-right">
     <!-- INDUSTRY SELECTOR (hidden — auto-set from signup) -->
@@ -378,9 +379,11 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
         <option value="clinic">Clinic</option>
       </select>
     </div>
+    <a href="/client/" class="btn-lo" style="text-decoration:none;">🏠 Home</a>
+    <a href="/client/review.html" class="btn-lo" style="text-decoration:none;">⭐ Reviews</a>
     <div class="wa-status"><div class="ws-dot no" id="wsDot"></div><span id="wsText">Not Connected</span></div>
-    <div style="font-size:11px;font-weight:700;color:var(--accent);background:var(--a3);padding:5px 10px;border-radius:14px;border:1px solid rgba(108,99,255,.2);" id="industryBadge">—</div>
-    <div style="font-size:13px;font-weight:600;color:var(--white);" id="navBiz">Loading...</div>
+    <div style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:5px 10px;border-radius:14px;" id="industryBadge">—</div>
+    <div style="font-size:13px;font-weight:600;color:var(--text);" id="navBiz">Loading...</div>
     <button class="btn-lo" id="logoutBtn">Logout</button>
   </div>
 </nav>
