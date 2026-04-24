@@ -172,6 +172,7 @@ td{padding:8px 10px;font-size:12px;border-top:1px solid rgba(255,255,255,.04);}
       <span class="ptag ptag-pro" id="ptag">Pro</span>
     </div>
     <a href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" id="upgradeBtn" class="btn-lo btn-upgrade" style="display:none;">&#x1F48E; Upgrade</a>
+    <a href="/client/review.html" id="reviewBtn" class="btn-lo" style="display:none;text-decoration:none;background:#fbbf24;color:#000;">&#x2B50; Reviews</a>
     <a href="/shop" id="shopBtn" class="btn-lo" style="display:none;text-decoration:none;background:var(--accent);color:#fff;">&#x1F6E0; Shop Dashboard</a>
     <button class="btn-lo" id="logoutBtn">Logout</button>
   </div>
@@ -252,7 +253,7 @@ td{padding:8px 10px;font-size:12px;border-top:1px solid rgba(255,255,255,.04);}
             <input type="file" id="imgInput" accept="image/*">
             <div style="font-size:32px;">&#x1F4F8;</div>
             <div style="font-size:13px;color:var(--muted);margin-top:6px;">Click or drag image here</div>
-            <div style="font-size:11px;color:var(--muted);">JPG, PNG, WEBP (max 50MB)</div>
+            <div style="font-size:11px;color:var(--muted);">JPG, PNG, WEBP (max 10MB)</div>
           </div>
           <div id="imgPreview" style="display:none;">
             <img id="prevImg" src="" alt="Preview">
@@ -375,6 +376,11 @@ fetch('/api/me', { headers:{ 'x-token': token } })
   // Shop Dashboard button (service/business plans)
   if(d.user.plan==='service' || d.user.plan==='business'){
     document.getElementById('shopBtn').style.display='inline-block';
+  }
+
+  // Google Review button (pro/service/business)
+  if(d.user.features && d.user.features.reviews){
+    document.getElementById('reviewBtn').style.display='inline-block';
   }
 
   // Upgrade button (for starter or expired trial)
