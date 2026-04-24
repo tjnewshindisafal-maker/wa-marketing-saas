@@ -131,7 +131,59 @@ body{
 }
 .search-in:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,0.1);}
 
-/* USER LIST */
+/* ===== LOGIN PAGE ===== */
+#loginPage{
+  min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0f1629 0%,#1a2340 100%);padding:20px;
+}
+#loginPage .lbox{
+  background:var(--surface);border-radius:var(--radius-lg);padding:40px 32px;
+  max-width:420px;width:100%;box-shadow:var(--shadow-lg);text-align:center;
+  border:none;margin:0;
+}
+#loginPage .lbox h2{
+  font-size:24px;font-weight:800;color:var(--text);margin:12px 0 4px;
+  letter-spacing:-0.02em;
+}
+#loginPage .lbox p{font-size:13px;color:var(--text-sub);margin-bottom:24px;}
+#loginPage .lfield{
+  text-align:left;margin-bottom:14px;background:none;border:none;padding:0;
+  display:block;
+}
+#loginPage .lfield label{
+  display:block;font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:6px;
+}
+#loginPage .lfield input{
+  width:100%;padding:12px 14px;border:1.5px solid var(--border);border-radius:10px;
+  font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text);
+  outline:none;transition:border 0.15s;
+}
+#loginPage .lfield input:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px rgba(124,58,237,0.1);
+}
+#loginPage #loginBtn{
+  width:100%;padding:13px;background:var(--accent);color:#fff;border:none;
+  border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;
+  font-family:var(--font);margin-top:8px;transition:all 0.15s;
+  box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center;gap:6px;
+}
+#loginPage #loginBtn:hover{background:var(--accent-dark);box-shadow:var(--shadow);}
+#loginPage #loginBtn:disabled{opacity:0.6;cursor:not-allowed;}
+#loginPage #lerr{
+  display:none;background:var(--red-bg);color:#991b1b;padding:10px 14px;
+  border-radius:8px;font-size:13px;margin-top:14px;font-weight:500;
+  border-left:3px solid var(--red);
+}
+#loginPage #lerr.show{display:block;}
+/* Override inline 44px emoji */
+#loginPage .lbox > div:first-child{
+  width:64px;height:64px;border-radius:16px;margin:0 auto 8px;
+  background:linear-gradient(135deg,#7c3aed,#6d28d9);
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px !important;box-shadow:var(--shadow-md);
+}
+
+/* ===== LIST BOX (inside admin - user list) ===== */
 .lbox{
   background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
   padding:14px 16px;margin-bottom:10px;transition:all 0.15s;
@@ -240,12 +292,12 @@ tbody tr:hover{background:var(--surface-2);}
 <!-- LOGIN -->
 <div id="loginPage">
   <div class="lbox">
-    <div style="font-size:44px;">&#x1F6E1;&#xFE0F;</div>
+    <div>&#x1F6E1;&#xFE0F;</div>
     <h2>Admin Panel</h2>
     <p>WA Marketing Pro — Advizr Media</p>
     <div class="lfield"><label>Email</label><input type="email" id="lemail" placeholder="admin@advizrmedia.in"></div>
     <div class="lfield"><label>Password</label><input type="password" id="lpass" placeholder="Password"></div>
-    <button class="btn-lgo" id="loginBtn">&#x1F512; Login to Admin</button>
+    <button id="loginBtn">&#x1F512; Login to Admin</button>
     <div id="lerr">Wrong email or password!</div>
   </div>
 </div>
@@ -436,12 +488,27 @@ function tagPlan(p){
 
 // LOGIN
 document.getElementById('loginBtn').addEventListener('click', function(){
+  var btn = this;
+  document.getElementById('lerr').classList.remove('show');
   var email=document.getElementById('lemail').value.trim();
   var pass=document.getElementById('lpass').value.trim();
+  if(!email || !pass){
+    document.getElementById('lerr').textContent = 'Please enter email and password';
+    document.getElementById('lerr').classList.add('show');
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = '⏳ Logging in...';
   fetch('/api/admin/login',{ method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email,pass}) })
   .then(function(r){ return r.json(); })
   .then(function(d){
-    if(!d.ok){ document.getElementById('lerr').style.display='block'; return; }
+    btn.disabled = false;
+    btn.innerHTML = '&#x1F512; Login to Admin';
+    if(!d.ok){
+      document.getElementById('lerr').textContent = d.msg || 'Wrong email or password!';
+      document.getElementById('lerr').classList.add('show');
+      return;
+    }
     localStorage.setItem('wa_token',d.token);
     token=d.token;
     localStorage.setItem('wa_admin_token',d.token);
@@ -449,7 +516,12 @@ document.getElementById('loginBtn').addEventListener('click', function(){
     document.getElementById('appPage').style.display='block';
     loadStats(); loadUsers();
   })
-  .catch(function(){ document.getElementById('lerr').style.display='block'; });
+  .catch(function(){
+    btn.disabled = false;
+    btn.innerHTML = '&#x1F512; Login to Admin';
+    document.getElementById('lerr').textContent = 'Network error. Please try again.';
+    document.getElementById('lerr').classList.add('show');
+  });
 });
 document.getElementById('lpass').addEventListener('keydown',function(e){ if(e.key==='Enter') document.getElementById('loginBtn').click(); });
 
