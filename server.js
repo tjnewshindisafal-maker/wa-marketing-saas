@@ -1090,12 +1090,19 @@ app.post('/api/wa/send', upload.single('image'), clientAuth, async (req,res) => 
       let status = 'failed';
       try {
         let ph = String(c.phone).replace(/\D/g,'');
+        if(ph.length===11 && ph.startsWith('0')) ph = ph.slice(1);
         if(ph.length===10) ph='91'+ph;
         const jid = ph+'@s.whatsapp.net';
         const msg = message.replace(/\{name\}/g,c.name||'Customer').replace(/\{store\}/g,business).replace(/\{business\}/g,business).replace(/\{jobId\}/g,c.jobId||'').replace(/\{status\}/g,c.status||'').replace(/\{amount\}/g,c.amount||'');
-        if(imgBuf){ await s.sock.sendMessage(jid,{ image:imgBuf,mimetype:imgMime,caption:msg }); }
-        else { await s.sock.sendMessage(jid,{ text:msg }); }
+        let sentResult;
+        if(imgBuf){ sentResult = await s.sock.sendMessage(jid,{ image:imgBuf,mimetype:imgMime,caption:msg }); }
+        else { sentResult = await s.sock.sendMessage(jid,{ text:msg }); }
         status='sent'; sent++;
+        // Track this message for receipts
+        if(sentResult && sentResult.key && sentResult.key.id){
+          if(!s.msgTracker) s.msgTracker = {};
+          s.msgTracker[sentResult.key.id] = { phone:c.phone, name:c.name, index:i, jid };
+        }
         io.to('wa_'+userId).emit('sent',{ index:i, phone:c.phone, name:c.name, status:'sent' });
         await new Promise(r=>setTimeout(r,2000+Math.random()*2000));
       } catch(err){
@@ -1195,6 +1202,33 @@ async function createSession(userId, socket) {
       if(qr){ const qrImg=await qrcode.toDataURL(qr); sessions[userId].qr=qrImg; sessions[userId].status='qr'; if(socket) socket.emit('qr',{qr:qrImg}); io.to('wa_'+userId).emit('qr',{qr:qrImg}); }
       if(connection==='open'){ sessions[userId].status='connected'; sessions[userId].qr=null; const info={name:sock.user?.name||'User',number:sock.user?.id?.split(':')[0]||''}; if(socket) socket.emit('connected',info); io.to('wa_'+userId).emit('connected',info); console.log('WA Connected:',userId); }
       if(connection==='close'){ const code=lastDisconnect?.error?.output?.statusCode; sessions[userId].status='disconnected'; if(socket) socket.emit('disconnected',{}); io.to('wa_'+userId).emit('disconnected',{}); if(code!==DisconnectReason.loggedOut){ setTimeout(()=>createSession(userId,null),5000); } else { fs.rmSync(path.join('auth',userId),{recursive:true,force:true}); } }
+    });
+    // Track delivery/read receipts for sent messages
+    sock.ev.on('messages.update', async (updates) => {
+      try {
+        for(const upd of updates){
+          if(!upd.key || !upd.key.id || !upd.update) continue;
+          const tracker = sessions[userId]?.msgTracker;
+          if(!tracker || !tracker[upd.key.id]) continue;
+          const info = tracker[upd.key.id];
+          // Baileys status: 1=PENDING, 2=SERVER_ACK, 3=DELIVERY_ACK (delivered), 4=READ, 5=PLAYED
+          const statusNum = upd.update.status;
+          let newStatus = null;
+          if(statusNum === 4 || statusNum === 'READ') newStatus = 'read';
+          else if(statusNum === 3 || statusNum === 'DELIVERY_ACK') newStatus = 'delivered';
+          if(newStatus){
+            io.to('wa_'+userId).emit('receipt', { index: info.index, phone: info.phone, name: info.name, status: newStatus });
+            // Update DB log
+            try {
+              await db.collection('msg_logs').updateOne(
+                { userId, phone: info.phone, status: { $in: ['sent','delivered'] } },
+                { $set: { status: newStatus, [newStatus+'At']: new Date() } },
+                { sort: { createdAt: -1 } }
+              );
+            } catch(e){}
+          }
+        }
+      } catch(e){ /* ignore */ }
     });
   } catch(e){ console.log('Session error:',e.message); if(sessions[userId]) sessions[userId].status='error'; }
 }
