@@ -490,8 +490,8 @@ body{
       <div style="font-size:11px;color:var(--muted);">Need: <b style="color:var(--green);">Name</b> and <b style="color:var(--green);">Phone</b> columns</div>
     </div>
     <div style="display:flex;gap:8px;margin-bottom:10px;">
-      <input type="text" id="mName" placeholder="Name" style="flex:1;background:var(--s3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--white);font-size:12px;font-family:var(--font);">
-      <input type="tel" id="mPhone" placeholder="Phone" style="flex:1;background:var(--s3);border:1px solid var(--border2);border-radius:8px;padding:8px 12px;color:var(--white);font-size:12px;font-family:var(--font);">
+      <input type="text" id="mName" placeholder="Name" style="flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;font-family:var(--font);outline:none;">
+      <input type="tel" id="mPhone" placeholder="Phone (10 digit or +91)" style="flex:1;background:var(--surface);border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-size:14px;font-family:var(--font);outline:none;">
       <button class="btn-sec" id="addBtn">+ Add</button>
     </div>
     <div id="contactsWrap" style="display:none;">
@@ -543,7 +543,7 @@ body{
     </div>
 
     <div style="margin-top:20px;">
-      <div style="font-weight:600;color:var(--white);margin-bottom:8px;">Upcoming & Past Schedules</div>
+      <div style="font-weight:600;color:var(--text);margin-bottom:8px;">Upcoming & Past Schedules</div>
       <div id="schedList" style="display:flex;flex-direction:column;gap:8px;">
         <div style="color:var(--muted);font-size:13px;text-align:center;padding:16px;">No scheduled campaigns yet.</div>
       </div>
@@ -639,8 +639,8 @@ function loadSchedules(){
         var badge = t.status==='pending' ? '<span style="background:#f9c74f33;color:#f9c74f;padding:2px 8px;border-radius:4px;font-size:11px;">Pending</span>'
                  : t.status==='sent' ? '<span style="background:#10b98133;color:#10b981;padding:2px 8px;border-radius:4px;font-size:11px;">Sent</span>'
                  : '<span style="background:#ef444433;color:#ef4444;padding:2px 8px;border-radius:4px;font-size:11px;">'+t.status+'</span>';
-        html += '<div style="border:1px solid var(--border2);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;">'
-             + '<div><div style="font-weight:600;color:var(--white);">'+t.title+'</div>'
+        html += '<div style="border:1px solid var(--border);border-radius:8px;padding:12px;display:flex;justify-content:space-between;align-items:center;">'
+             + '<div><div style="font-weight:600;color:var(--text);">'+t.title+'</div>'
              + '<div style="font-size:12px;color:var(--muted);margin-top:4px;">'+when+' | '+(t.contacts?t.contacts.length:0)+' contacts | Sent: '+(t.sentCount||0)+'</div></div>'
              + '<div style="display:flex;gap:6px;align-items:center;">'+badge
              + (t.status==='pending'?'<button onclick="deleteSchedule(\''+t._id+'\')" style="background:none;border:1px solid #ef4444;color:#ef4444;padding:4px 8px;border-radius:4px;font-size:11px;cursor:pointer;">Delete</button>':'')
@@ -952,7 +952,7 @@ function renderContacts(){
     return '<tr style="opacity:'+(c.status==='sent'?.6:1)+'">'
       +'<td><input type="checkbox" class="ck" data-i="'+i+'" '+(c.selected?'checked':'')+'></td>'
       +'<td style="color:var(--muted);">'+(i+1)+'</td>'
-      +'<td style="font-weight:600;color:var(--white);">'+c.name+'</td>'
+      +'<td style="font-weight:600;color:var(--text);">'+c.name+'</td>'
       +'<td style="font-size:11px;color:var(--muted);">+'+c.phone+'</td>'
       +'<td class="'+sc+'">'+sv+'</td>'
       +'</tr>';
@@ -967,15 +967,31 @@ function renderContacts(){
 
 function updateSendBtns(){
   var pending=contacts.filter(function(c){ return c.selected&&c.status==='pending'; });
-  document.getElementById('sendAllBtn').disabled=!connected||!pending.length||sending;
-  document.getElementById('sendNextBtn').disabled=!connected||!pending.length||sending;
-  document.getElementById('sendAllBtn').textContent='Send to All ('+pending.length+')';
+  var totalPending=contacts.filter(function(c){ return c.status==='pending'; });
+  var hasUnselected = totalPending.length > pending.length;
+  document.getElementById('sendAllBtn').disabled=!connected||!totalPending.length||sending;
+  document.getElementById('sendNextBtn').disabled=!connected||!totalPending.length||sending;
+  var label = hasUnselected
+    ? '&#x1F4AC; Send to All Pending ('+totalPending.length+')'
+    : '&#x1F4AC; Send to Selected ('+pending.length+')';
+  document.getElementById('sendAllBtn').innerHTML = label;
 }
 
 // ── SEND ──────────────────────────────────────────────────────────────────────
 function doSend(onlyNext){
   if(!connected){ toast('Connect WhatsApp first!','err'); return; }
-  var pending=contacts.filter(function(c){ return c.selected&&c.status==='pending'; });
+  // Auto-include all pending if user clicked "Send to All Pending"
+  var selectedPending = contacts.filter(function(c){ return c.selected && c.status==='pending'; });
+  var allPending = contacts.filter(function(c){ return c.status==='pending'; });
+  var pending;
+  if(!onlyNext && selectedPending.length < allPending.length){
+    // "Send to All" clicked but some unselected — auto-select all pending
+    contacts.forEach(function(c){ if(c.status==='pending') c.selected = true; });
+    renderContacts();
+    pending = allPending;
+  } else {
+    pending = selectedPending;
+  }
   if(!pending.length){ toast('No pending contacts!','err'); return; }
   var msg=document.getElementById('msgText').value.trim();
   if(!msg){ toast('Enter message!','err'); return; }
