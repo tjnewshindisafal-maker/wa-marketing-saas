@@ -72,6 +72,133 @@ async function verifyPassword(plain, hash){
   return bcrypt.compare(plain, hash);
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// 🛡️ BAILEYS SAFETY HELPERS — Ban Prevention Layer
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Per-user daily send tracker (in-memory, reset midnight)
+const userDailyStats = {}; 
+// Structure: { userId: { sent: 0, failed: 0, lastReset: Date, consecutiveFails: 0, pausedUntil: null } }
+
+function getDailyStats(userId){
+  const today = new Date(); today.setHours(0,0,0,0);
+  if(!userDailyStats[userId] || userDailyStats[userId].lastReset < today.getTime()){
+    userDailyStats[userId] = { 
+      sent: 0, failed: 0, lastReset: today.getTime(), 
+      consecutiveFails: 0, pausedUntil: null 
+    };
+  }
+  return userDailyStats[userId];
+}
+
+// Smart throttling — sending count ke hisab se delay decide karo
+function getSmartDelay(sentCount){
+  // First 10: 20-30 sec (warm up)
+  if(sentCount < 10) return 20000 + Math.random() * 10000;
+  // 10-50: 12-18 sec
+  if(sentCount < 50) return 12000 + Math.random() * 6000;
+  // 50-100: 8-12 sec
+  if(sentCount < 100) return 8000 + Math.random() * 4000;
+  // 100+: 6-10 sec
+  return 6000 + Math.random() * 4000;
+}
+
+// Human break — har 25 messages ke baad 1-2 minute pause
+function shouldTakeBreak(sentCount){
+  return sentCount > 0 && sentCount % 25 === 0;
+}
+
+function getBreakDuration(){
+  return 60000 + Math.random() * 60000; // 1-2 min
+}
+
+// Time window check — sirf 10 AM se 8 PM (IST)
+function isAllowedTimeIST(){
+  const ist = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Kolkata' }));
+  const h = ist.getHours();
+  const day = ist.getDay(); // 0 = Sunday
+  // Sunday morning skip (12 PM se start)
+  if(day === 0 && h < 12) return false;
+  // Normal days: 10 AM - 8 PM
+  return h >= 10 && h < 20;
+}
+
+// Typing simulation — message bhejne se pehle "typing..." dikhao
+async function simulateTyping(sock, jid, msgLength = 50){
+  try {
+    await sock.sendPresenceUpdate('composing', jid);
+    // Typing duration based on message length (real human speed: ~30 wpm)
+    const typingTime = Math.min(4000, 800 + msgLength * 50);
+    await new Promise(r => setTimeout(r, typingTime));
+    await sock.sendPresenceUpdate('paused', jid);
+  } catch(e){ /* ignore presence errors */ }
+}
+
+// Safety check — kya yeh user/message bhej sakta hai?
+function canSendNow(userId, plan){
+  const stats = getDailyStats(userId);
+  
+  // Check pause
+  if(stats.pausedUntil && Date.now() < stats.pausedUntil){
+    const minLeft = Math.ceil((stats.pausedUntil - Date.now()) / 60000);
+    return { ok: false, reason: `Auto-paused due to failures. Resume in ${minLeft} min.` };
+  }
+  
+  // Check time window
+  if(!isAllowedTimeIST()){
+    return { ok: false, reason: 'Messages allowed only 10 AM - 8 PM IST.' };
+  }
+  
+  // Per-plan soft caps (safer than hard plan limits)
+  const softCaps = { starter: 50, pro: 180, service: 180, business: 200, trial: 20, admin: 500 };
+  const cap = softCaps[plan] || 50;
+  if(stats.sent >= cap){
+    return { ok: false, reason: `Daily safe limit reached (${cap}). Try tomorrow for account safety.` };
+  }
+  
+  return { ok: true, sent: stats.sent, remaining: cap - stats.sent };
+}
+
+// Failure tracker — 3 consecutive fails = auto pause
+function trackFailure(userId){
+  const stats = getDailyStats(userId);
+  stats.consecutiveFails++;
+  stats.failed++;
+  if(stats.consecutiveFails >= 3){
+    stats.pausedUntil = Date.now() + 30 * 60 * 1000; // 30 min pause
+    console.log(`⚠️  Auto-paused user ${userId} due to 3 consecutive failures`);
+    stats.consecutiveFails = 0;
+    return true; // got paused
+  }
+  return false;
+}
+
+function trackSuccess(userId){
+  const stats = getDailyStats(userId);
+  stats.sent++;
+  stats.consecutiveFails = 0;
+}
+
+// Random emoji rotation for variation
+const SAFE_EMOJIS = ['👋', '🙏', '✨', '😊', '🌟', '💫', ''];
+function rotateEmoji(){
+  return SAFE_EMOJIS[Math.floor(Math.random() * SAFE_EMOJIS.length)];
+}
+
+// Spam word detector — block messages with risky words
+const SPAM_WORDS = [
+  'free money', 'click now', 'urgent action', 'limited time only',
+  'winner selected', 'congratulations you have won', 'claim now',
+  'act fast', 'guaranteed prize', 'lottery winner'
+];
+
+function hasSpamWords(message){
+  const lower = String(message).toLowerCase();
+  return SPAM_WORDS.some(word => lower.includes(word));
+}
+
+console.log('🛡️  Baileys safety layer loaded');
+// ═══════════════════════════════════════════════════════════════════════════
 // ── DB CONNECTION ─────────────────────────────────────────────────────────────
 // ── SYSTEM WA (dedicated number for OTPs) ─────────────────────────────────────
 let systemWA = { sock: null, status: 'disconnected', qr: null };
@@ -285,6 +412,11 @@ function startScheduler() {
           const contacts = task.contacts || [];
           let sent = 0;
           for(let i = 0; i < contacts.length; i++){
+            // 🛡️ Safety: time window check
+            if(!isAllowedTimeIST()){
+               console.log('Scheduler: Time window closed, stopping');
+               break;
+            }
             const c = contacts[i];
             try {
               let ph = String(c.phone).replace(/\D/g,'');
@@ -302,7 +434,7 @@ function startScheduler() {
                 await s.sock.sendMessage(jid, { text:msg });
               }
               sent++;
-              await new Promise(r => setTimeout(r, 2000+Math.random()*2000));
+              await new Promise(r => setTimeout(r, 8000 + Math.random() * 7000));
             } catch(e){ console.log('Scheduler send error:', e.message); }
           }
           await db.collection('scheduled_msgs').updateOne(
@@ -1065,56 +1197,168 @@ app.post('/api/wa/disconnect', clientAuth, async (req,res) => {
     res.json({ ok:true });
   } catch(e){ res.json({ ok:false, msg:e.message }); }
 });
+// 🛡️ Safety stats — UI me show karne ke liye
+app.get('/api/wa/safety-stats', clientAuth, async (req,res) => {
+  try {
+    const userId = req.user._id.toString();
+    const stats = getDailyStats(userId);
+    const softCaps = { starter: 50, pro: 180, service: 180, business: 200, trial: 20, admin: 500 };
+    const cap = softCaps[req.user.plan] || 50;
+    
+    res.json({ 
+      ok: true,
+      sent: stats.sent,
+      failed: stats.failed,
+      remaining: Math.max(0, cap - stats.sent),
+      cap,
+      paused: stats.pausedUntil && Date.now() < stats.pausedUntil,
+      pausedUntil: stats.pausedUntil,
+      timeWindowOk: isAllowedTimeIST(),
+      consecutiveFails: stats.consecutiveFails
+    });
+  } catch(e){ res.json({ ok:false, msg:e.message }); }
+});
 
 app.post('/api/wa/send', upload.single('image'), clientAuth, async (req,res) => {
   try {
     const { contacts, message } = req.body;
-    if(!contacts||!message) return res.json({ ok:false, msg:'contacts and message required' });
+    if(!contacts || !message) return res.json({ ok:false, msg:'contacts and message required' });
     if(message.length > 4000) return res.json({ ok:false, msg:'Message too long' });
+    
+    // 🛡️ SAFETY CHECK 1: Spam word filter
+    if(hasSpamWords(message)){
+      return res.json({ ok:false, msg:'Message contains spam-like words. Please rephrase to avoid account ban.' });
+    }
+    
     const userId = req.user._id.toString();
     const s = sessions[userId];
-    if(!s||s.status!=='connected') return res.json({ ok:false, msg:'WhatsApp not connected' });
-    const limit = PLAN_FEATURES[req.user.plan]?.msgLimit || 50;
+    if(!s || s.status !== 'connected') return res.json({ ok:false, msg:'WhatsApp not connected' });
+    
+    // 🛡️ SAFETY CHECK 2: Time window + pause + soft cap
+    const safetyCheck = canSendNow(userId, req.user.plan);
+    if(!safetyCheck.ok) return res.json({ ok:false, msg: safetyCheck.reason });
+    
+    const planLimit = PLAN_FEATURES[req.user.plan]?.msgLimit || 50;
     let list;
     try { list = JSON.parse(contacts); } catch(e){ return res.json({ ok:false, msg:'Invalid contacts' }); }
     if(!Array.isArray(list)) return res.json({ ok:false, msg:'Invalid contacts' });
-    if(list.length > limit) return res.json({ ok:false, msg:`Plan limit: ${limit} messages/day` });
-    res.json({ ok:true, total:list.length });
-    let imgBuf=null, imgMime='image/jpeg';
-    if(req.file){ imgBuf=fs.readFileSync(req.file.path); imgMime=req.file.mimetype||'image/jpeg'; }
-    let sent=0;
-    const business = req.user.business||req.user.name;
+    if(list.length > planLimit) return res.json({ ok:false, msg:`Plan limit: ${planLimit} messages/day` });
+    
+    // 🛡️ SAFETY CHECK 3: Cap to remaining safe quota
+    const safeRemaining = safetyCheck.remaining;
+    if(list.length > safeRemaining){
+      return res.json({ 
+        ok:false, 
+        msg:`Only ${safeRemaining} more messages safe to send today. Account safety priority!` 
+      });
+    }
+    
+    res.json({ ok:true, total: list.length });
+    
+    let imgBuf = null, imgMime = 'image/jpeg';
+    if(req.file){ 
+      imgBuf = fs.readFileSync(req.file.path); 
+      imgMime = req.file.mimetype || 'image/jpeg'; 
+    }
+    
+    let sent = 0;
+    const business = req.user.business || req.user.name;
     const logs = [];
-    for(let i=0;i<list.length;i++){
+    const sessionStats = getDailyStats(userId);
+    
+    for(let i = 0; i < list.length; i++){
       const c = list[i];
       let status = 'failed';
+      
+      // 🛡️ SAFETY: Re-check time + pause inside loop (long campaigns)
+      if(!isAllowedTimeIST()){
+        io.to('wa_'+userId).emit('paused', { reason: 'Time window closed (10 AM-8 PM only)' });
+        break;
+      }
+      if(sessionStats.pausedUntil && Date.now() < sessionStats.pausedUntil){
+        io.to('wa_'+userId).emit('paused', { reason: 'Auto-paused due to failures' });
+        break;
+      }
+      
       try {
-        let ph = String(c.phone).replace(/\D/g,'');
-        if(ph.length===11 && ph.startsWith('0')) ph = ph.slice(1);
-        if(ph.length===10) ph='91'+ph;
-        const jid = ph+'@s.whatsapp.net';
-        const msg = message.replace(/\{name\}/g,c.name||'Customer').replace(/\{store\}/g,business).replace(/\{business\}/g,business).replace(/\{jobId\}/g,c.jobId||'').replace(/\{status\}/g,c.status||'').replace(/\{amount\}/g,c.amount||'');
+        let ph = String(c.phone).replace(/\D/g, '');
+        if(ph.length === 11 && ph.startsWith('0')) ph = ph.slice(1);
+        if(ph.length === 10) ph = '91' + ph;
+        const jid = ph + '@s.whatsapp.net';
+        
+        // Personalize message
+        let msg = message
+          .replace(/\{name\}/g, c.name || 'Customer')
+          .replace(/\{store\}/g, business)
+          .replace(/\{business\}/g, business)
+          .replace(/\{jobId\}/g, c.jobId || '')
+          .replace(/\{status\}/g, c.status || '')
+          .replace(/\{amount\}/g, c.amount || '');
+        
+        // 🛡️ SAFETY: Random emoji injection (variation)
+        if(Math.random() < 0.3 && !msg.match(/[\u{1F300}-\u{1F9FF}]/u)){
+          msg = msg + ' ' + rotateEmoji();
+        }
+        
+        // 🛡️ SAFETY: Typing indicator before sending (human-like)
+        await simulateTyping(s.sock, jid, msg.length);
+        
         let sentResult;
-        if(imgBuf){ sentResult = await s.sock.sendMessage(jid,{ image:imgBuf,mimetype:imgMime,caption:msg }); }
-        else { sentResult = await s.sock.sendMessage(jid,{ text:msg }); }
-        status='sent'; sent++;
-        // Track this message for receipts
+        if(imgBuf){ 
+          sentResult = await s.sock.sendMessage(jid, { image:imgBuf, mimetype:imgMime, caption:msg }); 
+        } else { 
+          sentResult = await s.sock.sendMessage(jid, { text:msg }); 
+        }
+        
+        status = 'sent'; 
+        sent++; 
+        trackSuccess(userId);
+        
         if(sentResult && sentResult.key && sentResult.key.id){
           if(!s.msgTracker) s.msgTracker = {};
           s.msgTracker[sentResult.key.id] = { phone:c.phone, name:c.name, index:i, jid };
         }
-        io.to('wa_'+userId).emit('sent',{ index:i, phone:c.phone, name:c.name, status:'sent' });
-        await new Promise(r=>setTimeout(r,2000+Math.random()*2000));
+        
+        io.to('wa_'+userId).emit('sent', { 
+          index:i, phone:c.phone, name:c.name, status:'sent',
+          progress: { sent, total: list.length }
+        });
+        
+        // 🛡️ SAFETY: Smart delay based on count
+        const delay = getSmartDelay(sessionStats.sent);
+        await new Promise(r => setTimeout(r, delay));
+        
+        // 🛡️ SAFETY: Take break every 25 msgs
+        if(shouldTakeBreak(sessionStats.sent)){
+          const breakMs = getBreakDuration();
+          io.to('wa_'+userId).emit('break', { 
+            duration: Math.round(breakMs/1000), 
+            msg: `Taking ${Math.round(breakMs/1000)}s break for account safety` 
+          });
+          await new Promise(r => setTimeout(r, breakMs));
+        }
+        
       } catch(err){
-        io.to('wa_'+userId).emit('sent',{ index:i, phone:c.phone, name:c.name, status:'failed' });
+        const wasPaused = trackFailure(userId);
+        io.to('wa_'+userId).emit('sent', { index:i, phone:c.phone, name:c.name, status:'failed' });
+        if(wasPaused){
+          io.to('wa_'+userId).emit('paused', { 
+            reason: '3 failures in a row — paused 30 min for account safety' 
+          });
+          break; // stop the loop entirely
+        }
       }
       logs.push({ userId, phone:c.phone, name:c.name, status, createdAt:new Date() });
     }
+    
     if(logs.length) await db.collection('msg_logs').insertMany(logs);
     await db.collection('users').updateOne({ _id:req.user._id }, { $inc:{ msgCount:sent } });
-    if(req.file) try{ fs.unlinkSync(req.file.path); }catch(e){}
-    io.to('wa_'+userId).emit('done',{ total:list.length, sent });
-  } catch(e){ res.json({ ok:false, msg:e.message }); }
+    if(req.file) try{ fs.unlinkSync(req.file.path); } catch(e){}
+    io.to('wa_'+userId).emit('done', { total: list.length, sent });
+  } catch(e){ 
+    console.log('wa/send error:', e.message);
+    // Note: response already sent at start of route
+  }
 });
 
 // ── JOB WA NOTIFICATION — INDUSTRY-WISE ───────────────────────────────────────
