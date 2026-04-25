@@ -249,9 +249,19 @@ body{
 .stat-pill.err{color:var(--red);background:var(--red-bg);border-color:transparent;}
 
 .contacts-list{
-  max-height:300px;overflow-y:auto;border:1px solid var(--border);
-  border-radius:var(--radius);background:var(--surface-2);
+  max-height:400px;overflow-y:auto;overflow-x:auto;border:1px solid var(--border);
+  border-radius:var(--radius);background:var(--surface);margin-top:14px;
 }
+.contacts-list table{width:100%;border-collapse:separate;border-spacing:0;font-size:13px;}
+.contacts-list thead{position:sticky;top:0;background:var(--surface-2);z-index:1;}
+.contacts-list th{
+  padding:12px 12px;text-align:left;font-weight:700;color:var(--text-sub);
+  font-size:11px;text-transform:uppercase;letter-spacing:0.04em;
+  border-bottom:1px solid var(--border);white-space:nowrap;
+}
+.contacts-list tbody tr{border-bottom:1px solid var(--border);}
+.contacts-list tbody tr:last-child{border-bottom:none;}
+.contacts-list tbody tr:hover{background:var(--surface-2);}
 .contacts-list .row{
   padding:10px 14px;border-bottom:1px solid var(--border);
   display:flex;justify-content:space-between;align-items:center;font-size:13px;gap:10px;
@@ -710,11 +720,26 @@ socket.on('disconnected', function(){
 });
 
 socket.on('sent', function(d){
-  contacts[d.index].status = d.status;
-  renderContacts();
+  if(typeof d.index === 'number' && contacts[d.index]){
+    contacts[d.index].status = d.status;
+    renderContacts();
+  }
   var done = contacts.filter(function(c){ return c.status!=='pending'; }).length;
   var pct  = contacts.length ? Math.round((done/contacts.length)*100) : 0;
   document.getElementById('progBar').style.width = pct+'%';
+});
+
+// Delivery / Read receipts (delivered ✓✓ blue, read 👁)
+socket.on('receipt', function(d){
+  if(typeof d.index === 'number' && contacts[d.index]){
+    // Don't downgrade: if already 'read', don't go back to 'delivered'
+    var cur = contacts[d.index].status;
+    var rank = { pending:0, sent:1, failed:1, delivered:2, read:3 };
+    if((rank[d.status]||0) > (rank[cur]||0)){
+      contacts[d.index].status = d.status;
+      renderContacts();
+    }
+  }
 });
 
 socket.on('done', function(d){
@@ -900,10 +925,14 @@ document.getElementById('excelInput').addEventListener('change', function(e){
 });
 
 function addContact(name,phone){
-  var ph=String(phone).replace(/\D/g,'');
-  if(ph.length<10) return;
+  var ph=String(phone).replace(/\D/g,''); // strip all non-digits
+  // Remove leading 0 (e.g. 08087289267 -> 8087289267)
+  if(ph.length===11 && ph.startsWith('0')) ph = ph.slice(1);
+  // Add 91 if 10 digit
   if(ph.length===10) ph='91'+ph;
-  if(contacts.find(function(c){ return c.phone===ph; })) return;
+  // Final validation: must be 12 digits starting with 91 (Indian format)
+  if(ph.length<11){ toast('Invalid phone number','err'); return; }
+  if(contacts.find(function(c){ return c.phone===ph; })){ toast('Already added','err'); return; }
   contacts.push({name:name||'Customer',phone:ph,status:'pending',selected:true});
   renderContacts();
   updateSendBtns();
@@ -938,23 +967,31 @@ function renderContacts(){
   if(!contacts.length){ document.getElementById('contactsWrap').style.display='none'; return; }
   document.getElementById('contactsWrap').style.display='block';
   var total=contacts.length;
-  var sent=contacts.filter(function(c){ return c.status==='sent'; }).length;
+  var sent=contacts.filter(function(c){ return c.status==='sent' || c.status==='delivered' || c.status==='read'; }).length;
+  var delivered=contacts.filter(function(c){ return c.status==='delivered' || c.status==='read'; }).length;
+  var read=contacts.filter(function(c){ return c.status==='read'; }).length;
   var failed=contacts.filter(function(c){ return c.status==='failed'; }).length;
   var pending=contacts.filter(function(c){ return c.status==='pending'; }).length;
   document.getElementById('statsBar').innerHTML=
-    '<div class="stat-pill"><div class="dot" style="background:var(--accent)"></div>'+total+'</div>'+
-    '<div class="stat-pill"><div class="dot" style="background:var(--green)"></div>Sent: '+sent+'</div>'+
-    '<div class="stat-pill"><div class="dot" style="background:var(--red)"></div>Failed: '+failed+'</div>'+
+    '<div class="stat-pill"><div class="dot" style="background:var(--accent)"></div>Total: '+total+'</div>'+
+    '<div class="stat-pill ok"><div class="dot" style="background:var(--green)"></div>Sent: '+sent+'</div>'+
+    '<div class="stat-pill"><div class="dot" style="background:#3b82f6"></div>Delivered: '+delivered+'</div>'+
+    '<div class="stat-pill"><div class="dot" style="background:#7c3aed"></div>Read: '+read+'</div>'+
+    '<div class="stat-pill err"><div class="dot" style="background:var(--red)"></div>Failed: '+failed+'</div>'+
     '<div class="stat-pill"><div class="dot" style="background:var(--yellow)"></div>Pending: '+pending+'</div>';
   document.getElementById('cTb').innerHTML=contacts.map(function(c,i){
-    var sc=c.status==='sent'?'st-sent':c.status==='failed'?'st-fail':'st-pend';
-    var sv=c.status==='sent'?'&#x2705; Sent':c.status==='failed'?'&#x274C; Failed':'&#x23F3; Pending';
-    return '<tr style="opacity:'+(c.status==='sent'?.6:1)+'">'
-      +'<td><input type="checkbox" class="ck" data-i="'+i+'" '+(c.selected?'checked':'')+'></td>'
-      +'<td style="color:var(--muted);">'+(i+1)+'</td>'
-      +'<td style="font-weight:600;color:var(--text);">'+c.name+'</td>'
-      +'<td style="font-size:11px;color:var(--muted);">+'+c.phone+'</td>'
-      +'<td class="'+sc+'">'+sv+'</td>'
+    var statusInfo;
+    if(c.status==='read'){ statusInfo='<span style="color:#7c3aed;font-weight:600;">&#x1F441;&#xFE0F; Read</span>'; }
+    else if(c.status==='delivered'){ statusInfo='<span style="color:#3b82f6;font-weight:600;">&#x2705;&#x2705; Delivered</span>'; }
+    else if(c.status==='sent'){ statusInfo='<span style="color:var(--green);font-weight:600;">&#x2705; Sent</span>'; }
+    else if(c.status==='failed'){ statusInfo='<span style="color:var(--red);font-weight:600;">&#x274C; Failed</span>'; }
+    else{ statusInfo='<span style="color:var(--yellow);font-weight:600;">&#x23F3; Pending</span>'; }
+    return '<tr style="opacity:'+(c.status==='sent'||c.status==='delivered'||c.status==='read'?.85:1)+'">'
+      +'<td style="padding:10px 8px;"><input type="checkbox" class="ck" data-i="'+i+'" '+(c.selected?'checked':'')+'></td>'
+      +'<td style="color:var(--muted);padding:10px 8px;font-size:13px;">'+(i+1)+'</td>'
+      +'<td style="font-weight:600;color:var(--text);padding:10px 12px;font-size:14px;">'+c.name+'</td>'
+      +'<td style="color:var(--text-sub);padding:10px 12px;font-size:13px;font-family:monospace;">+'+c.phone+'</td>'
+      +'<td style="padding:10px 12px;font-size:13px;">'+statusInfo+'</td>'
       +'</tr>';
   }).join('');
   document.querySelectorAll('.ck').forEach(function(cb){
