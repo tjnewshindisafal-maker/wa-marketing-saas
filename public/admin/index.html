@@ -229,6 +229,12 @@ body{
 /* MODAL */
 .modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;padding:20px;overflow-y:auto;align-items:flex-start;justify-content:center;}
 .modal.on, .modal.open{display:flex;}
+/* Inner content (when .modal is child of .overlay) */
+.overlay > .modal, .overlay .modal{
+  display:block !important;position:static !important;background:var(--surface);border-radius:var(--radius-lg);padding:24px;
+  max-width:500px;width:100%;box-shadow:var(--shadow-lg);margin-top:30px;inset:auto;z-index:auto;
+}
+.overlay > div:not(.modal){background:var(--surface);border-radius:var(--radius-lg);padding:24px;max-width:500px;width:100%;box-shadow:var(--shadow-lg);margin-top:30px;}
 .modal > div{background:var(--surface);border-radius:var(--radius-lg);padding:24px;max-width:500px;width:100%;box-shadow:var(--shadow-lg);margin-top:30px;}
 .modal-sub{font-size:13px;color:var(--text-sub);margin-bottom:16px;}
 .mfield{margin-bottom:14px;}
