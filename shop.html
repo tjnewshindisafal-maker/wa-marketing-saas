@@ -242,7 +242,17 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
   display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);
   z-index:1000;padding:20px;overflow-y:auto;align-items:flex-start;justify-content:center;
 }
-.modal.on{display:flex;}
+.modal.on, .modal.open{display:flex;}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;padding:20px;overflow-y:auto;align-items:flex-start;justify-content:center;}
+.overlay.on, .overlay.open{display:flex;}
+.overlay > div, .modal > div{
+  background:var(--surface);border-radius:var(--radius-lg);padding:24px;
+  max-width:520px;width:100%;box-shadow:var(--shadow-lg);margin-top:30px;
+}
+
+/* Special case: sidebar overlay (full screen black bg, no flex centering) */
+#sidebarOverlay{display:none;background:rgba(0,0,0,0.5);align-items:initial;justify-content:initial;padding:0;z-index:200;}
+#sidebarOverlay.on, #sidebarOverlay.open{display:block;}
 .modal > div{
   background:var(--surface);border-radius:var(--radius-lg);padding:24px;
   max-width:520px;width:100%;box-shadow:var(--shadow-lg);margin-top:30px;
@@ -310,9 +320,6 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
 .mnav-item .mico{font-size:22px;line-height:1;}
 .mnav-item.on{color:var(--accent);}
 
-.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:200;}
-.overlay.on{display:block;}
-
 /* ===== RESPONSIVE ===== */
 @media(max-width:900px){
   .menu-toggle{display:block;}
@@ -370,19 +377,17 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
   <button class="menu-toggle" onclick="document.querySelector('.sidebar').classList.toggle('on'); document.getElementById('sidebarOverlay') && document.getElementById('sidebarOverlay').classList.toggle('on')">☰</button>
   <div class="nav-logo">⚡ Service <span>Hub</span></div>
   <div class="nav-right">
-    <!-- INDUSTRY SELECTOR (hidden — auto-set from signup) -->
-    <div class="industry-bar" style="display:none;">
-      <select id="industrySelect">
-        <option value="repair">Repair</option>
-        <option value="salon">Salon</option>
-        <option value="auto">Auto</option>
-        <option value="clinic">Clinic</option>
-      </select>
-    </div>
     <a href="/client/" class="btn-lo" style="text-decoration:none;">🏠 Home</a>
     <a href="/client/review.html" class="btn-lo" style="text-decoration:none;">⭐ Reviews</a>
     <div class="wa-status"><div class="ws-dot no" id="wsDot"></div><span id="wsText">Not Connected</span></div>
-    <div style="font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-bg);padding:5px 10px;border-radius:14px;" id="industryBadge">—</div>
+    <!-- Industry switcher (visible) -->
+    <select id="industrySelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:14px;background:var(--accent-bg);color:var(--accent);font-weight:700;font-size:11px;cursor:pointer;font-family:var(--font);" title="Switch industry">
+      <option value="repair">🔧 Repair</option>
+      <option value="salon">💇 Salon</option>
+      <option value="auto">🚗 Auto</option>
+      <option value="clinic">🏥 Clinic</option>
+    </select>
+    <span id="industryBadge" style="display:none;"></span>
     <div style="font-size:13px;font-weight:600;color:var(--text);" id="navBiz">Loading...</div>
     <button class="btn-lo" id="logoutBtn">Logout</button>
   </div>
@@ -829,8 +834,15 @@ function changeIndustry(){
   currentIndustry = document.getElementById('industrySelect').value;
   localStorage.setItem('wa_industry', currentIndustry);
   applyIndustry();
+  loadAll();
   toast('Switched to '+INDUSTRY_DATA[currentIndustry].label,'ok');
 }
+
+// Wire up the industry select dropdown
+document.addEventListener('DOMContentLoaded', function(){
+  var sel = document.getElementById('industrySelect');
+  if(sel){ sel.addEventListener('change', changeIndustry); }
+});
 
 function applyIndustry(){
   var data = INDUSTRY_DATA[currentIndustry];
@@ -971,15 +983,17 @@ fetch('/api/me',{headers:{'x-token':token}}).then(function(r){return r.json();})
   if(!d.ok){ localStorage.removeItem('wa_token'); window.location.href='/'; return; }
   currentUser=d.user;
   document.getElementById('navBiz').textContent=d.user.business||d.user.name;
-  // Auto-detect industry from user signup
-  // Map signup industry codes -> dashboard industry keys
+  // Industry priority: 1) localStorage (user's manual switch) 2) signup industry 3) default
+  var savedInd = localStorage.getItem('wa_industry');
   var indMap = {
     repair:'repair', electric:'repair',
     salon:'salon',
     carwash:'auto', auto:'auto',
     clinic:'clinic'
   };
-  if(d.user.industry && indMap[d.user.industry]){
+  if(savedInd && INDUSTRY_DATA[savedInd]){
+    currentIndustry = savedInd;
+  } else if(d.user.industry && indMap[d.user.industry]){
     currentIndustry = indMap[d.user.industry];
   }
   applyIndustry();
