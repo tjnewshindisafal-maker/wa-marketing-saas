@@ -245,7 +245,12 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
 .modal.on, .modal.open{display:flex;}
 .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;padding:20px;overflow-y:auto;align-items:flex-start;justify-content:center;}
 .overlay.on, .overlay.open{display:flex;}
-.overlay > div, .modal > div{
+/* Inner content box (when .modal is used as a child of .overlay) - always visible */
+.overlay > .modal, .overlay .modal{
+  display:block !important;position:static !important;background:var(--surface);border-radius:var(--radius-lg);padding:24px;
+  max-width:520px;width:100%;box-shadow:var(--shadow-lg);margin-top:30px;inset:auto;z-index:auto;
+}
+.overlay > div:not(.modal){
   background:var(--surface);border-radius:var(--radius-lg);padding:24px;
   max-width:520px;width:100%;box-shadow:var(--shadow-lg);margin-top:30px;
 }
@@ -381,7 +386,7 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
     <a href="/client/review.html" class="btn-lo" style="text-decoration:none;">⭐ Reviews</a>
     <div class="wa-status"><div class="ws-dot no" id="wsDot"></div><span id="wsText">Not Connected</span></div>
     <!-- Industry switcher (visible) -->
-    <select id="industrySelect" style="padding:6px 10px;border:1px solid var(--border);border-radius:14px;background:var(--accent-bg);color:var(--accent);font-weight:700;font-size:11px;cursor:pointer;font-family:var(--font);" title="Switch industry">
+    <select id="industrySelect" onchange="changeIndustry()" style="padding:6px 10px;border:1px solid var(--border);border-radius:14px;background:var(--accent-bg);color:var(--accent);font-weight:700;font-size:11px;cursor:pointer;font-family:var(--font);" title="Switch industry">
       <option value="repair">🔧 Repair</option>
       <option value="salon">💇 Salon</option>
       <option value="auto">🚗 Auto</option>
@@ -834,15 +839,9 @@ function changeIndustry(){
   currentIndustry = document.getElementById('industrySelect').value;
   localStorage.setItem('wa_industry', currentIndustry);
   applyIndustry();
-  loadAll();
+  if(typeof loadAll === 'function') loadAll();
   toast('Switched to '+INDUSTRY_DATA[currentIndustry].label,'ok');
 }
-
-// Wire up the industry select dropdown
-document.addEventListener('DOMContentLoaded', function(){
-  var sel = document.getElementById('industrySelect');
-  if(sel){ sel.addEventListener('change', changeIndustry); }
-});
 
 function applyIndustry(){
   var data = INDUSTRY_DATA[currentIndustry];
