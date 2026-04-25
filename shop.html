@@ -305,6 +305,15 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
 .donut-legend div{display:flex;align-items:center;gap:8px;padding:4px 0;}
 .industry-bar{height:6px;background:var(--accent);border-radius:4px;}
 
+/* Industry switcher pills */
+.ind-pill{
+  background:transparent;border:none;padding:5px 9px;border-radius:11px;
+  cursor:pointer;font-size:14px;line-height:1;font-family:var(--font);
+  transition:all 0.15s;color:var(--text-sub);
+}
+.ind-pill:hover{background:rgba(0,0,0,0.04);}
+.ind-pill.active{background:var(--accent);color:#fff;box-shadow:var(--shadow-sm);}
+
 /* ===== EMPTY ===== */
 .empty{
   text-align:center;padding:40px 20px;color:var(--muted);
@@ -386,11 +395,17 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
     <a href="/client/review.html" class="btn-lo" style="text-decoration:none;">⭐ Reviews</a>
     <div class="wa-status"><div class="ws-dot no" id="wsDot"></div><span id="wsText">Not Connected</span></div>
     <!-- Industry switcher (visible) -->
-    <select id="industrySelect" onchange="changeIndustry()" style="padding:6px 10px;border:1px solid var(--border);border-radius:14px;background:var(--accent-bg);color:var(--accent);font-weight:700;font-size:11px;cursor:pointer;font-family:var(--font);" title="Switch industry">
-      <option value="repair">🔧 Repair</option>
-      <option value="salon">💇 Salon</option>
-      <option value="auto">🚗 Auto</option>
-      <option value="clinic">🏥 Clinic</option>
+    <div style="display:flex;gap:4px;background:var(--surface-2);padding:3px;border-radius:14px;border:1px solid var(--border);" id="industryPills">
+      <button type="button" class="ind-pill" data-ind="repair" onclick="setIndustry('repair')" title="Repair">🔧</button>
+      <button type="button" class="ind-pill" data-ind="salon" onclick="setIndustry('salon')" title="Salon">💇</button>
+      <button type="button" class="ind-pill" data-ind="auto" onclick="setIndustry('auto')" title="Auto">🚗</button>
+      <button type="button" class="ind-pill" data-ind="clinic" onclick="setIndustry('clinic')" title="Clinic">🏥</button>
+    </div>
+    <select id="industrySelect" style="display:none;">
+      <option value="repair">Repair</option>
+      <option value="salon">Salon</option>
+      <option value="auto">Auto</option>
+      <option value="clinic">Clinic</option>
     </select>
     <span id="industryBadge" style="display:none;"></span>
     <div style="font-size:13px;font-weight:600;color:var(--text);" id="navBiz">Loading...</div>
@@ -835,21 +850,44 @@ var INDUSTRY_DATA = {
 
 var currentIndustry = 'repair'; // default, will be overwritten by user.industry from signup
 
+// New simple industry setter (called by pill buttons)
+function setIndustry(ind){
+  if(!INDUSTRY_DATA[ind]){ console.warn('Unknown industry:', ind); return; }
+  currentIndustry = ind;
+  localStorage.setItem('wa_industry', ind);
+  // Sync hidden select
+  var sel = document.getElementById('industrySelect');
+  if(sel) sel.value = ind;
+  // Update pill active state
+  document.querySelectorAll('.ind-pill').forEach(function(p){
+    p.classList.toggle('active', p.getAttribute('data-ind') === ind);
+  });
+  // Apply industry changes safely
+  try { applyIndustry(); } catch(e){ console.error('applyIndustry error:', e); }
+  if(typeof loadAll === 'function'){ try { loadAll(); } catch(e){ console.error('loadAll error:', e); } }
+  if(typeof toast === 'function'){ try { toast('Switched to '+INDUSTRY_DATA[ind].label,'ok'); } catch(e){} }
+}
+
+// Old function kept for compatibility
 function changeIndustry(){
-  currentIndustry = document.getElementById('industrySelect').value;
-  localStorage.setItem('wa_industry', currentIndustry);
-  applyIndustry();
-  if(typeof loadAll === 'function') loadAll();
-  toast('Switched to '+INDUSTRY_DATA[currentIndustry].label,'ok');
+  var sel = document.getElementById('industrySelect');
+  if(sel) setIndustry(sel.value);
 }
 
 function applyIndustry(){
   var data = INDUSTRY_DATA[currentIndustry];
+  if(!data){ console.error('No data for industry:', currentIndustry); return; }
 
   // Navbar badge
-  document.getElementById('industryBadge').textContent = data.icon+' '+data.label;
+  var badge = document.getElementById('industryBadge');
+  if(badge) badge.textContent = data.icon+' '+data.label;
   // Hidden selector sync
-  document.getElementById('industrySelect').value = currentIndustry;
+  var sel = document.getElementById('industrySelect');
+  if(sel) sel.value = currentIndustry;
+  // Industry pills active state
+  document.querySelectorAll('.ind-pill').forEach(function(p){
+    p.classList.toggle('active', p.getAttribute('data-ind') === currentIndustry);
+  });
 
   // ── SIDEBAR — show/hide items + rename ──────────────────────────────
   document.getElementById('sb-jobs').innerHTML = '<span class="sb-ico">'+data.icon+'</span>All '+data.jobWordPlural+' <span class="sb-badge" id="pendingBadge">0</span>';
