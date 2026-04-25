@@ -1032,6 +1032,8 @@ fetch('/api/me',{headers:{'x-token':token}}).then(function(r){return r.json();})
     currentIndustry = savedInd;
   } else if(d.user.industry && indMap[d.user.industry]){
     currentIndustry = indMap[d.user.industry];
+    // Persist mapped industry to localStorage so it sticks
+    localStorage.setItem('wa_industry', currentIndustry);
   }
   applyIndustry();
   loadAll();
