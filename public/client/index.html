@@ -390,6 +390,7 @@ body{
     <a href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" id="upgradeBtn" class="btn-lo btn-upgrade" style="display:none;">&#x1F48E; Upgrade</a>
     <a href="/client/review.html" id="reviewBtn" class="btn-lo" style="display:none;text-decoration:none;background:#fbbf24;color:#000;">&#x2B50; Reviews</a>
     <a href="/shop" id="shopBtn" class="btn-lo" style="display:none;text-decoration:none;background:var(--accent);color:#fff;">&#x1F6E0; Jobs</a>
+    <button class="btn-lo" id="chatbotNavBtn" onclick="document.getElementById('chatbotCard').scrollIntoView({behavior:'smooth'})" style="display:none;">🤖 Chatbot</button>
     <button class="btn-lo" id="logoutBtn">Logout</button>
   </div>
 </nav>
@@ -559,6 +560,138 @@ body{
       </div>
     </div>
   </div>
+
+  <!-- ── CHATBOT CARD ─────────────────────────────────────────────────────── -->
+  <div class="card" id="chatbotCard" style="display:none;">
+    <div class="card-title">
+      🤖 Auto-Reply Chatbot
+      <span style="font-size:11px;background:#6c63ff33;color:#6c63ff;padding:3px 8px;border-radius:6px;margin-left:8px;">PRO</span>
+    </div>
+    <div style="color:var(--muted);font-size:13px;margin-bottom:16px;">Automatically reply to incoming WhatsApp messages. Flow → Keyword → AI fallback.</div>
+
+    <!-- Sub-tabs -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;" id="cbTabBar">
+      <button class="btn-primary cb-tab on" data-tab="cbSettings">⚙️ Settings</button>
+      <button class="btn-lo cb-tab" data-tab="cbKeywords">🔑 Keywords</button>
+      <button class="btn-lo cb-tab" data-tab="cbFlows">🔀 Flows</button>
+      <button class="btn-lo cb-tab" data-tab="cbLogs">💬 Chat Logs</button>
+    </div>
+
+    <!-- Settings Tab -->
+    <div id="cbSettings">
+      <div id="cbStatsBar" style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;padding:12px;background:var(--surface);border-radius:10px;">
+        <div style="text-align:center;"><div style="font-size:20px;font-weight:700;" id="cbStatToday">—</div><div style="font-size:11px;color:var(--muted);">Today's Messages</div></div>
+        <div style="text-align:center;"><div style="font-size:20px;font-weight:700;" id="cbStatTotal">—</div><div style="font-size:11px;color:var(--muted);">Total Chats</div></div>
+        <div style="text-align:center;"><div style="font-size:20px;font-weight:700;" id="cbStatActive">—</div><div style="font-size:11px;color:var(--muted);">Active Now</div></div>
+      </div>
+
+      <div class="field" style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+        <label style="margin:0;flex:1;">Enable Chatbot</label>
+        <label style="display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="cbEnabled" style="width:18px;height:18px;">
+          <span style="font-size:13px;color:var(--muted);">Auto-reply to incoming messages</span>
+        </label>
+      </div>
+
+      <div class="field">
+        <label>Greeting / Menu Message</label>
+        <textarea id="cbGreeting" rows="3" placeholder="Hi! 👋 How can I help you today? Type *menu* for options." style="font-size:13px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Fallback Message <span style="color:var(--muted);font-weight:400;">(when no keyword matches)</span></label>
+        <textarea id="cbFallback" rows="2" placeholder="Sorry, I didn't understand that. Type *menu* for options." style="font-size:13px;"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Trigger Words <span style="color:var(--muted);font-weight:400;">(comma separated — starts the bot)</span></label>
+        <input type="text" id="cbTriggerWords" placeholder="hi, hello, hey, menu, start, help">
+      </div>
+
+      <div class="field">
+        <label>Auto-Start Flow <span style="color:var(--muted);font-weight:400;">(optional — show menu on trigger)</span></label>
+        <select id="cbAutoFlow" style="width:100%;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+          <option value="">— None (show greeting only) —</option>
+        </select>
+      </div>
+
+      <div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
+        <div class="field" style="display:flex;align-items:center;gap:12px;margin-bottom:10px;">
+          <label style="margin:0;flex:1;">Enable AI Replies <span style="font-size:11px;color:var(--muted);">(Gemini — needs GEMINI_API_KEY)</span></label>
+          <input type="checkbox" id="cbAiEnabled" style="width:18px;height:18px;">
+        </div>
+        <div class="field" id="cbAiContextWrap" style="display:none;">
+          <label>AI Context / Business Info</label>
+          <textarea id="cbAiContext" rows="3" placeholder="We are a mobile repair shop in Mumbai. We fix all brands. Prices start from ₹500. Working hours 10AM-8PM." style="font-size:13px;"></textarea>
+        </div>
+      </div>
+
+      <button class="btn-primary" id="cbSaveConfig" style="margin-top:8px;">💾 Save Settings</button>
+    </div>
+
+    <!-- Keywords Tab -->
+    <div id="cbKeywords" style="display:none;">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:14px;background:var(--surface);border-radius:10px;">
+        <div class="field" style="flex:2;min-width:140px;margin:0;">
+          <label>Keyword</label>
+          <input type="text" id="kwKeyword" placeholder="price, timing, address...">
+        </div>
+        <div class="field" style="flex:1;min-width:120px;margin:0;">
+          <label>Match Type</label>
+          <select id="kwMatchType" style="width:100%;padding:8px;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+            <option value="contains">Contains</option>
+            <option value="exact">Exact</option>
+            <option value="starts">Starts with</option>
+          </select>
+        </div>
+        <div class="field" style="flex:3;min-width:200px;margin:0;">
+          <label>Auto Reply</label>
+          <input type="text" id="kwReply" placeholder="Our price starts from ₹500...">
+        </div>
+        <div style="display:flex;align-items:flex-end;">
+          <button class="btn-primary" id="addKwBtn" style="white-space:nowrap;">+ Add</button>
+        </div>
+      </div>
+      <div id="kwList"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">No keywords yet. Add one above.</div></div>
+    </div>
+
+    <!-- Flows Tab -->
+    <div id="cbFlows" style="display:none;">
+      <div style="color:var(--muted);font-size:12px;margin-bottom:12px;">
+        Create menu-based conversation flows. Customers reply with a number to navigate.<br>
+        <strong>Format per step:</strong> message + numbered options (each option can jump to another step or give a direct reply).
+      </div>
+      <button class="btn-primary" id="newFlowBtn" style="margin-bottom:14px;">+ New Flow</button>
+
+      <!-- Flow builder modal (inline) -->
+      <div id="flowBuilder" style="display:none;background:var(--surface);border-radius:12px;padding:16px;margin-bottom:16px;border:1px solid var(--border);">
+        <div style="font-weight:600;margin-bottom:10px;" id="fbTitle">New Flow</div>
+        <div class="field">
+          <label>Flow Name</label>
+          <input type="text" id="fbName" placeholder="Main Menu">
+        </div>
+        <div id="fbSteps"></div>
+        <button class="btn-lo" id="addStepBtn" style="margin-top:6px;font-size:12px;">+ Add Step</button>
+        <div style="display:flex;gap:8px;margin-top:14px;">
+          <button class="btn-primary" id="saveFlowBtn">💾 Save Flow</button>
+          <button class="btn-lo" id="cancelFlowBtn">Cancel</button>
+        </div>
+        <input type="hidden" id="fbEditId">
+      </div>
+
+      <div id="flowList"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">No flows yet.</div></div>
+    </div>
+
+    <!-- Chat Logs Tab -->
+    <div id="cbLogs" style="display:none;">
+      <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
+        <input type="text" id="cbLogPhone" placeholder="Filter by phone..." style="flex:1;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);">
+        <button class="btn-lo" id="cbLoadLogs">🔄 Load</button>
+      </div>
+      <div id="cbLogList"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Click Load to view conversations.</div></div>
+    </div>
+  </div>
+
 </div>
 
 <div id="toasts"></div>
@@ -630,6 +763,12 @@ fetch('/api/me', { headers:{ 'x-token': token } })
   if(d.user.features && d.user.features.scheduler){
     document.getElementById('schedCard').style.display='block';
     loadSchedules();
+  }
+  if(d.user.features && d.user.features.chatbot){
+    document.getElementById('chatbotCard').style.display='block';
+    document.getElementById('chatbotNavBtn').style.display='inline-flex';
+    var mnCb = document.getElementById('mnavChatbot'); if(mnCb) mnCb.style.display='flex';
+    loadChatbotConfig();
   }
   startPolling();
 })
@@ -1073,6 +1212,264 @@ function toast(msg,type){
   document.getElementById('toasts').appendChild(el);
   setTimeout(function(){ el.remove(); },3500);
 }
+
+// ── CHATBOT ───────────────────────────────────────────────────────────────────
+var cbFlowsCache = [];
+
+// Sub-tab switching
+document.querySelectorAll('.cb-tab').forEach(function(btn){
+  btn.addEventListener('click', function(){
+    document.querySelectorAll('.cb-tab').forEach(function(b){ b.classList.remove('on'); b.style.background=''; });
+    this.classList.add('on');
+    var tabs = ['cbSettings','cbKeywords','cbFlows','cbLogs'];
+    tabs.forEach(function(t){ document.getElementById(t).style.display='none'; });
+    var target = this.getAttribute('data-tab');
+    document.getElementById(target).style.display='block';
+    if(target==='cbKeywords') loadKeywords();
+    if(target==='cbFlows') loadFlows();
+    if(target==='cbLogs') { document.getElementById('cbLogList').innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Click Load to view conversations.</div>'; }
+  });
+});
+
+// AI context toggle
+document.getElementById('cbAiEnabled').addEventListener('change', function(){
+  document.getElementById('cbAiContextWrap').style.display = this.checked ? 'block' : 'none';
+});
+
+function loadChatbotConfig(){
+  fetch('/api/chatbot/stats',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){
+      document.getElementById('cbStatToday').textContent = d.todayMsgs;
+      document.getElementById('cbStatTotal').textContent = d.totalConversations;
+      document.getElementById('cbStatActive').textContent = d.activeCount;
+    }
+  }).catch(function(){});
+
+  fetch('/api/chatbot/flows',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(d.ok){ cbFlowsCache = d.flows||[]; populateFlowSelect(); }
+  }).catch(function(){});
+
+  fetch('/api/chatbot/config',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) return;
+    var c = d.config;
+    document.getElementById('cbEnabled').checked = !!c.enabled;
+    document.getElementById('cbGreeting').value  = c.greetingMsg||'';
+    document.getElementById('cbFallback').value  = c.fallbackMsg||'';
+    document.getElementById('cbTriggerWords').value = Array.isArray(c.triggerWords)?c.triggerWords.join(', '):(c.triggerWords||'');
+    document.getElementById('cbAiEnabled').checked = !!c.aiEnabled;
+    document.getElementById('cbAiContextWrap').style.display = c.aiEnabled?'block':'none';
+    document.getElementById('cbAiContext').value = c.aiContext||'';
+    if(c.autoFlowId) document.getElementById('cbAutoFlow').value = c.autoFlowId;
+  }).catch(function(){});
+}
+
+function populateFlowSelect(){
+  var sel = document.getElementById('cbAutoFlow');
+  var cur = sel.value;
+  sel.innerHTML = '<option value="">— None (show greeting only) —</option>';
+  cbFlowsCache.forEach(function(f){
+    var o = document.createElement('option');
+    o.value = f._id; o.textContent = f.name;
+    sel.appendChild(o);
+  });
+  if(cur) sel.value = cur;
+}
+
+document.getElementById('cbSaveConfig').addEventListener('click', function(){
+  var data = {
+    enabled: document.getElementById('cbEnabled').checked,
+    greetingMsg: document.getElementById('cbGreeting').value.trim(),
+    fallbackMsg: document.getElementById('cbFallback').value.trim(),
+    triggerWords: document.getElementById('cbTriggerWords').value,
+    aiEnabled: document.getElementById('cbAiEnabled').checked,
+    aiContext: document.getElementById('cbAiContext').value.trim(),
+    autoFlowId: document.getElementById('cbAutoFlow').value || null
+  };
+  fetch('/api/chatbot/config',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},{'x-token':token}),body:JSON.stringify(data)})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok) toast('Chatbot settings saved!','ok'); else toast(d.msg,'err');
+  });
+});
+
+// Keywords
+function loadKeywords(){
+  fetch('/api/chatbot/keywords',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) return;
+    var list = d.keywords||[];
+    if(!list.length){ document.getElementById('kwList').innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">No keywords yet.</div>'; return; }
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:13px;">';
+    html += '<tr style="border-bottom:1px solid var(--border);"><th style="text-align:left;padding:6px 8px;color:var(--muted);">Keyword</th><th style="text-align:left;padding:6px 8px;color:var(--muted);">Match</th><th style="text-align:left;padding:6px 8px;color:var(--muted);">Reply</th><th style="padding:6px 8px;"></th></tr>';
+    list.forEach(function(kw){
+      html += '<tr style="border-bottom:1px solid var(--border)20;">';
+      html += '<td style="padding:7px 8px;font-weight:600;">'+escHtml(kw.keyword)+'</td>';
+      html += '<td style="padding:7px 8px;color:var(--muted);font-size:11px;">'+kw.matchType+'</td>';
+      html += '<td style="padding:7px 8px;color:var(--muted);max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+escHtml(kw.reply)+'</td>';
+      html += '<td style="padding:7px 8px;text-align:right;display:flex;gap:4px;justify-content:flex-end;">';
+      html += '<button class="btn-lo" style="font-size:11px;padding:3px 8px;" onclick="toggleKw(\''+kw._id+'\','+!kw.isActive+')">'+(kw.isActive?'Disable':'Enable')+'</button>';
+      html += '<button class="btn-lo" style="font-size:11px;padding:3px 8px;background:#c0392b22;color:#e74c3c;" onclick="deleteKw(\''+kw._id+'\')">Delete</button>';
+      html += '</td></tr>';
+    });
+    html += '</table>';
+    document.getElementById('kwList').innerHTML = html;
+  });
+}
+
+document.getElementById('addKwBtn').addEventListener('click', function(){
+  var kw = document.getElementById('kwKeyword').value.trim();
+  var reply = document.getElementById('kwReply').value.trim();
+  var matchType = document.getElementById('kwMatchType').value;
+  if(!kw || !reply){ toast('Keyword and reply are required.','err'); return; }
+  fetch('/api/chatbot/keywords',{method:'POST',headers:Object.assign({'Content-Type':'application/json'},{'x-token':token}),body:JSON.stringify({keyword:kw,reply:reply,matchType:matchType})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok){ document.getElementById('kwKeyword').value=''; document.getElementById('kwReply').value=''; loadKeywords(); toast('Keyword added!','ok'); }
+    else toast(d.msg,'err');
+  });
+});
+
+function toggleKw(id, isActive){
+  fetch('/api/chatbot/keywords/'+id,{method:'PUT',headers:Object.assign({'Content-Type':'application/json'},{'x-token':token}),body:JSON.stringify({isActive:isActive})})
+  .then(function(r){return r.json();}).then(function(){ loadKeywords(); });
+}
+function deleteKw(id){
+  if(!confirm('Delete this keyword?')) return;
+  fetch('/api/chatbot/keywords/'+id,{method:'DELETE',headers:{'x-token':token}})
+  .then(function(r){return r.json();}).then(function(d){ if(d.ok) loadKeywords(); });
+}
+
+// Flows
+var fbStepCount = 0;
+function loadFlows(){
+  fetch('/api/chatbot/flows',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) return;
+    cbFlowsCache = d.flows||[];
+    populateFlowSelect();
+    var list = cbFlowsCache;
+    if(!list.length){ document.getElementById('flowList').innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">No flows yet.</div>'; return; }
+    var html = '';
+    list.forEach(function(f){
+      html += '<div style="background:var(--surface);border-radius:10px;padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:center;">';
+      html += '<div><div style="font-weight:600;">'+escHtml(f.name)+'</div><div style="font-size:11px;color:var(--muted);">'+(f.steps||[]).length+' steps</div></div>';
+      html += '<div style="display:flex;gap:6px;">';
+      html += '<button class="btn-lo" style="font-size:12px;" onclick=\'editFlow('+JSON.stringify(f)+')\'>Edit</button>';
+      html += '<button class="btn-lo" style="font-size:12px;background:#c0392b22;color:#e74c3c;" onclick="deleteFlow(\''+f._id+'\')">Delete</button>';
+      html += '</div></div>';
+    });
+    document.getElementById('flowList').innerHTML = html;
+  });
+}
+
+document.getElementById('newFlowBtn').addEventListener('click', function(){
+  document.getElementById('fbEditId').value='';
+  document.getElementById('fbTitle').textContent='New Flow';
+  document.getElementById('fbName').value='';
+  document.getElementById('fbSteps').innerHTML='';
+  fbStepCount=0;
+  addFlowStep();
+  document.getElementById('flowBuilder').style.display='block';
+  this.style.display='none';
+});
+
+document.getElementById('cancelFlowBtn').addEventListener('click', function(){
+  document.getElementById('flowBuilder').style.display='none';
+  document.getElementById('newFlowBtn').style.display='inline-flex';
+});
+
+function addFlowStep(step){
+  var i = fbStepCount++;
+  var id   = step ? step.id : 'step'+i;
+  var msg  = step ? step.message : '';
+  var opts = step ? JSON.stringify(step.options||[]) : '[]';
+  var html = '<div id="fbStep'+i+'" style="background:var(--bg);border-radius:8px;padding:12px;margin-bottom:8px;border:1px solid var(--border);">';
+  html += '<div style="display:flex;justify-content:space-between;margin-bottom:6px;">';
+  html += '<span style="font-size:12px;font-weight:600;color:var(--muted);">Step '+(i+1)+'</span>';
+  html += '<button class="btn-lo" style="font-size:11px;padding:2px 8px;" onclick="document.getElementById(\'fbStep'+i+'\').remove()">Remove</button>';
+  html += '</div>';
+  html += '<div class="field" style="margin-bottom:8px;"><label style="font-size:11px;">Step ID</label><input type="text" value="'+escHtml(id)+'" class="fb-step-id" placeholder="start / step1 / pricing" style="font-size:12px;"></div>';
+  html += '<div class="field" style="margin-bottom:8px;"><label style="font-size:11px;">Message (shown to customer)</label><textarea class="fb-step-msg" rows="2" style="font-size:12px;" placeholder="Welcome! Choose:\n1. Services\n2. Pricing\n3. Location">'+escHtml(msg)+'</textarea></div>';
+  html += '<div class="field"><label style="font-size:11px;">Options (JSON array) <span style="color:var(--muted);font-weight:400;">e.g. [{\"input\":\"1\",\"label\":\"Services\",\"reply\":\"We offer...\",\"nextStep\":\"\"}]</span></label>';
+  html += '<textarea class="fb-step-opts" rows="3" style="font-size:11px;font-family:monospace;">'+escHtml(opts)+'</textarea></div>';
+  html += '</div>';
+  document.getElementById('fbSteps').insertAdjacentHTML('beforeend', html);
+}
+
+document.getElementById('addStepBtn').addEventListener('click', function(){ addFlowStep(); });
+
+document.getElementById('saveFlowBtn').addEventListener('click', function(){
+  var name = document.getElementById('fbName').value.trim();
+  if(!name){ toast('Flow name is required.','err'); return; }
+  var steps = [];
+  var stepDivs = document.querySelectorAll('#fbSteps > div');
+  var valid = true;
+  stepDivs.forEach(function(div){
+    var stepId = div.querySelector('.fb-step-id').value.trim();
+    var msg    = div.querySelector('.fb-step-msg').value.trim();
+    var optsRaw= div.querySelector('.fb-step-opts').value.trim();
+    var opts   = [];
+    try { opts = JSON.parse(optsRaw); } catch(e){ toast('Invalid JSON in options for step: '+stepId,'err'); valid=false; }
+    if(stepId && msg) steps.push({id:stepId, message:msg, options:opts});
+  });
+  if(!valid || !steps.length){ toast('At least one valid step is required.','err'); return; }
+  var editId = document.getElementById('fbEditId').value;
+  var url    = editId ? '/api/chatbot/flows/'+editId : '/api/chatbot/flows';
+  var method = editId ? 'PUT' : 'POST';
+  fetch(url,{method:method,headers:Object.assign({'Content-Type':'application/json'},{'x-token':token}),body:JSON.stringify({name:name,steps:steps})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(d.ok){ document.getElementById('flowBuilder').style.display='none'; document.getElementById('newFlowBtn').style.display='inline-flex'; loadFlows(); toast('Flow saved!','ok'); }
+    else toast(d.msg,'err');
+  });
+});
+
+function editFlow(f){
+  document.getElementById('fbEditId').value = f._id;
+  document.getElementById('fbTitle').textContent = 'Edit Flow';
+  document.getElementById('fbName').value = f.name;
+  document.getElementById('fbSteps').innerHTML = '';
+  fbStepCount = 0;
+  (f.steps||[]).forEach(function(s){ addFlowStep(s); });
+  document.getElementById('flowBuilder').style.display='block';
+  document.getElementById('newFlowBtn').style.display='none';
+}
+
+function deleteFlow(id){
+  if(!confirm('Delete this flow?')) return;
+  fetch('/api/chatbot/flows/'+id,{method:'DELETE',headers:{'x-token':token}})
+  .then(function(r){return r.json();}).then(function(d){ if(d.ok){ loadFlows(); toast('Flow deleted.','ok'); } });
+}
+
+// Chat Logs
+document.getElementById('cbLoadLogs').addEventListener('click', function(){
+  var phone = document.getElementById('cbLogPhone').value.trim();
+  var url = '/api/chatbot/logs'+(phone?'?phone='+encodeURIComponent(phone):'');
+  fetch(url,{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){ toast(d.msg,'err'); return; }
+    var logs = d.logs||[];
+    if(!logs.length){ document.getElementById('cbLogList').innerHTML='<div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">No conversations found.</div>'; return; }
+    // Group by phone
+    var groups = {};
+    logs.forEach(function(l){
+      if(!groups[l.phone]) groups[l.phone]=[];
+      groups[l.phone].push(l);
+    });
+    var html = '';
+    Object.keys(groups).forEach(function(ph){
+      html += '<div style="margin-bottom:16px;">';
+      html += '<div style="font-size:12px;font-weight:600;color:var(--muted);margin-bottom:6px;">📱 +'+ph+'</div>';
+      groups[ph].slice(0,20).forEach(function(m){
+        var isOut = m.direction==='out';
+        var t = new Date(m.timestamp).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});
+        html += '<div style="display:flex;justify-content:'+(isOut?'flex-end':'flex-start')+';margin-bottom:4px;">';
+        html += '<div style="max-width:80%;background:'+(isOut?'#25d36622':'var(--surface)')+';padding:7px 11px;border-radius:10px;font-size:12px;">';
+        html += escHtml(m.message);
+        html += '<span style="font-size:10px;color:var(--muted);display:block;text-align:right;margin-top:3px;">'+t+'</span>';
+        html += '</div></div>';
+      });
+      html += '</div>';
+    });
+    document.getElementById('cbLogList').innerHTML = html;
+  });
+});
+
+function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 <!-- MOBILE BOTTOM NAV -->
 <nav class="mobile-nav">
@@ -1088,6 +1485,10 @@ function toast(msg,type){
     <span class="mico">🛠️</span>
     <span>Jobs</span>
   </a>
+  <button class="mnav-item" id="mnavChatbot" aria-label="Chatbot" style="display:none;" onclick="document.getElementById('chatbotCard').scrollIntoView({behavior:'smooth'})">
+    <span class="mico">🤖</span>
+    <span>Bot</span>
+  </button>
   <a href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" class="mnav-item" id="mnavUpgrade" aria-label="Upgrade" style="display:none;">
     <span class="mico">💎</span>
     <span>Upgrade</span>

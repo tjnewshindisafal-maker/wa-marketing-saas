@@ -8,6 +8,7 @@ const multer     = require('multer');
 const path       = require('path');
 const fs         = require('fs');
 const { registerReviewRoutes, triggerReviewOnJobComplete } = require('./google-review');
+const { registerChatbotRoutes, handleIncomingMessage }    = require('./chatbot');
 const qrcode     = require('qrcode');
 const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
@@ -280,6 +281,7 @@ async function connectDB() {
     startTrialChecker();
     startReminderChecker();
     registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions);
+    registerChatbotRoutes(app, db, clientAuth, PLAN_FEATURES);
   } catch(e) { console.error('MongoDB error:', e.message); }
  } 
 async function initAdmin() {
@@ -547,13 +549,13 @@ const sessions = {};
 
 // ── PLAN FEATURES ─────────────────────────────────────────────────────────────
 const PLAN_FEATURES = {
-  starter:  { msgLimit:50,  scheduler:false, analytics:false, jobs:false, reviews:false },
-  pro:      { msgLimit:200, scheduler:true,  analytics:true,  jobs:false, reviews:true  },
-  service:  { msgLimit:200, scheduler:true,  analytics:true,  jobs:true,  reviews:true  },
-  business: { msgLimit:500, scheduler:true,  analytics:true,  jobs:true,  reviews:true  },
-  review:   { msgLimit:20,  scheduler:false, analytics:false, jobs:false, reviews:true  },
-  trial:    { msgLimit:20,  scheduler:false, analytics:false, jobs:false, reviews:false },
-  admin:    { msgLimit:9999,scheduler:true,  analytics:true,  jobs:true,  reviews:true  }
+  starter:  { msgLimit:50,  scheduler:false, analytics:false, jobs:false, reviews:false, chatbot:false },
+  pro:      { msgLimit:200, scheduler:true,  analytics:true,  jobs:false, reviews:true,  chatbot:true  },
+  service:  { msgLimit:200, scheduler:true,  analytics:true,  jobs:true,  reviews:true,  chatbot:true  },
+  business: { msgLimit:500, scheduler:true,  analytics:true,  jobs:true,  reviews:true,  chatbot:true  },
+  review:   { msgLimit:20,  scheduler:false, analytics:false, jobs:false, reviews:true,  chatbot:false },
+  trial:    { msgLimit:20,  scheduler:false, analytics:false, jobs:false, reviews:false, chatbot:false },
+  admin:    { msgLimit:9999,scheduler:true,  analytics:true,  jobs:true,  reviews:true,  chatbot:true  }
 };
 function hasFeature(plan, feature){ return PLAN_FEATURES[plan]?.[feature] || false; }
 
@@ -1471,6 +1473,27 @@ async function createSession(userId, socket) {
               );
             } catch(e){}
           }
+        }
+      } catch(e){ /* ignore */ }
+    });
+    // Incoming messages → chatbot engine
+    sock.ev.on('messages.upsert', async ({ messages: msgs, type }) => {
+      if (type !== 'notify') return;
+      try {
+        const user = await db.collection('users').findOne({ _id: new ObjectId(userId) });
+        if (!user) return;
+        for (const msg of msgs) {
+          if (msg.key.fromMe) continue;
+          if (!msg.message) continue;
+          const fromJid = msg.key.remoteJid;
+          if (!fromJid || fromJid.includes('@g.us')) continue; // skip groups
+          const text = msg.message.conversation
+            || msg.message.extendedTextMessage?.text
+            || msg.message.buttonsResponseMessage?.selectedButtonId
+            || msg.message.listResponseMessage?.singleSelectReply?.selectedRowId
+            || '';
+          if (!text) continue;
+          await handleIncomingMessage(db, userId, fromJid, text, sock, user);
         }
       } catch(e){ /* ignore */ }
     });
