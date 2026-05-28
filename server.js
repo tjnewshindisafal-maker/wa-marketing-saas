@@ -23,7 +23,7 @@ const JWT_SECRET      = process.env.JWT_SECRET;
 const ADMIN_EMAIL     = process.env.ADMIN_EMAIL;
 const ADMIN_PASS      = process.env.ADMIN_PASS;
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://wadigit.com,https://wa-marketing-saas-1.onrender.com').split(',').map(s => s.trim());
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || 'https://wadigit.com,https://wa-marketing-saas-1.onrender.com,https://wa-marketing-saas-production.up.railway.app').split(',').map(s => s.trim());
 const BCRYPT_ROUNDS   = 10;
 const JWT_EXPIRY      = '7d';
 
