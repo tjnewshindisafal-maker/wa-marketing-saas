@@ -418,12 +418,14 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
   <!-- SIDEBAR -->
   <div class="sidebar">
     <button class="sb-btn on" data-sec="sec-overview"><span class="sb-ico">📊</span>Overview</button>
+    <button class="sb-btn" data-sec="sec-leads" id="sb-leads"><span class="sb-ico">📞</span>Leads / Calls <span class="sb-badge" id="newLeadsBadge">0</span></button>
     <button class="sb-btn" data-sec="sec-jobs" id="sb-jobs"><span class="sb-ico">🔧</span>All Jobs <span class="sb-badge" id="pendingBadge">0</span></button>
     <button class="sb-btn" data-sec="sec-new-job" id="sb-newjob"><span class="sb-ico">➕</span>New Job</button>
     <button class="sb-btn" data-sec="sec-pickup" id="sb-pickup"><span class="sb-ico">📦</span>Ready Pickup</button>
     <button class="sb-btn" data-sec="sec-whatsapp"><span class="sb-ico">💬</span>WhatsApp</button>
     <button class="sb-btn" data-sec="sec-technicians" id="sb-staff"><span class="sb-ico">👤</span>Technicians</button>
     <button class="sb-btn" data-sec="sec-customers" id="sb-customers"><span class="sb-ico">👥</span>Customers</button>
+    <button class="sb-btn" data-sec="sec-locations" id="sb-locations"><span class="sb-ico">📍</span>Locations</button>
     <button class="sb-btn" data-sec="sec-activity"><span class="sb-ico">📋</span>Activity Log</button>
   </div>
 
@@ -565,6 +567,7 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
               <select id="nj-tech"><option value="">Not assigned</option></select>
             </div>
           </div>
+          <div class="mf"><label>📍 Location / Branch</label><select id="nj-location"><option value="">— Not specified —</option></select></div>
 
           <!-- TIME SLOT (only Salon & Clinic) -->
           <div class="mf" id="nj-timeslot-wrap" style="display:none;">
@@ -669,6 +672,71 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
       </div>
     </div>
 
+    <!-- LEADS / CALLS -->
+    <div class="section" id="sec-leads">
+      <div class="stats-grid">
+        <div class="stat-card sc-blue"><div class="stat-ico">📞</div><div class="stat-val" id="lead-st-total">0</div><div class="stat-lbl">Total Leads / Calls</div></div>
+        <div class="stat-card sc-yellow"><div class="stat-ico">🆕</div><div class="stat-val" id="lead-st-new">0</div><div class="stat-lbl">New (Not Contacted)</div></div>
+        <div class="stat-card sc-green"><div class="stat-ico">✅</div><div class="stat-val" id="lead-st-converted">0</div><div class="stat-lbl">Converted to Job</div></div>
+        <div class="stat-card sc-acc"><div class="stat-ico">📈</div><div class="stat-val" id="lead-st-rate">0%</div><div class="stat-lbl">Conversion Rate</div></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head"><div class="panel-title">📍 Location-wise Breakdown</div></div>
+        <table><thead><tr><th>Location</th><th>Total Leads</th><th>Converted</th><th>Conv. Rate</th></tr></thead>
+        <tbody id="leadLocBreakdownTb"></tbody></table>
+      </div>
+
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">📞 All Leads / Calls</div>
+          <div class="panel-acts">
+            <input class="search-in" id="leadSearch" placeholder="Search name/phone...">
+            <select class="filter-sel" id="leadLocFilter"><option value="">All Locations</option></select>
+            <select class="filter-sel" id="leadSourceFilter">
+              <option value="">All Sources</option>
+              <option value="google_ads">Google Ads</option>
+              <option value="gmb">Google My Business</option>
+              <option value="myoperator">MyOperator Call</option>
+              <option value="walkin">Walk-in</option>
+              <option value="referral">Referral</option>
+              <option value="website">Website</option>
+              <option value="other">Other</option>
+            </select>
+            <select class="filter-sel" id="leadStatusFilter">
+              <option value="">All Status</option>
+              <option value="new">New</option>
+              <option value="contacted">Contacted</option>
+              <option value="converted">Converted</option>
+              <option value="lost">Lost</option>
+            </select>
+            <button class="abtn ab-inv" onclick="openCsvImport()">⇪ Import CSV</button>
+            <button class="abtn ab-pri" onclick="openLeadModal()">+ Add Lead</button>
+          </div>
+        </div>
+        <div class="table-scroll">
+        <table>
+          <thead><tr><th>Name / Phone</th><th>Location</th><th>Source</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead>
+          <tbody id="leadsTb"></tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- LOCATIONS -->
+    <div class="section" id="sec-locations">
+      <div class="panel">
+        <div class="panel-head">
+          <div class="panel-title">📍 Locations / Branches</div>
+          <button class="abtn ab-pri" onclick="openLocationModal()">+ Add Location</button>
+        </div>
+        <table>
+          <thead><tr><th>Name</th><th>Address</th><th>Phone</th><th>Action</th></tr></thead>
+          <tbody id="locationsTb"></tbody>
+        </table>
+      </div>
+    </div>
+
     <!-- ACTIVITY LOG -->
     <div class="section" id="sec-activity">
       <div class="panel">
@@ -723,6 +791,72 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
   </div>
 </div>
 
+<!-- LEAD / CALL MODAL -->
+<div class="overlay" id="leadModal">
+  <div class="modal">
+    <h3 id="leadModalTitle">Add Lead / Call</h3>
+    <input type="hidden" id="lm-id">
+    <div class="m-grid">
+      <div class="mf"><label>Name *</label><input type="text" id="lm-name" placeholder="Customer name"></div>
+      <div class="mf"><label>Phone *</label><input type="tel" id="lm-phone" placeholder="9876543210"></div>
+    </div>
+    <div class="m-grid">
+      <div class="mf"><label>Location / Branch</label><select id="lm-location"><option value="">— Select —</option></select></div>
+      <div class="mf"><label>Source</label>
+        <select id="lm-source">
+          <option value="google_ads">Google Ads</option>
+          <option value="gmb">Google My Business</option>
+          <option value="myoperator">MyOperator Call</option>
+          <option value="walkin">Walk-in</option>
+          <option value="referral">Referral</option>
+          <option value="website">Website</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="mf"><label>Notes</label><textarea id="lm-notes" placeholder="Call notes..."></textarea></div>
+    <div class="modal-btns">
+      <button class="btn-save" id="saveLeadBtn">Save Lead</button>
+      <button class="btn-cancel" onclick="document.getElementById('leadModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOCATION MODAL -->
+<div class="overlay" id="locationModal">
+  <div class="modal">
+    <h3 id="locationModalTitle">Add Location</h3>
+    <input type="hidden" id="lc-id">
+    <div class="mf"><label>Location Name *</label><input type="text" id="lc-name" placeholder="e.g. Kothrud Branch"></div>
+    <div class="mf"><label>Address</label><input type="text" id="lc-address" placeholder="Shop address"></div>
+    <div class="mf"><label>Phone</label><input type="tel" id="lc-phone" placeholder="9876543210"></div>
+    <div class="modal-btns">
+      <button class="btn-save" id="saveLocationBtn">Save Location</button>
+      <button class="btn-cancel" onclick="document.getElementById('locationModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
+<!-- CSV IMPORT MODAL (for MyOperator / Google Sheets call-log export) -->
+<div class="overlay" id="csvImportModal">
+  <div class="modal" style="max-width:720px;">
+    <h3>⇪ Import Leads/Calls from CSV</h3>
+    <p style="font-size:12px;color:var(--text-sub);margin:8px 0 14px;">Export your call log from MyOperator (or any CSV with Name/Phone/Location columns) and upload it here.</p>
+    <div class="mf"><input type="file" id="csvFileInput" accept=".csv"></div>
+    <div id="csvMappingWrap" style="display:none;">
+      <div style="font-size:13px;font-weight:600;margin:14px 0 8px;color:var(--text);">Map Columns</div>
+      <div class="m-grid" id="csvMappingGrid"></div>
+      <div style="font-size:13px;font-weight:600;margin:14px 0 8px;color:var(--text);">Preview (first 5 rows)</div>
+      <div class="table-scroll"><table><thead id="csvPreviewHead"></thead><tbody id="csvPreviewBody"></tbody></table></div>
+      <div style="font-size:12px;color:var(--text-sub);margin-top:8px;" id="csvSummary"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-save" id="csvImportBtn" style="display:none;">Import Leads</button>
+      <button class="btn-cancel" onclick="document.getElementById('csvImportModal').classList.remove('open')">Cancel</button>
+    </div>
+  </div>
+</div>
+
 <div id="toasts"></div>
 
 <script>
@@ -730,6 +864,11 @@ var token = localStorage.getItem('wa_token')||'';
 var currentUser = null;
 var allJobs = [];
 var allTechs = [];
+var allLocations = [];
+var allLeads = [];
+var convertingLeadId = null;
+var csvHeaders = [];
+var csvRows = [];
 var socket = io();
 var waConnected = false;
 
@@ -1078,7 +1217,7 @@ document.getElementById('disconnectWaBtn').addEventListener('click',function(){
   .then(function(){ setWAStatus(false); toast('Disconnected'); });
 });
 
-function loadAll(){ loadStats(); loadTechs(); loadCustomers(); }
+function loadAll(){ loadStats(); loadTechs(); loadCustomers(); loadLocations(); loadLeadStats(); loadLeads(); }
 
 function loadStats(){
   fetch('/api/jobs',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
@@ -1240,11 +1379,13 @@ document.getElementById('createJobBtn').addEventListener('click',function(){
   var remDays=noRem?0:parseInt(document.getElementById('nj-reminder-days').value||0);
   if(!cn||!cp){ toast('Name and phone required!','err'); return; }
   var btn=this; btn.textContent='Creating...'; btn.disabled=true;
+  var loc=document.getElementById('nj-location').value;
   var payload={
     customerName:cn, customerPhone:cp, serviceType:svc, deviceModel:dev,
     priority:pri, description:desc,
     industry: currentIndustry,
-    reminderDays: remDays
+    reminderDays: remDays,
+    location: loc
   };
   // Calculate reminder date locally for backwards-compatibility
   if(remDays > 0){
@@ -1270,7 +1411,13 @@ document.getElementById('createJobBtn').addEventListener('click',function(){
     if(tech){
       fetch('/api/jobs/'+d.job.jobId+'/technician',{method:'PUT',headers:{'x-token':token,'Content-Type':'application/json'},body:JSON.stringify({technicianId:tech})});
     }
+    if(convertingLeadId){
+      fetch('/api/leads/'+convertingLeadId+'/link-job',{method:'PUT',headers:{'x-token':token,'Content-Type':'application/json'},body:JSON.stringify({jobId:d.job.jobId})})
+      .then(function(){ loadLeads(); loadLeadStats(); });
+      convertingLeadId=null;
+    }
     ['nj-cname','nj-cphone','nj-device','nj-desc'].forEach(function(id){ document.getElementById(id).value=''; });
+    document.getElementById('nj-location').value='';
     showSection('sec-jobs');
     setTimeout(loadAll,1000);
   });
@@ -1415,6 +1562,290 @@ function deleteTech(id){
   if(!confirm('Delete technician?')) return;
   fetch('/api/technicians/'+id,{method:'DELETE',headers:{'x-token':token}}).then(function(){ toast('Deleted!','ok'); loadTechs(); });
 }
+
+// ═══════════════════════════ LOCATIONS ═══════════════════════════
+function loadLocations(){
+  fetch('/api/locations',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) return;
+    allLocations=d.locations||[];
+    var opts=allLocations.map(function(l){ return '<option value="'+l.name+'">'+l.name+'</option>'; }).join('');
+    document.getElementById('nj-location').innerHTML='<option value="">— Not specified —</option>'+opts;
+    document.getElementById('lm-location').innerHTML='<option value="">— Select —</option>'+opts;
+    document.getElementById('leadLocFilter').innerHTML='<option value="">All Locations</option>'+opts;
+    renderLocationsTable();
+  });
+}
+
+function renderLocationsTable(){
+  document.getElementById('locationsTb').innerHTML=allLocations.length?allLocations.map(function(l){
+    return '<tr><td style="font-weight:600;color:var(--text);">'+l.name+'</td>'
+      +'<td style="font-size:12px;color:var(--text-sub);">'+(l.address||'—')+'</td>'
+      +'<td style="font-size:12px;color:var(--text-sub);">'+(l.phone?'+'+l.phone:'—')+'</td>'
+      +'<td><div style="display:flex;gap:4px;flex-wrap:wrap;"><button class="abtn ab-pri" onclick="editLocation(\''+l._id+'\')">Edit</button><button class="abtn ab-del" onclick="deleteLocation(\''+l._id+'\')">Delete</button></div></td></tr>';
+  }).join(''):'<tr class="empty"><td colspan="4">No locations added yet — add your 10 shops here</td></tr>';
+}
+
+function openLocationModal(){
+  document.getElementById('locationModalTitle').textContent='Add Location';
+  document.getElementById('lc-id').value='';
+  document.getElementById('lc-name').value='';
+  document.getElementById('lc-address').value='';
+  document.getElementById('lc-phone').value='';
+  document.getElementById('locationModal').classList.add('open');
+}
+
+function editLocation(id){
+  var loc=allLocations.find(function(l){ return l._id===id; });
+  if(!loc) return;
+  document.getElementById('locationModalTitle').textContent='Edit Location';
+  document.getElementById('lc-id').value=id;
+  document.getElementById('lc-name').value=loc.name;
+  document.getElementById('lc-address').value=loc.address||'';
+  document.getElementById('lc-phone').value=loc.phone||'';
+  document.getElementById('locationModal').classList.add('open');
+}
+
+document.getElementById('saveLocationBtn').addEventListener('click',function(){
+  var id=document.getElementById('lc-id').value;
+  var name=document.getElementById('lc-name').value.trim();
+  var address=document.getElementById('lc-address').value.trim();
+  var phone=document.getElementById('lc-phone').value.trim();
+  if(!name){ toast('Location name required!','err'); return; }
+  var url=id?'/api/locations/'+id:'/api/locations';
+  var method=id?'PUT':'POST';
+  fetch(url,{method:method,headers:{'x-token':token,'Content-Type':'application/json'},body:JSON.stringify({name:name,address:address,phone:phone})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){ toast(d.msg,'err'); return; }
+    toast('Location saved!','ok');
+    document.getElementById('locationModal').classList.remove('open');
+    loadLocations();
+  });
+});
+
+function deleteLocation(id){
+  if(!confirm('Delete this location?')) return;
+  fetch('/api/locations/'+id,{method:'DELETE',headers:{'x-token':token}}).then(function(){ toast('Deleted!','ok'); loadLocations(); });
+}
+
+// ═══════════════════════════ LEADS / CALLS ═══════════════════════════
+var LEAD_SOURCE_LABELS={google_ads:'Google Ads',gmb:'GMB',myoperator:'MyOperator',walkin:'Walk-in',referral:'Referral',website:'Website',other:'Other'};
+var LEAD_STATUS_LABELS={new:'🆕 New',contacted:'📞 Contacted',converted:'✅ Converted',lost:'❌ Lost'};
+
+function loadLeadStats(){
+  fetch('/api/leads/stats',{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) return;
+    document.getElementById('lead-st-total').textContent=d.total;
+    document.getElementById('lead-st-new').textContent=d.byStatus.new||0;
+    document.getElementById('lead-st-converted').textContent=d.converted;
+    document.getElementById('lead-st-rate').textContent=d.convRate+'%';
+    document.getElementById('newLeadsBadge').textContent=d.byStatus.new||0;
+    var rows=Object.keys(d.byLocation||{});
+    document.getElementById('leadLocBreakdownTb').innerHTML=rows.length?rows.map(function(loc){
+      var v=d.byLocation[loc];
+      var rate=v.total?Math.round((v.converted/v.total)*100):0;
+      return '<tr><td style="font-weight:600;color:var(--text);">'+loc+'</td><td>'+v.total+'</td><td>'+v.converted+'</td><td>'+rate+'%</td></tr>';
+    }).join(''):'<tr class="empty"><td colspan="4">No leads yet</td></tr>';
+  });
+}
+
+function loadLeads(){
+  var params=new URLSearchParams();
+  var loc=document.getElementById('leadLocFilter').value; if(loc) params.set('location',loc);
+  var src=document.getElementById('leadSourceFilter').value; if(src) params.set('source',src);
+  var st=document.getElementById('leadStatusFilter').value; if(st) params.set('status',st);
+  var q=document.getElementById('leadSearch').value; if(q) params.set('search',q);
+  fetch('/api/leads?'+params.toString(),{headers:{'x-token':token}}).then(function(r){return r.json();}).then(function(d){
+    if(!d.ok) return;
+    allLeads=d.leads||[];
+    renderLeads();
+  });
+}
+
+function leadStatusTag(s){
+  var m={new:'pending',contacted:'in_progress',converted:'completed',lost:'cancelled'};
+  return '<span class="tag '+(m[s]||'')+'">'+(LEAD_STATUS_LABELS[s]||s)+'</span>';
+}
+
+function renderLeads(){
+  document.getElementById('leadsTb').innerHTML=allLeads.length?allLeads.map(function(l){
+    return '<tr>'
+      +'<td><div style="font-weight:600;color:var(--text);">'+l.name+'</div><div style="font-size:11px;color:var(--muted);">+'+l.phone+'</div></td>'
+      +'<td style="font-size:12px;">'+(l.location||'—')+'</td>'
+      +'<td style="font-size:12px;">'+(LEAD_SOURCE_LABELS[l.source]||l.source)+'</td>'
+      +'<td>'+leadStatusTag(l.status)+'</td>'
+      +'<td style="font-size:12px;color:var(--muted);">'+fmtDate(l.createdAt)+'</td>'
+      +'<td><div style="display:flex;gap:4px;flex-wrap:wrap;">'
+        +(l.status==='new'?'<button class="abtn ab-inv" onclick="setLeadStatus(\''+l._id+'\',\'contacted\')">Contacted</button>':'')
+        +(l.status!=='converted'&&l.status!=='lost'?'<button class="abtn ab-gr" onclick="convertLeadToJob(\''+l._id+'\')">Convert to Job</button>':'')
+        +(l.status!=='lost'&&l.status!=='converted'?'<button class="abtn ab-del" onclick="setLeadStatus(\''+l._id+'\',\'lost\')">Lost</button>':'')
+        +'<button class="abtn ab-wa" onclick="msgCustomer(\''+l.phone+'\',\''+l.name+'\')">📱</button>'
+        +'<button class="abtn ab-del" onclick="deleteLead(\''+l._id+'\')">🗑</button>'
+      +'</div></td>'
+      +'</tr>';
+  }).join(''):'<tr class="empty"><td colspan="6">No leads/calls yet — add manually or import CSV from MyOperator</td></tr>';
+}
+
+['leadLocFilter','leadSourceFilter','leadStatusFilter'].forEach(function(id){
+  document.getElementById(id).addEventListener('change',loadLeads);
+});
+document.getElementById('leadSearch').addEventListener('input',function(){ loadLeads(); });
+
+function openLeadModal(){
+  document.getElementById('leadModalTitle').textContent='Add Lead / Call';
+  document.getElementById('lm-id').value='';
+  document.getElementById('lm-name').value='';
+  document.getElementById('lm-phone').value='';
+  document.getElementById('lm-location').value='';
+  document.getElementById('lm-source').value='walkin';
+  document.getElementById('lm-notes').value='';
+  document.getElementById('leadModal').classList.add('open');
+}
+
+document.getElementById('saveLeadBtn').addEventListener('click',function(){
+  var name=document.getElementById('lm-name').value.trim();
+  var phone=document.getElementById('lm-phone').value.trim();
+  var location=document.getElementById('lm-location').value;
+  var source=document.getElementById('lm-source').value;
+  var notes=document.getElementById('lm-notes').value.trim();
+  if(!name||!phone){ toast('Name and phone required!','err'); return; }
+  fetch('/api/leads',{method:'POST',headers:{'x-token':token,'Content-Type':'application/json'},body:JSON.stringify({name:name,phone:phone,location:location,source:source,notes:notes})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){ toast(d.msg,'err'); return; }
+    toast('Lead added!','ok');
+    document.getElementById('leadModal').classList.remove('open');
+    loadLeads(); loadLeadStats();
+  });
+});
+
+function setLeadStatus(id,status){
+  fetch('/api/leads/'+id,{method:'PUT',headers:{'x-token':token,'Content-Type':'application/json'},body:JSON.stringify({status:status})})
+  .then(function(r){return r.json();}).then(function(d){
+    if(!d.ok){ toast(d.msg,'err'); return; }
+    toast('Lead updated!','ok');
+    loadLeads(); loadLeadStats();
+  });
+}
+
+function deleteLead(id){
+  if(!confirm('Delete this lead?')) return;
+  fetch('/api/leads/'+id,{method:'DELETE',headers:{'x-token':token}}).then(function(){ toast('Deleted!','ok'); loadLeads(); loadLeadStats(); });
+}
+
+function convertLeadToJob(id){
+  var lead=allLeads.find(function(l){ return l._id===id; });
+  if(!lead) return;
+  convertingLeadId=id;
+  document.getElementById('nj-cname').value=lead.name;
+  document.getElementById('nj-cphone').value=lead.phone;
+  if(lead.location) document.getElementById('nj-location').value=lead.location;
+  toast('Lead loaded — fill service details and create job','ok');
+  showSection('sec-new-job');
+}
+
+// ═══════════════════════════ CSV IMPORT (MyOperator call log) ═══════════════════════════
+var CSV_FIELDS=[
+  {key:'name',label:'Name *',guess:['name','caller','customer']},
+  {key:'phone',label:'Phone *',guess:['phone','number','caller number','mobile']},
+  {key:'location',label:'Location',guess:['location','branch','shop']},
+  {key:'source',label:'Source',guess:['source','campaign']},
+  {key:'notes',label:'Notes',guess:['notes','remark','description']},
+  {key:'createdAt',label:'Date/Time',guess:['date','time','created']}
+];
+
+function openCsvImport(){
+  csvHeaders=[]; csvRows=[];
+  document.getElementById('csvFileInput').value='';
+  document.getElementById('csvMappingWrap').style.display='none';
+  document.getElementById('csvImportBtn').style.display='none';
+  document.getElementById('csvImportModal').classList.add('open');
+}
+
+document.getElementById('csvFileInput').addEventListener('change',function(e){
+  var file=e.target.files[0];
+  if(!file) return;
+  var reader=new FileReader();
+  reader.onload=function(ev){ parseCsv(ev.target.result); };
+  reader.readAsText(file);
+});
+
+function parseCsvLine(line){
+  var result=[]; var cur=''; var inQuotes=false;
+  for(var i=0;i<line.length;i++){
+    var c=line[i];
+    if(c==='"'){ inQuotes=!inQuotes; }
+    else if(c===','&&!inQuotes){ result.push(cur); cur=''; }
+    else { cur+=c; }
+  }
+  result.push(cur);
+  return result.map(function(s){ return s.trim().replace(/^"|"$/g,''); });
+}
+
+function parseCsv(text){
+  var lines=text.split(/\r?\n/).filter(function(l){ return l.trim().length; });
+  if(!lines.length){ toast('Empty file!','err'); return; }
+  csvHeaders=parseCsvLine(lines[0]);
+  csvRows=lines.slice(1).map(parseCsvLine);
+  renderCsvMapping();
+}
+
+function guessColumn(guesses){
+  for(var i=0;i<csvHeaders.length;i++){
+    var h=csvHeaders[i].toLowerCase();
+    if(guesses.some(function(g){ return h.indexOf(g)!==-1; })) return i;
+  }
+  return -1;
+}
+
+function renderCsvMapping(){
+  document.getElementById('csvMappingWrap').style.display='block';
+  document.getElementById('csvMappingGrid').innerHTML=CSV_FIELDS.map(function(f){
+    var guess=guessColumn(f.guess);
+    var opts=csvHeaders.map(function(h,idx){
+      return '<option value="'+idx+'" '+(idx===guess?'selected':'')+'>'+h+'</option>';
+    }).join('');
+    return '<div class="mf"><label>'+f.label+'</label><select id="csvmap-'+f.key+'" onchange="renderCsvPreview()"><option value="">— Skip —</option>'+opts+'</select></div>';
+  }).join('');
+  renderCsvPreview();
+  document.getElementById('csvImportBtn').style.display='inline-flex';
+}
+
+function getMappedRows(){
+  var mapping={};
+  CSV_FIELDS.forEach(function(f){
+    var v=document.getElementById('csvmap-'+f.key).value;
+    mapping[f.key]=v===''?-1:parseInt(v);
+  });
+  return csvRows.map(function(row){
+    var obj={};
+    CSV_FIELDS.forEach(function(f){
+      obj[f.key]=mapping[f.key]>=0?(row[mapping[f.key]]||''):'';
+    });
+    return obj;
+  }).filter(function(r){ return r.name && r.phone; });
+}
+
+function renderCsvPreview(){
+  var mapped=getMappedRows();
+  document.getElementById('csvPreviewHead').innerHTML='<tr>'+CSV_FIELDS.map(function(f){ return '<th>'+f.label+'</th>'; }).join('')+'</tr>';
+  document.getElementById('csvPreviewBody').innerHTML=mapped.slice(0,5).map(function(r){
+    return '<tr>'+CSV_FIELDS.map(function(f){ return '<td>'+(r[f.key]||'—')+'</td>'; }).join('')+'</tr>';
+  }).join('');
+  document.getElementById('csvSummary').textContent=mapped.length+' valid rows found (out of '+csvRows.length+' total). Rows missing Name or Phone are skipped.';
+}
+
+document.getElementById('csvImportBtn').addEventListener('click',function(){
+  var rows=getMappedRows();
+  if(!rows.length){ toast('No valid rows to import!','err'); return; }
+  var btn=this; btn.textContent='Importing...'; btn.disabled=true;
+  fetch('/api/leads/import',{method:'POST',headers:{'x-token':token,'Content-Type':'application/json'},body:JSON.stringify({rows:rows})})
+  .then(function(r){return r.json();}).then(function(d){
+    btn.textContent='Import Leads'; btn.disabled=false;
+    if(!d.ok){ toast(d.msg,'err'); return; }
+    toast(d.imported+' leads imported!','ok');
+    document.getElementById('csvImportModal').classList.remove('open');
+    loadLeads(); loadLeadStats();
+  });
+});
 
 function showSection(id){
   document.querySelectorAll('.section').forEach(function(s){s.classList.remove('on');});

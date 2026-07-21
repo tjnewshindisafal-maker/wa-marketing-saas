@@ -9,6 +9,7 @@ const path       = require('path');
 const fs         = require('fs');
 const { registerReviewRoutes, triggerReviewOnJobComplete } = require('./google-review');
 const { registerChatbotRoutes, handleIncomingMessage }    = require('./chatbot');
+const { registerCrmRoutes } = require('./crm');
 const qrcode     = require('qrcode');
 const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
@@ -275,6 +276,8 @@ async function connectDB() {
     try { await db.collection('users').createIndex({ email: 1 }, { unique: true }); } catch(e){}
     try { await db.collection('jobs').createIndex({ jobId: 1 }); } catch(e){}
     try { await db.collection('jobs').createIndex({ clientId: 1 }); } catch(e){}
+    try { await db.collection('leads').createIndex({ clientId: 1 }); } catch(e){}
+    try { await db.collection('locations').createIndex({ clientId: 1 }); } catch(e){}
 
     await initAdmin();
     startScheduler();
@@ -282,6 +285,7 @@ async function connectDB() {
     startReminderChecker();
     registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions);
     registerChatbotRoutes(app, db, clientAuth, PLAN_FEATURES);
+    registerCrmRoutes(app, db, clientAuth, PLAN_FEATURES);
   } catch(e) { console.error('MongoDB error:', e.message); }
  } 
 async function initAdmin() {
@@ -945,12 +949,13 @@ app.post('/api/jobs', clientAuth, async (req,res) => {
   try {
     if(!hasFeature(req.user.plan,'jobs')) return res.json({ ok:false, msg:'Upgrade to Service plan' });
     let { customerName, customerPhone, serviceType, description, deviceModel, priority,
-            industry, reminderDays, reminderDate, timeSlot } = req.body;
+            industry, reminderDays, reminderDate, timeSlot, location } = req.body;
     customerName = sanitizeStr(customerName, 100);
     customerPhone = sanitizeStr(customerPhone, 15);
     serviceType = sanitizeStr(serviceType, 100) || 'General';
     description = sanitizeStr(description, 1000);
     deviceModel = sanitizeStr(deviceModel, 200);
+    location = sanitizeStr(location, 100);
     priority = ['normal','urgent','vip'].indexOf(priority) !== -1 ? priority : 'normal';
 
     if(!customerName || !customerPhone) return res.json({ ok:false, msg:'Customer name and phone required' });
@@ -970,6 +975,7 @@ app.post('/api/jobs', clientAuth, async (req,res) => {
       customerName, customerPhone, serviceType,
       description, deviceModel, priority,
       industry: jobIndustry,
+      location,
       status:'pending',
       statusHistory:[{ status:'pending', time:new Date(), note:'Created' }],
       cost:null, costApproved:null, technicianId:null, technicianName:null,
@@ -990,9 +996,11 @@ app.get('/api/jobs', clientAuth, async (req,res) => {
   try {
     const status = sanitizeStr(req.query.status, 30);
     const search = sanitizeStr(req.query.search, 100);
+    const location = sanitizeStr(req.query.location, 100);
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const query = { clientId:req.user._id.toString() };
     if(status) query.status = status;
+    if(location) query.location = location;
     if(search){
       const safe = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
       query.$or = [
