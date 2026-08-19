@@ -287,22 +287,17 @@ async function connectDB() {
 async function initAdmin() {
   try {
     const users = db.collection('users');
+    const adminEmail = sanitizeStr(ADMIN_EMAIL, 150).toLowerCase();
     const admin = await users.findOne({ role:'admin' });
     if(!admin){
       const hashedPass = await hashPassword(ADMIN_PASS);
-      await users.insertOne({ name:'Admin', email:ADMIN_EMAIL, pass:hashedPass, role:'admin', status:'active', plan:'admin', createdAt:new Date() });
+      await users.insertOne({ name:'Admin', email:adminEmail, pass:hashedPass, role:'admin', status:'active', plan:'admin', createdAt:new Date() });
       console.log('Admin created');
     } else {
       // Only update email if changed; never auto-reset password on restart
-      if(admin.email !== ADMIN_EMAIL){
-        await users.updateOne({ _id: admin._id }, { $set:{ email: ADMIN_EMAIL, status:'active' } });
+      if(admin.email !== adminEmail){
+        await users.updateOne({ _id: admin._id }, { $set:{ email: adminEmail, status:'active' } });
         console.log('Admin email updated');
-      }
-      // If RESET_ADMIN_PASS=true is set, force-reset password once
-      if(process.env.RESET_ADMIN_PASS === 'true'){
-        const hashedPass = await hashPassword(ADMIN_PASS);
-        await users.updateOne({ _id: admin._id }, { $set:{ pass:hashedPass, status:'active' } });
-        console.log('⚠️  Admin password RESET (remove RESET_ADMIN_PASS env var now)');
       }
     }
   } catch(e) { console.log('initAdmin error:', e.message); }
