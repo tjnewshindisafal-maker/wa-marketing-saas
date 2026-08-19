@@ -735,16 +735,15 @@ document.getElementById('do-signup').addEventListener('click', function(){
     body: JSON.stringify({ name:name, business:biz||name, industry:ind, email:email, phone:phone, pass:pass, plan:selectedPlan })
   })
   .then(function(r){ return r.json(); })
-  .then(function(d){
+    .then(function(d){
     btn.textContent='Start 7-Day Free Trial'; btn.disabled=false;
-    if(!d.ok){ toast(d.msg||'Login failed!','err'); return; }
-    // Save industry locally so shop dashboard picks it immediately
+    if(!d.ok){ toast(d.msg||'Signup failed!','err'); return; }
+    // Payment step paused for now — log the new account straight in
+    localStorage.setItem('wa_token', d.token);
+    localStorage.setItem('wa_user', JSON.stringify({ name:name, plan:selectedPlan }));
     localStorage.setItem('wa_industry', mapIndustryToShop(ind));
-    pendingUser = { name:name, email:email, phone:phone, plan:selectedPlan, amount:selectedAmount };
     closeModal('signup');
-    // Show UPI payment
-    document.getElementById('upi-amount').innerHTML = '&#x20B9;'+selectedAmount;
-    openModal('upi');
+    window.location.href='/client';
   })
   .catch(function(){ btn.textContent='Start 7-Day Free Trial'; btn.disabled=false; toast('Server error!','err'); });
 });
