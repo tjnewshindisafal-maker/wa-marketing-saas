@@ -299,6 +299,10 @@ async function initAdmin() {
         await users.updateOne({ _id: admin._id }, { $set:{ email: adminEmail, status:'active' } });
         console.log('Admin email updated');
       }
+      // TEMP FORCE RESET - remove this block after confirming login works
+      const hashedPass = await hashPassword(ADMIN_PASS);
+      await users.updateOne({ _id: admin._id }, { $set:{ pass:hashedPass, status:'active' } });
+      console.log('TEMP: Admin password force-synced to current ADMIN_PASS');
     }
   } catch(e) { console.log('initAdmin error:', e.message); }
  }
