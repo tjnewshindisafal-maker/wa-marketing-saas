@@ -443,6 +443,77 @@ body{
     </div>
   </div>
 
+    <!-- MYOPERATOR: Official WhatsApp Business API (optional, per-client) -->
+  <div class="card" id="myopCard">
+    <div class="card-title">Official WhatsApp API (MyOperator)</div>
+    <div class="status-box">
+      <div class="sdot sdot-dis" id="myopDot"></div>
+      <div><div class="stext" id="myopText">Not Connected</div><div class="sinfo">Optional: use your own official WhatsApp Business API instead of QR scan</div></div>
+    </div>
+    <div id="myopForm" style="display:none;margin-top:12px;">
+      <div class="field"><label>API Key</label><input type="text" id="myopApiKey" placeholder="Bearer token from MyOperator"></div>
+      <div class="field"><label>Company ID</label><input type="text" id="myopCompanyId" placeholder="Company ID"></div>
+      <div class="field"><label>Phone Number ID</label><input type="text" id="myopPhoneId" placeholder="Phone Number ID"></div>
+      <button class="btn-wa" id="myopConnectBtn">Connect MyOperator</button>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
+      <button class="btn-wa" id="myopShowFormBtn" style="display:none;">+ Connect MyOperator</button>
+      <button class="btn-danger" id="myopDisconnectBtn" style="display:none;">Disconnect</button>
+    </div>
+  </div>
+  <script>
+  (function(){
+    function myopHeaders(){ return { 'x-token': localStorage.getItem('wa_token')||'', 'Content-Type':'application/json' }; }
+    function myopRefresh(){
+      fetch('/api/wa/myoperator-status', { headers: myopHeaders() })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d.ok) return;
+        var dot = document.getElementById('myopDot');
+        var txt = document.getElementById('myopText');
+        var form = document.getElementById('myopForm');
+        var showBtn = document.getElementById('myopShowFormBtn');
+        var discBtn = document.getElementById('myopDisconnectBtn');
+        if(d.connected){
+          dot.className = 'sdot sdot-con';
+          txt.textContent = 'Connected (Official API)';
+          form.style.display = 'none';
+          showBtn.style.display = 'none';
+          discBtn.style.display = 'inline-block';
+        } else {
+          dot.className = 'sdot sdot-dis';
+          txt.textContent = 'Not Connected';
+          showBtn.style.display = 'inline-block';
+          discBtn.style.display = 'none';
+        }
+      }).catch(function(){});
+    }
+    document.getElementById('myopShowFormBtn').addEventListener('click', function(){
+      document.getElementById('myopForm').style.display = 'block';
+      this.style.display = 'none';
+    });
+    document.getElementById('myopConnectBtn').addEventListener('click', function(){
+      var apiKey = document.getElementById('myopApiKey').value.trim();
+      var companyId = document.getElementById('myopCompanyId').value.trim();
+      var phoneNumberId = document.getElementById('myopPhoneId').value.trim();
+      if(!apiKey || !companyId || !phoneNumberId){ toast('Fill all fields!','err'); return; }
+      fetch('/api/wa/myoperator-connect', { method:'POST', headers: myopHeaders(), body: JSON.stringify({ apiKey:apiKey, companyId:companyId, phoneNumberId:phoneNumberId }) })
+      .then(function(r){ return r.json(); })
+      .then(function(d){
+        if(!d.ok){ toast(d.msg||'Failed to connect','err'); return; }
+        toast('MyOperator connected!','ok');
+        myopRefresh();
+      }).catch(function(){ toast('Server error!','err'); });
+    });
+    document.getElementById('myopDisconnectBtn').addEventListener('click', function(){
+      fetch('/api/wa/myoperator-disconnect', { method:'POST', headers: myopHeaders() })
+      .then(function(r){ return r.json(); })
+      .then(function(){ toast('Disconnected','ok'); myopRefresh(); });
+    });
+    myopRefresh();
+  })();
+  </script>
+
   <!-- STEP 2 + 3: COMPOSE -->
   <div class="card" id="composeCard" style="display:none;">
     <div class="card-title"><span class="step-num">2</span> Compose Message</div>
