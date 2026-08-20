@@ -79,6 +79,7 @@ async function sendBulkViaMyOperator(db, io, user, body, file, res) {
       // Gentle pacing — protects the number's quality rating even on the official API.
       await new Promise(r => setTimeout(r, 1200 + Math.random() * 800));
     } catch (err) {
+            console.log('MyOperator send error:', err.message);
       io.to('wa_' + userId).emit('sent', { index: i, phone: c.phone, name: c.name, status: 'failed' });
     }
     logs.push({ userId, phone: c.phone, name: c.name, status, createdAt: new Date() });
