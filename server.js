@@ -9,6 +9,7 @@ const path       = require('path');
 const fs         = require('fs');
 const { registerReviewRoutes, triggerReviewOnJobComplete } = require('./google-review');
 const { registerChatbotRoutes, handleIncomingMessage }    = require('./chatbot');
+const { registerMyOperatorRoutes, sendBulkViaMyOperator } = require('./myoperator');
 const qrcode     = require('qrcode');
 const bcrypt     = require('bcryptjs');
 const jwt        = require('jsonwebtoken');
@@ -282,6 +283,7 @@ async function connectDB() {
     startReminderChecker();
     registerReviewRoutes(app, db, clientAuth, PLAN_FEATURES, sessions);
     registerChatbotRoutes(app, db, clientAuth, PLAN_FEATURES);
+        registerMyOperatorRoutes(app, db, clientAuth);
   } catch(e) { console.error('MongoDB error:', e.message); }
  } 
 async function initAdmin() {
@@ -1231,6 +1233,10 @@ app.post('/api/wa/send', upload.single('image'), clientAuth, async (req,res) => 
       return res.json({ ok:false, msg:'Message contains spam-like words. Please rephrase to avoid account ban.' });
     }
     
+    // MyOperator official API path — bypasses Baileys session entirely
+    if(req.user.myoperator && req.user.myoperator.enabled){
+      return sendBulkViaMyOperator(db, io, req.user, req.body, req.file, res);
+    }
     const userId = req.user._id.toString();
     const s = sessions[userId];
     if(!s || s.status !== 'connected') return res.json({ ok:false, msg:'WhatsApp not connected' });
