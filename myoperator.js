@@ -38,9 +38,9 @@ async function sendTextMessage(cfg, phone, text) {
       myop_ref_id: null
     })
   });
-  const data = await resp.json().catch(() => ({}));
+    const data = await resp.json().catch(() => ({}));
   if (!resp.ok || data.status !== 'success') {
-    throw new Error(data.message || ('MyOperator send failed (' + resp.status + ')'));
+    throw new Error('HTTP ' + resp.status + ' — ' + JSON.stringify(data));
   }
   return data;
 }
