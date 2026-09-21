@@ -373,6 +373,88 @@ body{
 .hidden{display:none !important;}
 .mt-8{margin-top:8px;}
 .mt-16{margin-top:16px;}
+
+/* ===================== APP SHELL (sidebar + panes) ===================== */
+.shell{display:flex;align-items:flex-start;}
+.sidebar{
+  width:240px;flex:0 0 240px;position:sticky;top:60px;
+  height:calc(100vh - 60px);background:var(--surface);
+  border-right:1px solid var(--border);padding:16px 12px;
+  display:flex;flex-direction:column;gap:2px;overflow-y:auto;
+}
+.side-label{
+  font-size:10px;font-weight:800;letter-spacing:.11em;text-transform:uppercase;
+  color:var(--muted);padding:14px 12px 7px;
+}
+.side-item{
+  display:flex;align-items:center;gap:11px;width:100%;
+  padding:11px 12px;border-radius:10px;border:1px solid transparent;
+  background:transparent;color:var(--text-sub);
+  font-family:var(--font);font-size:14px;font-weight:600;line-height:1.2;
+  cursor:pointer;text-align:left;text-decoration:none;transition:background .15s,color .15s;
+}
+.side-item:hover{background:var(--surface-2);color:var(--text);}
+.side-item.on{background:var(--accent-bg);color:var(--accent-dark);border-color:#CFE6DA;}
+.side-ic{
+  width:26px;height:26px;flex:0 0 26px;display:flex;align-items:center;
+  justify-content:center;font-size:15px;line-height:1;
+}
+.side-item.up{background:#FDF6E8;color:#8A5300;}
+.side-item.up:hover{background:#F9EDD5;color:#8A5300;}
+.side-foot{margin-top:auto;padding-top:14px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:2px;}
+#reviewBtn[style*="inline"], #shopBtn[style*="inline"],
+#upgradeBtn[style*="inline"], #chatbotNavBtn[style*="inline"]{display:flex !important;}
+
+.main{flex:1;min-width:0;}
+.page{max-width:940px;margin:0 auto;padding:26px 24px 48px;}
+.pane{display:none;}
+.pane.on{display:block;}
+.pane-head{margin:0 0 18px;}
+.pane-head h1{font-size:23px;font-weight:800;letter-spacing:-.025em;color:var(--text);line-height:1.2;}
+.pane-head p{font-size:14px;color:var(--text-sub);margin-top:5px;max-width:52ch;}
+.notice{
+  background:var(--accent-bg);border:1px solid #CFE6DA;border-radius:var(--radius);
+  padding:14px 16px;margin-bottom:16px;font-size:13.5px;color:var(--accent-dark);font-weight:600;line-height:1.5;
+}
+
+@media(max-width:900px){
+  .sidebar{display:none;}
+  .page{max-width:none;padding:16px 14px 96px;}
+  .pane-head h1{font-size:19px;}
+  .pane-head p{font-size:13px;}
+  .mobile-nav{
+    display:flex;position:fixed;bottom:0;left:0;right:0;
+    background:var(--surface);border-top:1px solid var(--border);
+    z-index:100;box-shadow:0 -2px 10px rgba(0,0,0,0.05);
+    padding:6px 4px max(6px, env(safe-area-inset-bottom));
+    justify-content:flex-start;overflow-x:auto;-webkit-overflow-scrolling:touch;
+  }
+  .mobile-nav::-webkit-scrollbar{display:none;}
+  .mnav-item{
+    flex:1 0 auto;min-width:68px;background:none;border:none;padding:7px 6px;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+    font-family:var(--font);font-size:10px;font-weight:700;color:var(--muted);
+    cursor:pointer;text-decoration:none;transition:color .15s;
+  }
+  .mnav-item .mico{font-size:19px;line-height:1;}
+  .mnav-item.on{color:var(--accent);}
+}
+
+/* Brand alignment: legacy blue/near-black actions → deep green */
+.btn-primary{background:var(--accent);color:#fff;}
+.btn-primary:hover{background:var(--accent-dark);}
+#refreshSchedBtn{background:var(--surface-2) !important;color:var(--text) !important;border:1px solid var(--border) !important;}
+#refreshSchedBtn:hover{background:#E8F0EB !important;}
+.cb-tab{
+  background:var(--surface) !important;color:var(--text-sub) !important;
+  border:1px solid var(--border) !important;border-radius:999px;
+  font-weight:600;padding:9px 16px;box-shadow:none !important;
+}
+.cb-tab:hover{background:var(--surface-2) !important;color:var(--text) !important;}
+.cb-tab.on{
+  background:var(--accent-bg) !important;color:var(--accent-dark) !important;
+  border-color:#CFE6DA !important;
+}
 </style>
 </head>
 <body>
@@ -388,14 +470,29 @@ body{
       <span class="uname" id="uname">Loading...</span>
       <span class="ptag ptag-pro" id="ptag">Pro</span>
     </div>
-    <a href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" id="upgradeBtn" class="btn-lo btn-upgrade" style="display:none;">&#x1F48E; Upgrade</a>
-    <a href="/client/review.html" id="reviewBtn" class="btn-lo" style="display:none;text-decoration:none;background:#fbbf24;color:#000;">&#x2B50; Reviews</a>
-    <a href="/shop" id="shopBtn" class="btn-lo" style="display:none;text-decoration:none;background:var(--accent);color:#fff;">&#x1F6E0; Jobs</a>
-    <button class="btn-lo" id="chatbotNavBtn" onclick="document.getElementById('chatbotCard').scrollIntoView({behavior:'smooth'})" style="display:none;">🤖 Chatbot</button>
-    <button class="btn-lo" id="logoutBtn">Logout</button>
   </div>
 </nav>
 
+<div class="shell">
+
+<aside class="sidebar">
+  <div class="side-label">Messaging</div>
+  <button class="side-item on" data-pane="campaign"><span class="side-ic">&#9998;</span><span>New campaign</span></button>
+  <button class="side-item" data-pane="sched"><span class="side-ic">&#128340;</span><span>Scheduled</span></button>
+  <button class="side-item" id="chatbotNavBtn" data-pane="bot" style="display:none;"><span class="side-ic">&#128172;</span><span>Auto-reply</span></button>
+
+  <div class="side-label">Setup</div>
+  <button class="side-item" data-pane="conn"><span class="side-ic">&#128241;</span><span>Connection</span></button>
+  <a class="side-item" href="/client/review.html" id="reviewBtn" style="display:none;"><span class="side-ic">&#9733;</span><span>Reviews</span></a>
+  <a class="side-item" href="/shop" id="shopBtn" style="display:none;"><span class="side-ic">&#9881;</span><span>Jobs</span></a>
+
+  <div class="side-foot">
+    <a class="side-item up" href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" id="upgradeBtn" style="display:none;"><span class="side-ic">&#9830;</span><span>Upgrade plan</span></a>
+    <button class="side-item" id="logoutBtn"><span class="side-ic">&#9099;</span><span>Logout</span></button>
+  </div>
+</aside>
+
+<div class="main">
 <div class="page">
 
   <!-- TRIAL BANNER (Active) -->
@@ -427,9 +524,14 @@ body{
     <div class="limit-text" id="limitText">0 / 0 messages today</div>
   </div>
 
-  <!-- STEP 1: CONNECT -->
+  <section class="pane" data-pane="conn">
+  <div class="pane-head">
+    <h1>Connection</h1>
+    <p>Link the WhatsApp number you send from. Scan once &mdash; the session stays active.</p>
+  </div>
+
   <div class="card">
-    <div class="card-title"><span class="step-num">1</span> Connect Your WhatsApp</div>
+    <div class="card-title">Connect your WhatsApp</div>
     <div class="status-box">
       <div class="sdot sdot-dis" id="sdot"></div>
       <div><div class="stext" id="stext">Not Connected</div><div class="sinfo" id="sinfo">Connect your WhatsApp to start sending</div></div>
@@ -514,10 +616,17 @@ body{
     myopRefresh();
   })();
   </script>
+  </section>
 
-  <!-- STEP 2 + 3: COMPOSE -->
+  <section class="pane" data-pane="campaign">
+  <div class="pane-head">
+    <h1>New campaign</h1>
+    <p>Write the message, add your contact list, then send with safe delays.</p>
+  </div>
+  <div class="notice" id="waNotice">WhatsApp is not connected yet. Open <b>Connection</b> and scan the QR code to unlock campaigns.</div>
+
   <div class="card" id="composeCard" style="display:none;">
-    <div class="card-title"><span class="step-num">2</span> Compose Message</div>
+    <div class="card-title"><span class="step-num">1</span> Compose message</div>
     <div class="grid-2">
       <div>
         <div class="field">
@@ -565,7 +674,7 @@ body{
 
   <!-- STEP 3: CONTACTS -->
   <div class="card" id="contactsCard" style="display:none;">
-    <div class="card-title"><span class="step-num">3</span> Contacts</div>
+    <div class="card-title"><span class="step-num">2</span> Contacts</div>
     <div class="excel-drop">
       <input type="file" id="excelInput" accept=".xlsx,.xls,.csv">
       <div style="font-size:28px;">&#x1F4CA;</div>
@@ -594,7 +703,7 @@ body{
 
   <!-- STEP 4: SEND -->
   <div class="card" id="sendCard" style="display:none;">
-    <div class="card-title"><span class="step-num">4</span> Send Messages</div>
+    <div class="card-title"><span class="step-num">3</span> Send messages</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.7;">
       &#x26A0;&#xFE0F; Messages sent with 1.5-2.5 sec delay to avoid ban. Do not close this tab while sending.
     </div>
@@ -604,9 +713,16 @@ body{
     </div>
   </div>
 
-  <!-- STEP 5: SCHEDULED MESSAGES (Pro+) -->
+  </section>
+
+  <section class="pane" data-pane="sched">
+  <div class="pane-head">
+    <h1>Scheduled</h1>
+    <p>Queue a campaign for a future date and time. It sends automatically.</p>
+  </div>
+
   <div class="card" id="schedCard" style="display:none;">
-    <div class="card-title"><span class="step-num">5</span> Scheduled Messages <span style="font-size:11px;background:var(--accent-bg);color:var(--accent-dark);padding:3px 8px;border-radius:6px;margin-left:8px;">PRO</span></div>
+    <div class="card-title">Scheduled messages <span style="font-size:11px;background:var(--accent-bg);color:var(--accent-dark);padding:3px 8px;border-radius:6px;margin-left:8px;">PRO</span></div>
     <div style="color:var(--muted);font-size:13px;margin-bottom:14px;">Schedule a campaign to send later automatically.</div>
 
     <div class="grid-2">
@@ -622,7 +738,7 @@ body{
 
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn-primary" id="schedBtn">&#x1F4C5; Schedule Current Campaign</button>
-      <button class="btn-wa" id="refreshSchedBtn" style="background:var(--text);">&#x1F504; Refresh</button>
+      <button class="btn-wa" id="refreshSchedBtn">&#x1F504; Refresh</button>
     </div>
 
     <div style="margin-top:20px;">
@@ -634,9 +750,17 @@ body{
   </div>
 
   <!-- ── CHATBOT CARD ─────────────────────────────────────────────────────── -->
+  </section>
+
+  <section class="pane" data-pane="bot">
+  <div class="pane-head">
+    <h1>Auto-reply</h1>
+    <p>Answer incoming messages automatically &mdash; flow menu, then keywords, then AI fallback.</p>
+  </div>
+
   <div class="card" id="chatbotCard" style="display:none;">
     <div class="card-title">
-      🤖 Auto-Reply Chatbot
+      Auto-reply chatbot
       <span style="font-size:11px;background:var(--accent-bg);color:var(--accent-dark);padding:3px 8px;border-radius:6px;margin-left:8px;">PRO</span>
     </div>
     <div style="color:var(--muted);font-size:13px;margin-bottom:16px;">Automatically reply to incoming WhatsApp messages. Flow → Keyword → AI fallback.</div>
@@ -763,7 +887,10 @@ body{
       <div id="cbLogList"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Click Load to view conversations.</div></div>
     </div>
   </div>
+  </section>
 
+</div>
+</div>
 </div>
 
 <div id="toasts"></div>
@@ -1543,33 +1670,47 @@ document.getElementById('cbLoadLogs').addEventListener('click', function(){
 
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
-<!-- MOBILE BOTTOM NAV -->
 <nav class="mobile-nav">
-  <a href="/client/" class="mnav-item on" aria-label="Home">
-    <span class="mico">🏠</span>
-    <span>Home</span>
-  </a>
-  <a href="/client/review.html" class="mnav-item" id="mnavReview" aria-label="Reviews" style="display:none;">
-    <span class="mico">⭐</span>
-    <span>Reviews</span>
-  </a>
-  <a href="/shop" class="mnav-item" id="mnavShop" aria-label="Shop" style="display:none;">
-    <span class="mico">🛠️</span>
-    <span>Jobs</span>
-  </a>
-  <button class="mnav-item" id="mnavChatbot" aria-label="Chatbot" style="display:none;" onclick="document.getElementById('chatbotCard').scrollIntoView({behavior:'smooth'})">
-    <span class="mico">🤖</span>
-    <span>Bot</span>
-  </button>
-  <a href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" class="mnav-item" id="mnavUpgrade" aria-label="Upgrade" style="display:none;">
-    <span class="mico">💎</span>
-    <span>Upgrade</span>
-  </a>
-  <button class="mnav-item" id="mnavLogout" aria-label="Logout">
-    <span class="mico">🚪</span>
-    <span>Logout</span>
-  </button>
+  <button class="mnav-item on" data-pane="campaign"><span class="mico">&#9998;</span><span>Campaign</span></button>
+  <button class="mnav-item" data-pane="sched"><span class="mico">&#128340;</span><span>Scheduled</span></button>
+  <button class="mnav-item" id="mnavChatbot" data-pane="bot" style="display:none;"><span class="mico">&#128172;</span><span>Auto-reply</span></button>
+  <button class="mnav-item" data-pane="conn"><span class="mico">&#128241;</span><span>Connect</span></button>
+  <a class="mnav-item" href="/client/review.html" id="mnavReview" style="display:none;"><span class="mico">&#9733;</span><span>Reviews</span></a>
+  <a class="mnav-item" href="/shop" id="mnavShop" style="display:none;"><span class="mico">&#9881;</span><span>Jobs</span></a>
+  <a class="mnav-item" href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" id="mnavUpgrade" style="display:none;"><span class="mico">&#9830;</span><span>Upgrade</span></a>
+  <button class="mnav-item" id="mnavLogout"><span class="mico">&#9099;</span><span>Logout</span></button>
 </nav>
+
+<script>
+/* Pane switching for sidebar / bottom nav — UI only, no API logic touched. */
+(function(){
+  var panes = Array.prototype.slice.call(document.querySelectorAll('.pane'));
+  var navBtns = Array.prototype.slice.call(document.querySelectorAll('.side-item[data-pane], .mnav-item[data-pane]'));
+  function show(name){
+    panes.forEach(function(p){ p.classList.toggle('on', p.getAttribute('data-pane') === name); });
+    navBtns.forEach(function(b){ b.classList.toggle('on', b.getAttribute('data-pane') === name); });
+    window.scrollTo(0,0);
+  }
+  navBtns.forEach(function(b){
+    b.addEventListener('click', function(){ show(this.getAttribute('data-pane')); });
+  });
+  var compose = document.getElementById('composeCard');
+  function live(){ return compose && compose.style.display !== 'none'; }
+  function syncNotice(){
+    var n = document.getElementById('waNotice');
+    if(n) n.style.display = live() ? 'none' : 'block';
+  }
+  show(live() ? 'campaign' : 'conn');
+  syncNotice();
+  if(compose && window.MutationObserver){
+    var jumped = false;
+    new MutationObserver(function(){
+      syncNotice();
+      if(!jumped && live()){ jumped = true; show('campaign'); }
+    }).observe(compose, { attributes:true, attributeFilter:['style'] });
+  }
+})();
+</script>
 
 </body>
 </html>
