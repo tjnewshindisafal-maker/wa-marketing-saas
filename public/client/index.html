@@ -6,24 +6,25 @@
 <title>Dashboard - WA Marketing Pro</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="/socket.io/socket.io.js"></script>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com">
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 :root{
-  /* Light theme - WhatsApp green brand */
-  --bg:#f5f7fa;
+  /* Light theme - matches the wadigit.com homepage brand */
+  --bg:#F4F8F5;
   --surface:#ffffff;
-  --surface-2:#f9fafb;
-  --border:#e5e7eb;
-  --border-dark:#d1d5db;
-  --text:#111827;
-  --text-sub:#4b5563;
-  --muted:#9ca3af;
-  --accent:#7c3aed;
-  --accent-dark:#6d28d9;
-  --accent-bg:#ede9fe;
+  --surface-2:#F1F6F3;
+  --border:#E5EDE8;
+  --border-dark:#DCE8E0;
+  --text:#101C17;
+  --text-sub:#44584E;
+  --muted:#7C8F85;
+  --accent:#0B6B4A;
+  --accent-dark:#095c40;
+  --accent-bg:#EAF5EF;
   --blue:#2563eb;
   --blue-bg:#eff6ff;
-  --purple:#7c3aed;
+  --purple:#0B6B4A;
   --yellow:#f59e0b;
   --yellow-bg:#fef3c7;
   --red:#ef4444;
@@ -36,7 +37,7 @@
   --shadow-md:0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
   --radius:12px;
   --radius-lg:16px;
-  --font:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+  --font:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
 body{
@@ -56,10 +57,10 @@ body{
 }
 .nav-logo{display:flex;align-items:center;gap:10px;}
 .nav-logo-ic{
-  width:36px;height:36px;border-radius:10px;
-  background:linear-gradient(135deg,#25d366,#128c7e);
+  width:32px;height:32px;border-radius:9px;
+  background:var(--accent);color:#fff;
   display:flex;align-items:center;justify-content:center;
-  font-size:18px;box-shadow:var(--shadow-sm);
+  font-size:13px;font-weight:800;box-shadow:var(--shadow-sm);
 }
 .nav-logo-nm{font-size:16px;font-weight:800;color:var(--text);letter-spacing:-0.02em;}
 .nav-logo-nm span{color:var(--accent);}
@@ -151,7 +152,7 @@ body{
 }
 .sdot{width:12px;height:12px;border-radius:50%;flex-shrink:0;}
 .sdot-dis{background:var(--muted);}
-.sdot-con{background:var(--accent);box-shadow:0 0 0 4px rgba(37,211,102,0.15);}
+.sdot-con{background:var(--accent);box-shadow:0 0 0 4px rgba(11,107,74,0.15);}
 .sdot-qr{background:var(--yellow);animation:pulse 1.5s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.5;}}
 .stext{font-size:14px;font-weight:700;color:var(--text);}
@@ -188,7 +189,7 @@ body{
   transition:border 0.15s;outline:none;
 }
 .field input:focus, .field textarea:focus, .field select:focus{
-  border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,211,102,0.1);
+  border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,107,74,0.1);
 }
 .field textarea{resize:vertical;min-height:80px;line-height:1.5;}
 
@@ -378,7 +379,7 @@ body{
 
 <nav class="nav">
   <div class="nav-logo">
-    <div class="nav-logo-ic">&#x1F4AC;</div>
+    <div class="nav-logo-ic">WA</div>
     <div class="nav-logo-nm">WA Marketing <span>Pro</span></div>
   </div>
   <div class="nav-right">
@@ -605,7 +606,7 @@ body{
 
   <!-- STEP 5: SCHEDULED MESSAGES (Pro+) -->
   <div class="card" id="schedCard" style="display:none;">
-    <div class="card-title"><span class="step-num">5</span> Scheduled Messages <span style="font-size:11px;background:#6c63ff33;color:#6c63ff;padding:3px 8px;border-radius:6px;margin-left:8px;">PRO</span></div>
+    <div class="card-title"><span class="step-num">5</span> Scheduled Messages <span style="font-size:11px;background:var(--accent-bg);color:var(--accent-dark);padding:3px 8px;border-radius:6px;margin-left:8px;">PRO</span></div>
     <div style="color:var(--muted);font-size:13px;margin-bottom:14px;">Schedule a campaign to send later automatically.</div>
 
     <div class="grid-2">
@@ -621,7 +622,7 @@ body{
 
     <div style="display:flex;gap:8px;margin-top:12px;">
       <button class="btn-primary" id="schedBtn">&#x1F4C5; Schedule Current Campaign</button>
-      <button class="btn-wa" id="refreshSchedBtn" style="background:#2a2a3e;">&#x1F504; Refresh</button>
+      <button class="btn-wa" id="refreshSchedBtn" style="background:var(--text);">&#x1F504; Refresh</button>
     </div>
 
     <div style="margin-top:20px;">
@@ -636,7 +637,7 @@ body{
   <div class="card" id="chatbotCard" style="display:none;">
     <div class="card-title">
       🤖 Auto-Reply Chatbot
-      <span style="font-size:11px;background:#6c63ff33;color:#6c63ff;padding:3px 8px;border-radius:6px;margin-left:8px;">PRO</span>
+      <span style="font-size:11px;background:var(--accent-bg);color:var(--accent-dark);padding:3px 8px;border-radius:6px;margin-left:8px;">PRO</span>
     </div>
     <div style="color:var(--muted);font-size:13px;margin-bottom:16px;">Automatically reply to incoming WhatsApp messages. Flow → Keyword → AI fallback.</div>
 
@@ -1183,7 +1184,7 @@ function renderContacts(){
   var failed=contacts.filter(function(c){ return c.status==='failed'; }).length;
   var pending=contacts.filter(function(c){ return c.status==='pending'; }).length;
   document.getElementById('statsBar').innerHTML=
-    '<div class="stat-pill"><div class="dot" style="background:var(--accent)"></div>Total: '+total+'</div>'+
+    '<div class="stat-pill"><div class="dot" style="background:var(--muted)"></div>Total: '+total+'</div>'+
     '<div class="stat-pill ok"><div class="dot" style="background:var(--green)"></div>Sent: '+sent+'</div>'+
     '<div class="stat-pill"><div class="dot" style="background:#3b82f6"></div>Delivered: '+delivered+'</div>'+
     '<div class="stat-pill"><div class="dot" style="background:#7c3aed"></div>Read: '+read+'</div>'+
