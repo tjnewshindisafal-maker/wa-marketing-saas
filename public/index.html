@@ -210,6 +210,11 @@ body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
 .pfeats li::before{content:"✓";color:var(--green);font-weight:700;font-size:12px;flex-shrink:0;}
 .pfeats li.no::before{content:"✗";color:var(--muted);}
 .pfeats li.no{color:var(--muted);}
+.pfeat-title{font-size:13px;font-weight:700;color:var(--white);margin:0 0 12px;padding-top:16px;border-top:1px solid var(--border2);text-align:left;}
+.pfeat-title:first-of-type{border-top:none;padding-top:0;}
+.pfeat-list{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:8px;padding:0;text-align:left;}
+.pfeat-list li{font-size:13px;color:var(--text);line-height:1.55;}
+.pfeat-list li b{color:var(--white);}
 .btn-price{width:100%;padding:13px;border-radius:10px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;border:none;transition:all .2s;}
 .btn-po{background:transparent;border:1px solid var(--border2);color:var(--text);}
 .btn-po:hover{border-color:var(--accent);color:var(--accent);}
@@ -391,21 +396,33 @@ footer{position:relative;z-index:1;border-top:1px solid var(--border);padding:28
   <div class="sec-tag">Pricing</div>
   <h2 class="sec-h" id="pricing-heading">Simple & Transparent Pricing</h2>
   <div class="sec-sub">Start free. No hidden charges.</div>
-  <div class="price-grid" style="grid-template-columns:1fr;max-width:340px;margin:0 auto;">
+  <div class="price-grid" style="grid-template-columns:1fr;max-width:460px;margin:0 auto;">
     <article class="pcard hot">
       <div class="hot-tag">&#x1F525; Launch Offer</div>
       <div class="pplan">WA Marketing Pro</div>
       <div class="pprice"><small>&#x20B9;</small>99</div>
       <div class="pperiod">per month</div>
+      <button class="btn-price btn-pf" data-plan="pro" data-amount="99" style="width:100%;margin-bottom:22px;">Start Free Trial</button>
+
+      <div class="pfeat-title">Key Features</div>
+      <ul class="pfeat-list">
+        <li><b>Bulk WhatsApp Sender:</b> Send from YOUR own number, no API needed</li>
+        <li><b>Excel/CSV Upload:</b> Import unlimited contacts instantly</li>
+        <li><b>Image + Text Messages:</b> Product photos, offers, festival greetings</li>
+        <li><b>Ready-made Templates:</b> Product, Sale, Festival, Custom</li>
+        <li><b>Scheduled Campaigns:</b> Plan messages and auto-send later</li>
+        <li><b>Google Review Automation:</b> Auto-request reviews after job completion</li>
+        <li><b>AI Chatbot:</b> Auto-reply to incoming customer messages</li>
+        <li><b>Official WhatsApp API (Optional):</b> Connect your own Business API for higher volume, zero ban risk</li>
+      </ul>
+
+      <div class="pfeat-title">Usage</div>
       <ul class="pfeats">
         <li>200 messages/day</li>
-        <li>Excel Upload</li>
-        <li>Image + Message</li>
-        <li>All Templates</li>
-        <li>Scheduled Messages</li>
-        <li>Google Reviews + Chatbot</li>
+        <li>Unlimited Excel contact imports</li>
+        <li>Unlimited scheduled campaigns</li>
+        <li>7-day free trial, no credit card required</li>
       </ul>
-      <button class="btn-price btn-pf" data-plan="pro" data-amount="99">Start Free Trial</button>
     </article>
   </div>
 </section>
