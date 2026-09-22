@@ -8,6 +8,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <link rel="preconnect" href="https://fonts.gstatic.com">
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
 <style>
 :root{
   /* Light theme - matches the wadigit.com homepage brand */
@@ -455,6 +456,236 @@ body{
   background:var(--accent-bg) !important;color:var(--accent-dark) !important;
   border-color:#CFE6DA !important;
 }
+
+/* ===================== PREMIUM PASS (type + surface refinement) ===================== */
+body{background:#F7FAF8;letter-spacing:-0.005em;}
+::selection{background:#0B6B4A22;}
+
+/* Type scale */
+.pane-head h1{
+  font-family:"Instrument Serif",Georgia,serif;font-weight:400;
+  font-size:36px;line-height:1.08;letter-spacing:-0.015em;color:#0C1A14;
+}
+.pane-head p{font-size:15px;line-height:1.55;color:var(--text-sub);letter-spacing:0;}
+.card-title{font-size:15px;font-weight:700;letter-spacing:-0.005em;margin-bottom:18px;}
+.field label{font-size:12px;font-weight:700;letter-spacing:.02em;color:#3C5148;}
+.limit-text,.stat-pill,.ptag,.side-label{font-variant-numeric:tabular-nums;}
+
+/* Top bar */
+.nav{
+  height:64px;border-bottom:1px solid #E9F0EB;box-shadow:none;
+  background:rgba(255,255,255,.88);backdrop-filter:saturate(180%) blur(10px);
+}
+.nav-logo-ic{border-radius:10px;font-size:12px;letter-spacing:.02em;box-shadow:0 1px 2px rgba(11,107,74,.35);}
+.nav-logo-nm{font-size:16px;letter-spacing:-0.03em;}
+.uchip{background:#F6FAF7;border-color:#E9F0EB;}
+
+/* Sidebar */
+.sidebar{top:64px;height:calc(100vh - 64px);border-right:1px solid #E9F0EB;background:#FFFFFF;padding:14px 12px;}
+.side-item{position:relative;font-size:13.5px;letter-spacing:-0.005em;border-radius:11px;}
+.side-item.on{background:#EEF6F1;border-color:transparent;font-weight:700;}
+.side-item.on::before{
+  content:"";position:absolute;left:0;top:50%;transform:translateY(-50%);
+  width:3px;height:20px;border-radius:0 3px 3px 0;background:var(--accent);
+}
+.side-ic{font-size:14px;opacity:.9;}
+.side-label{letter-spacing:.14em;font-size:9.5px;color:#93A69B;}
+
+/* Cards + surfaces */
+.card{
+  border-radius:18px;border:1px solid #E9F0EB;padding:26px;
+  box-shadow:0 1px 2px rgba(16,28,23,.03),0 8px 24px -16px rgba(16,28,23,.10);
+}
+.status-box,.limit-box{border-radius:14px;border-color:#E9F0EB;background:#F7FAF8;}
+.limit-box{box-shadow:none;}
+.step-num{width:24px;height:24px;font-size:12px;background:#EEF6F1;color:var(--accent-dark);}
+.notice{border-radius:14px;border-color:#D7E9DF;background:#F2F9F5;font-weight:600;}
+
+/* Banners — flatten off-brand gradients */
+.trial-active{background:#F1F7FE;color:#123A66;border:1px solid #D6E7F9;box-shadow:none;}
+.trial-active .title,.trial-active .sub{color:#123A66;}
+.trial-active .btn{background:#1E5B9B;color:#fff !important;}
+.trial-expired{background:#FEF3F2;color:#7A1F17;border:1px solid #F8D7D3;box-shadow:none;}
+.trial-expired .title,.trial-expired .sub{color:#7A1F17;}
+.trial-expired .btn{background:#B4241A;color:#fff !important;}
+.trial-banner{border-radius:14px;}
+
+/* Controls */
+.btn,.btn-wa,.btn-primary,.btn-sec,.btn-danger{
+  border-radius:11px;font-weight:700;letter-spacing:-0.005em;padding:11px 18px;
+  transition:transform .12s ease,background .15s,box-shadow .15s;
+}
+.btn-wa,.btn-primary{box-shadow:0 1px 2px rgba(11,107,74,.25);}
+.btn-wa:hover,.btn-primary:hover{transform:translateY(-1px);}
+.btn-sec{background:#F4F8F5;border-color:#E3ECE6;font-weight:600;}
+.btn-sec:hover{background:#EAF2ED;}
+.field input,.field textarea,.field select{
+  border-radius:11px;border:1px solid #DDE8E2;background:#FCFEFD;font-size:14px;padding:11px 13px;
+}
+.field input:focus,.field textarea:focus,.field select:focus{
+  border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,107,74,.12);
+}
+.tmpl-tab{font-weight:600;border-color:#E3ECE6;}
+.tmpl-tab.on{background:#EEF6F1;color:var(--accent-dark);border-color:#CFE6DA;font-weight:700;}
+.img-drop,.excel-drop{border:1px dashed #CFDDD5;border-radius:14px;background:#FAFCFB;}
+
+/* Tables / lists */
+.contacts-list{border-radius:14px;border-color:#E9F0EB;}
+.contacts-list th{font-size:10px;letter-spacing:.08em;background:#F7FAF8;color:#6E837A;}
+.stat-pill{border-radius:999px;border-color:#E3ECE6;font-weight:700;font-size:12.5px;}
+.toast{border-radius:14px;box-shadow:0 12px 32px -12px rgba(16,28,23,.25);}
+
+@media(max-width:900px){
+  .nav{height:58px;}
+  .sidebar{top:58px;}
+  .pane-head h1{font-size:27px;}
+  .pane-head p{font-size:13.5px;}
+  .card{padding:18px;border-radius:16px;}
+}
+
+/* Icon + pill fixes */
+.tmpl-tab{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;}
+.tmpl-tabs{gap:8px;}
+.side-ic svg,.mico svg{display:block;}
+.side-item.on .side-ic{color:var(--accent);}
+.mnav-item .mico{display:flex;align-items:center;justify-content:center;height:20px;}
+
+.cb-tab{white-space:nowrap;display:inline-flex;align-items:center;gap:6px;}
+
+.img-rem{background:var(--surface-2);color:var(--text);border:1px solid var(--border);border-radius:9px;padding:7px 12px;font-weight:600;}
+.img-rem:hover{background:#FEF3F2;color:#B4241A;border-color:#F8D7D3;}
+
+/* ============ V2: brighter, bolder green, bigger headings ============ */
+body{background:#F3F8F4;}
+.main{background:
+  radial-gradient(1200px 320px at 22% -140px, #DDEFE4 0%, rgba(221,239,228,0) 70%),
+  #F3F8F4;}
+
+/* Headings */
+.pane-head{margin-bottom:24px;}
+.eyebrow{
+  display:inline-block;font-family:var(--font);font-size:10.5px;font-weight:800;
+  letter-spacing:.16em;text-transform:uppercase;color:var(--accent);
+  background:#E2F1E8;border-radius:999px;padding:5px 11px;margin-bottom:12px;
+}
+.pane-head h1{
+  font-family:"Newsreader",Georgia,serif;font-weight:600;
+  font-size:46px;line-height:1.02;letter-spacing:-0.025em;color:#08160F;
+}
+.pane-head p{font-size:15.5px;color:#3E5449;margin-top:10px;}
+
+/* Sidebar — solid green active state */
+.sidebar{background:#FFFFFF;border-right:1px solid #E3EDE7;padding:16px 12px;}
+.side-item{color:#3E5449;font-size:14px;font-weight:650;border-radius:12px;padding:12px 13px;}
+.side-item:hover{background:#F0F6F2;color:#0C1A14;}
+.side-item.on{background:var(--accent);color:#fff;border-color:transparent;font-weight:750;box-shadow:0 6px 16px -8px rgba(11,107,74,.65);}
+.side-item.on::before{display:none;}
+.side-item.on .side-ic{color:#fff;}
+.side-ic svg{stroke-width:1.9;}
+.side-label{color:#8DA396;letter-spacing:.15em;font-size:10px;padding:16px 13px 7px;}
+.side-item.up{background:#FFF7E6;color:#7A4A00;}
+.side-foot{border-top:1px solid #E3EDE7;}
+
+/* Top bar */
+.nav{background:rgba(255,255,255,.92);border-bottom:1px solid #E3EDE7;}
+.nav-logo-ic{background:var(--accent);box-shadow:0 4px 12px -4px rgba(11,107,74,.6);}
+.nav-logo-nm{font-weight:800;}
+
+/* Cards with a live green header rule */
+.card{border:1px solid #E3EDE7;border-radius:20px;box-shadow:0 2px 4px rgba(8,22,15,.02),0 18px 40px -30px rgba(8,22,15,.28);}
+.card-title{
+  font-size:16px;font-weight:800;letter-spacing:-0.015em;color:#08160F;
+  padding-bottom:14px;border-bottom:1px solid #EDF3EF;margin-bottom:20px;
+}
+.step-num{background:var(--accent);color:#fff;width:26px;height:26px;font-size:12px;box-shadow:0 4px 10px -5px rgba(11,107,74,.8);}
+
+/* Controls — bolder */
+.btn-wa,.btn-primary{background:var(--accent);box-shadow:0 8px 18px -10px rgba(11,107,74,.9);font-weight:750;}
+.btn-wa:hover,.btn-primary:hover{background:#075A3D;}
+.tmpl-tab.on,.cb-tab.on{background:var(--accent) !important;color:#fff !important;border-color:var(--accent) !important;}
+.stat-pill.ok{background:#E2F1E8;color:#075A3D;}
+.notice{background:#E7F4EC;border-color:#C7E3D3;color:#075A3D;}
+.status-box{background:#F6FAF7;border-color:#E3EDE7;}
+.stext{font-weight:800;letter-spacing:-0.01em;}
+.mnav-item.on{color:var(--accent);}
+.mnav-item .mico svg{stroke-width:1.9;}
+
+@media(max-width:900px){
+  .pane-head h1{font-size:32px;}
+  .pane-head p{font-size:14px;}
+  .card{padding:18px;border-radius:16px;}
+}
+
+/* ============ V3: craft pass ============ */
+@keyframes paneIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+.pane.on{animation:paneIn .28s cubic-bezier(.22,.61,.36,1) both;}
+
+/* Rhythm */
+.page{padding:34px 28px 56px;}
+.card{margin-bottom:20px;transition:box-shadow .2s ease,transform .2s ease;}
+.card:hover{box-shadow:0 2px 4px rgba(8,22,15,.02),0 26px 52px -34px rgba(8,22,15,.34);}
+
+/* Daily limit → progress card */
+.limit-box{
+  background:#FFFFFF;border:1px solid #E3EDE7;border-radius:18px;padding:18px 20px;
+  display:grid;grid-template-columns:1fr auto;grid-template-areas:"t n" "b b";
+  gap:12px 18px;align-items:center;box-shadow:0 2px 4px rgba(8,22,15,.02);
+}
+.limit-bar-wrap{grid-area:b;height:6px;background:#EDF3EF;border-radius:999px;border:0;}
+.limit-bar{background:var(--accent);}
+.limit-text{
+  grid-area:n;font-family:"Newsreader",Georgia,serif;font-weight:600;
+  font-size:19px;letter-spacing:-0.01em;color:#08160F;text-align:right;
+}
+.limit-box::before{
+  content:"Daily sending limit";grid-area:t;
+  font-size:10.5px;font-weight:800;letter-spacing:.16em;text-transform:uppercase;color:#8DA396;
+}
+
+/* WhatsApp preview refinement */
+.wa-prev{background:#E9E2DA;border-radius:16px;padding:18px 16px;background-image:none;box-shadow:inset 0 1px 3px rgba(0,0,0,.05);}
+.wa-bub{
+  background:#DCF8C6;border-radius:12px 4px 12px 12px;margin-left:auto;
+  box-shadow:0 1px 2px rgba(0,0,0,.10);font-size:13.5px;line-height:1.55;
+}
+.wa-time{color:#5B7A63;font-weight:600;}
+
+/* Inputs + focus */
+.field input,.field textarea,.field select{border-color:#DEE9E3;}
+.field input:hover,.field textarea:hover,.field select:hover{border-color:#C9DBD1;}
+.field textarea{min-height:120px;}
+.tmpl-tab{padding:9px 15px;}
+.img-drop:hover,.excel-drop:hover{border-color:var(--accent);background:#F1F8F4;}
+
+/* Tables */
+.contacts-list th{padding:13px 12px;}
+.contacts-list tbody tr:hover{background:#F6FAF7;}
+.stat-pill{padding:7px 14px;}
+
+/* Scrollbars */
+.sidebar::-webkit-scrollbar,.contacts-list::-webkit-scrollbar{width:8px;height:8px;}
+.sidebar::-webkit-scrollbar-thumb,.contacts-list::-webkit-scrollbar-thumb{background:#D8E5DD;border-radius:999px;}
+
+/* Focus visibility */
+.side-item:focus-visible,.mnav-item:focus-visible,button:focus-visible,a:focus-visible{
+  outline:2px solid var(--accent);outline-offset:2px;
+}
+a{color:var(--accent-dark);}
+a:hover{color:var(--accent);}
+
+@media(max-width:900px){
+  .page{padding:18px 14px 96px;}
+  .limit-text{font-size:17px;}
+  .card:hover{transform:none;}
+}
+
+/* JS writes inline display:flex on #limitBox — win over it without unhiding it */
+.limit-box[style*="flex"]{display:grid !important;}
+
+@media(max-width:560px){
+  .limit-box[style*="flex"]{grid-template-columns:1fr;grid-template-areas:"t" "n" "b";gap:8px;}
+  .limit-text{white-space:normal;text-align:left;font-size:18px;}
+}
 </style>
 </head>
 <body>
@@ -477,18 +708,18 @@ body{
 
 <aside class="sidebar">
   <div class="side-label">Messaging</div>
-  <button class="side-item on" data-pane="campaign"><span class="side-ic">&#9998;</span><span>New campaign</span></button>
-  <button class="side-item" data-pane="sched"><span class="side-ic">&#128340;</span><span>Scheduled</span></button>
-  <button class="side-item" id="chatbotNavBtn" data-pane="bot" style="display:none;"><span class="side-ic">&#128172;</span><span>Auto-reply</span></button>
+  <button class="side-item on" data-pane="campaign"><span class="side-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17.3V21h3.7L17.8 9.9l-3.7-3.7L3 17.3ZM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.7 3.7L20.7 7Z"/></svg></span><span>New campaign</span></button>
+  <button class="side-item" data-pane="sched"><span class="side-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3.5 2"/></svg></span><span>Scheduled</span></button>
+  <button class="side-item" id="chatbotNavBtn" data-pane="bot" style="display:none;"><span class="side-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5a7.5 7.5 0 0 1-10.9 6.7L4 20.5l1.4-4.6A7.5 7.5 0 1 1 20 12.5Z"/></svg></span><span>Auto-reply</span></button>
 
   <div class="side-label">Setup</div>
-  <button class="side-item" data-pane="conn"><span class="side-ic">&#128241;</span><span>Connection</span></button>
-  <a class="side-item" href="/client/review.html" id="reviewBtn" style="display:none;"><span class="side-ic">&#9733;</span><span>Reviews</span></a>
-  <a class="side-item" href="/shop" id="shopBtn" style="display:none;"><span class="side-ic">&#9881;</span><span>Jobs</span></a>
+  <button class="side-item" data-pane="conn"><span class="side-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span><span>Connection</span></button>
+  <a class="side-item" href="/client/review.html" id="reviewBtn" style="display:none;"><span class="side-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.8l6-.8L12 3.5Z"/></svg></span><span>Reviews</span></a>
+  <a class="side-item" href="/shop" id="shopBtn" style="display:none;"><span class="side-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M4.5 12H2.1M21.9 12h-2.4M6.7 6.7 5 5M19 19l-1.7-1.7M17.3 6.7 19 5M5 19l1.7-1.7"/></svg></span><span>Jobs</span></a>
 
   <div class="side-foot">
-    <a class="side-item up" href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" id="upgradeBtn" style="display:none;"><span class="side-ic">&#9830;</span><span>Upgrade plan</span></a>
-    <button class="side-item" id="logoutBtn"><span class="side-ic">&#9099;</span><span>Logout</span></button>
+    <a class="side-item up" href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" id="upgradeBtn" style="display:none;"><span class="side-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.1 5.4L19.5 10l-5.4 1.6L12 17l-2.1-5.4L4.5 10l5.4-1.6L12 3Z"/></svg></span><span>Upgrade plan</span></a>
+    <button class="side-item" id="logoutBtn"><span class="side-ic"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v7"/><path d="M6.8 7a7.5 7.5 0 1 0 10.4 0"/></svg></span><span>Logout</span></button>
   </div>
 </aside>
 
@@ -499,10 +730,10 @@ body{
   <div id="trialBanner" class="trial-banner trial-active" style="display:none;">
     <div class="row">
       <div>
-        <div class="title">&#x1F389; Free Trial Active</div>
+        <div class="title">Free trial active</div>
         <div class="sub" id="trialText">7 days left - Enjoy all Pro features!</div>
       </div>
-      <a href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20to%20paid%20plan%20before%20trial%20ends." target="_blank" class="btn">&#x1F4B3; Upgrade Now</a>
+      <a href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20to%20paid%20plan%20before%20trial%20ends." target="_blank" class="btn">Upgrade now</a>
     </div>
   </div>
 
@@ -510,22 +741,22 @@ body{
   <div id="expiredBanner" class="trial-banner trial-expired" style="display:none;">
     <div class="row">
       <div>
-        <div class="title">&#x26A0;&#xFE0F; Trial Expired</div>
+        <div class="title">Trial expired</div>
         <div class="sub">You've been downgraded to Starter. Upgrade to unlock all features.</div>
       </div>
-      <a href="https://wa.me/918087289267?text=Hi!%20My%20trial%20expired.%20I%20want%20to%20activate%20paid%20plan." target="_blank" class="btn">&#x1F4B3; Activate Plan</a>
+      <a href="https://wa.me/918087289267?text=Hi!%20My%20trial%20expired.%20I%20want%20to%20activate%20paid%20plan." target="_blank" class="btn">Activate plan</a>
     </div>
   </div>
 
   <!-- Daily Limit -->
   <div class="limit-box" id="limitBox" style="display:none;">
-    <div>&#x1F4CA;</div>
     <div class="limit-bar-wrap"><div class="limit-bar" id="limitBar" style="width:0%"></div></div>
     <div class="limit-text" id="limitText">0 / 0 messages today</div>
   </div>
 
   <section class="pane" data-pane="conn">
   <div class="pane-head">
+    <span class="eyebrow">Setup</span>
     <h1>Connection</h1>
     <p>Link the WhatsApp number you send from. Scan once &mdash; the session stays active.</p>
   </div>
@@ -541,7 +772,7 @@ body{
       <div class="qr-steps">1. Open WhatsApp on your phone<br>2. Menu (3 dots) → Linked Devices → Link a Device<br>3. Scan this QR code</div>
     </div>
     <div style="display:flex;gap:10px;margin-top:12px;flex-wrap:wrap;">
-      <button class="btn-wa" id="connectBtn">&#x1F4F1; Connect WhatsApp</button>
+      <button class="btn-wa" id="connectBtn">Connect WhatsApp</button>
       <button class="btn-danger" id="disconnectBtn" style="display:none;">Disconnect</button>
     </div>
   </div>
@@ -620,6 +851,7 @@ body{
 
   <section class="pane" data-pane="campaign">
   <div class="pane-head">
+    <span class="eyebrow">Messaging</span>
     <h1>New campaign</h1>
     <p>Write the message, add your contact list, then send with safe delays.</p>
   </div>
@@ -634,10 +866,10 @@ body{
           <input type="text" id="storeName" placeholder="e.g. Ramesh Electronics" readonly style="color:var(--accent);">
         </div>
         <div class="tmpl-tabs">
-          <button class="tmpl-tab on" id="t1">&#x1F6CD; Product</button>
-          <button class="tmpl-tab" id="t2">&#x1F3F7; Sale</button>
-          <button class="tmpl-tab" id="t3">&#x1F389; Festival</button>
-          <button class="tmpl-tab" id="t4">&#x270F; Custom</button>
+          <button class="tmpl-tab on" id="t1">Product</button>
+          <button class="tmpl-tab" id="t2">Sale</button>
+          <button class="tmpl-tab" id="t3">Festival</button>
+          <button class="tmpl-tab" id="t4">Custom</button>
         </div>
         <div class="field">
           <label>Message <span style="color:var(--muted);font-weight:400;">(use {name} for customer name)</span></label>
@@ -649,13 +881,13 @@ body{
           <label>Product Image (Optional)</label>
           <div class="img-drop" id="imgDrop">
             <input type="file" id="imgInput" accept="image/*">
-            <div style="font-size:32px;">&#x1F4F8;</div>
+            <div style="color:#7C8F85;display:flex;justify-content:center;"><svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><circle cx="9" cy="10.5" r="1.8"/><path d="M4.5 18l4.8-4.6a2 2 0 0 1 2.7 0L19.5 19"/></svg></div>
             <div style="font-size:13px;color:var(--muted);margin-top:6px;">Click or drag image here</div>
             <div style="font-size:11px;color:var(--muted);">JPG, PNG, WEBP (max 10MB)</div>
           </div>
           <div id="imgPreview" style="display:none;">
             <img id="prevImg" src="" alt="Preview">
-            <br><button class="img-rem" id="remImg">&#x2715; Remove</button>
+            <br><button class="img-rem" id="remImg">Remove image</button>
           </div>
         </div>
         <div style="margin-top:12px;">
@@ -677,7 +909,7 @@ body{
     <div class="card-title"><span class="step-num">2</span> Contacts</div>
     <div class="excel-drop">
       <input type="file" id="excelInput" accept=".xlsx,.xls,.csv">
-      <div style="font-size:28px;">&#x1F4CA;</div>
+      <div style="color:#7C8F85;display:flex;justify-content:center;"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9h17M9 9v11.5M15 9v11.5"/></svg></div>
       <div style="font-size:13px;color:var(--muted);margin-top:4px;">Upload Excel / CSV</div>
       <div style="font-size:11px;color:var(--muted);">Need: <b style="color:var(--green);">Name</b> and <b style="color:var(--green);">Phone</b> columns</div>
     </div>
@@ -690,7 +922,7 @@ body{
       <div class="stats-bar" id="statsBar"></div>
       <div class="prog-wrap" id="progWrap" style="display:none;"><div class="prog-bar" id="progBar"></div></div>
       <div style="display:flex;gap:8px;margin-bottom:8px;">
-        <button class="btn-sec" id="selAllBtn" style="font-size:11px;padding:5px 12px;">&#x2714; All</button>
+        <button class="btn-sec" id="selAllBtn" style="font-size:11px;padding:5px 12px;">Select all</button>
         <button class="btn-sec" id="clearSentBtn" style="font-size:11px;padding:5px 12px;">Clear Sent</button>
         <button class="btn-sec" id="clearAllBtn" style="font-size:11px;padding:5px 12px;color:var(--red);">Clear All</button>
       </div>
@@ -705,7 +937,7 @@ body{
   <div class="card" id="sendCard" style="display:none;">
     <div class="card-title"><span class="step-num">3</span> Send messages</div>
     <div style="font-size:12px;color:var(--muted);margin-bottom:14px;line-height:1.7;">
-      &#x26A0;&#xFE0F; Messages sent with 1.5-2.5 sec delay to avoid ban. Do not close this tab while sending.
+      Messages are sent with a 1.5&ndash;2.5 second delay to avoid ban. Do not close this tab while sending.
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;">
       <button class="btn-wa" id="sendAllBtn" disabled>&#x1F4AC; Send to All (0)</button>
@@ -717,6 +949,7 @@ body{
 
   <section class="pane" data-pane="sched">
   <div class="pane-head">
+    <span class="eyebrow">Messaging</span>
     <h1>Scheduled</h1>
     <p>Queue a campaign for a future date and time. It sends automatically.</p>
   </div>
@@ -737,8 +970,8 @@ body{
     </div>
 
     <div style="display:flex;gap:8px;margin-top:12px;">
-      <button class="btn-primary" id="schedBtn">&#x1F4C5; Schedule Current Campaign</button>
-      <button class="btn-wa" id="refreshSchedBtn">&#x1F504; Refresh</button>
+      <button class="btn-primary" id="schedBtn">Schedule campaign</button>
+      <button class="btn-sec" id="refreshSchedBtn">Refresh</button>
     </div>
 
     <div style="margin-top:20px;">
@@ -754,6 +987,7 @@ body{
 
   <section class="pane" data-pane="bot">
   <div class="pane-head">
+    <span class="eyebrow">Automation</span>
     <h1>Auto-reply</h1>
     <p>Answer incoming messages automatically &mdash; flow menu, then keywords, then AI fallback.</p>
   </div>
@@ -767,10 +1001,10 @@ body{
 
     <!-- Sub-tabs -->
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;" id="cbTabBar">
-      <button class="btn-primary cb-tab on" data-tab="cbSettings">⚙️ Settings</button>
-      <button class="btn-lo cb-tab" data-tab="cbKeywords">🔑 Keywords</button>
-      <button class="btn-lo cb-tab" data-tab="cbFlows">🔀 Flows</button>
-      <button class="btn-lo cb-tab" data-tab="cbLogs">💬 Chat Logs</button>
+      <button class="btn-primary cb-tab on" data-tab="cbSettings">Settings</button>
+      <button class="btn-lo cb-tab" data-tab="cbKeywords">Keywords</button>
+      <button class="btn-lo cb-tab" data-tab="cbFlows">Flows</button>
+      <button class="btn-lo cb-tab" data-tab="cbLogs">Chat logs</button>
     </div>
 
     <!-- Settings Tab -->
@@ -822,7 +1056,7 @@ body{
         </div>
       </div>
 
-      <button class="btn-primary" id="cbSaveConfig" style="margin-top:8px;">💾 Save Settings</button>
+      <button class="btn-primary" id="cbSaveConfig" style="margin-top:8px;">Save settings</button>
     </div>
 
     <!-- Keywords Tab -->
@@ -869,7 +1103,7 @@ body{
         <div id="fbSteps"></div>
         <button class="btn-lo" id="addStepBtn" style="margin-top:6px;font-size:12px;">+ Add Step</button>
         <div style="display:flex;gap:8px;margin-top:14px;">
-          <button class="btn-primary" id="saveFlowBtn">💾 Save Flow</button>
+          <button class="btn-primary" id="saveFlowBtn">Save flow</button>
           <button class="btn-lo" id="cancelFlowBtn">Cancel</button>
         </div>
         <input type="hidden" id="fbEditId">
@@ -882,7 +1116,7 @@ body{
     <div id="cbLogs" style="display:none;">
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:14px;">
         <input type="text" id="cbLogPhone" placeholder="Filter by phone..." style="flex:1;padding:8px;background:var(--surface);border:1px solid var(--border);border-radius:8px;color:var(--text);">
-        <button class="btn-lo" id="cbLoadLogs">🔄 Load</button>
+        <button class="btn-lo" id="cbLoadLogs">Load</button>
       </div>
       <div id="cbLogList"><div style="color:var(--muted);font-size:13px;text-align:center;padding:20px;">Click Load to view conversations.</div></div>
     </div>
@@ -1671,14 +1905,14 @@ document.getElementById('cbLoadLogs').addEventListener('click', function(){
 function escHtml(s){ return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 </script>
 <nav class="mobile-nav">
-  <button class="mnav-item on" data-pane="campaign"><span class="mico">&#9998;</span><span>Campaign</span></button>
-  <button class="mnav-item" data-pane="sched"><span class="mico">&#128340;</span><span>Scheduled</span></button>
-  <button class="mnav-item" id="mnavChatbot" data-pane="bot" style="display:none;"><span class="mico">&#128172;</span><span>Auto-reply</span></button>
-  <button class="mnav-item" data-pane="conn"><span class="mico">&#128241;</span><span>Connect</span></button>
-  <a class="mnav-item" href="/client/review.html" id="mnavReview" style="display:none;"><span class="mico">&#9733;</span><span>Reviews</span></a>
-  <a class="mnav-item" href="/shop" id="mnavShop" style="display:none;"><span class="mico">&#9881;</span><span>Jobs</span></a>
-  <a class="mnav-item" href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" id="mnavUpgrade" style="display:none;"><span class="mico">&#9830;</span><span>Upgrade</span></a>
-  <button class="mnav-item" id="mnavLogout"><span class="mico">&#9099;</span><span>Logout</span></button>
+  <button class="mnav-item on" data-pane="campaign"><span class="mico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 17.3V21h3.7L17.8 9.9l-3.7-3.7L3 17.3ZM20.7 7a1 1 0 0 0 0-1.4l-2.3-2.3a1 1 0 0 0-1.4 0l-1.8 1.8 3.7 3.7L20.7 7Z"/></svg></span><span>Campaign</span></button>
+  <button class="mnav-item" data-pane="sched"><span class="mico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5V12l3.5 2"/></svg></span><span>Scheduled</span></button>
+  <button class="mnav-item" id="mnavChatbot" data-pane="bot" style="display:none;"><span class="mico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12.5a7.5 7.5 0 0 1-10.9 6.7L4 20.5l1.4-4.6A7.5 7.5 0 1 1 20 12.5Z"/></svg></span><span>Auto-reply</span></button>
+  <button class="mnav-item" data-pane="conn"><span class="mico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M10.5 18.5h3"/></svg></span><span>Connect</span></button>
+  <a class="mnav-item" href="/client/review.html" id="mnavReview" style="display:none;"><span class="mico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-3-5.3 3 1.1-6L3.4 9.8l6-.8L12 3.5Z"/></svg></span><span>Reviews</span></a>
+  <a class="mnav-item" href="/shop" id="mnavShop" style="display:none;"><span class="mico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M4.5 12H2.1M21.9 12h-2.4M6.7 6.7 5 5M19 19l-1.7-1.7M17.3 6.7 19 5M5 19l1.7-1.7"/></svg></span><span>Jobs</span></a>
+  <a class="mnav-item" href="https://wa.me/918087289267?text=Hi!%20I%20want%20to%20upgrade%20my%20WA%20Marketing%20plan." target="_blank" id="mnavUpgrade" style="display:none;"><span class="mico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l2.1 5.4L19.5 10l-5.4 1.6L12 17l-2.1-5.4L4.5 10l5.4-1.6L12 3Z"/></svg></span><span>Upgrade</span></a>
+  <button class="mnav-item" id="mnavLogout"><span class="mico"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3.5v7"/><path d="M6.8 7a7.5 7.5 0 1 0 10.4 0"/></svg></span><span>Logout</span></button>
 </nav>
 
 <script>
