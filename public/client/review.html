@@ -1,225 +1,362 @@
 <!DOCTYPE html>
-<html lang="hi">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Google Reviews — WA Marketing</title>
+  <title>Google Reviews — Wadigit</title>
   <link rel="icon" href="/favicon.ico" />
+  <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,500;6..72,600;6..72,700&display=swap" rel="stylesheet">
   <style>
   :root{
-    --bg:#f5f7fa;--surface:#ffffff;--surface-2:#f9fafb;
-    --border:#e5e7eb;--border-dark:#d1d5db;
-    --text:#111827;--text-sub:#4b5563;--muted:#9ca3af;
-    --accent:#7c3aed;--accent-dark:#6d28d9;--accent-bg:#ede9fe;
-    --blue:#2563eb;--blue-bg:#eff6ff;
-    --red:#ef4444;--red-bg:#fee2e2;
-    --yellow:#f59e0b;--yellow-bg:#fef3c7;
+    --bg:#F3F8F4;--surface:#ffffff;--surface-2:#F6FAF7;
+    --border:#E3EDE7;--border-dark:#CFDDD5;
+    --text:#08160F;--text-sub:#3E5449;--muted:#8DA396;
+    --accent:#0B6B4A;--accent-dark:#075A3D;--accent-bg:#E2F1E8;
+    --blue:#1E5B9B;--blue-bg:#F1F7FE;
+    --red:#B4241A;--red-bg:#FEF3F2;
+    --yellow:#B07400;--yellow-bg:#FFF7E6;
     --white:#ffffff;
-    --shadow:0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04);
-    --shadow-md:0 4px 6px -1px rgba(0,0,0,0.06), 0 2px 4px -2px rgba(0,0,0,0.04);
-    --radius:12px;--radius-lg:16px;
-    --font:"Plus Jakarta Sans",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    --shadow:0 2px 4px rgba(8,22,15,.02);
+    --shadow-md:0 2px 4px rgba(8,22,15,.02),0 18px 40px -30px rgba(8,22,15,.28);
+    --radius:14px;--radius-lg:20px;
+    --font:"Manrope",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+    --serif:"Newsreader",Georgia,serif;
   }
   *{box-sizing:border-box;margin:0;padding:0;}
   body{
-    font-family:var(--font);background:var(--bg);color:var(--text);
+    font-family:var(--font);color:var(--text);
     font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased;
-    padding-bottom:24px;
+    letter-spacing:-0.005em;padding-bottom:40px;
+    background:
+      radial-gradient(1200px 320px at 22% -160px, #DDEFE4 0%, rgba(221,239,228,0) 70%),
+      var(--bg);
   }
-  /* Navbar */
+  ::selection{background:#0B6B4A22;}
+  a{color:var(--accent-dark);}
+  a:hover{color:var(--accent);}
+  button:focus-visible,a:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{
+    outline:2px solid var(--accent);outline-offset:2px;
+  }
+
+  /* Top bar */
   .navbar{
-    background:linear-gradient(135deg,#25d366,#128c7e);color:#fff;padding:14px 20px;
-    display:flex;align-items:center;justify-content:space-between;
-    position:sticky;top:0;z-index:100;box-shadow:var(--shadow);
+    background:rgba(255,255,255,.92);backdrop-filter:saturate(180%) blur(10px);
+    color:var(--text);padding:0 24px;height:64px;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    position:sticky;top:0;z-index:100;border-bottom:1px solid var(--border);
   }
-  .navbar h1{font-size:17px;font-weight:700;letter-spacing:-0.01em;}
+  .brand{display:flex;align-items:center;gap:11px;min-width:0;}
+  .brand-ic{
+    width:30px;height:30px;flex:0 0 30px;border-radius:10px;background:var(--accent);
+    color:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 4px 12px -4px rgba(11,107,74,.6);
+  }
+  .navbar h1{font-size:16px;font-weight:800;letter-spacing:-0.03em;white-space:nowrap;}
+  .nav-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap;}
   .navbar .back-btn{
-    background:rgba(255,255,255,0.2);border:none;color:#fff;
-    padding:8px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:500;
-    text-decoration:none;display:inline-block;transition:all 0.15s;
+    background:var(--surface);border:1px solid var(--border);color:var(--text-sub);
+    padding:9px 14px;border-radius:11px;cursor:pointer;font-size:13px;font-weight:650;
+    font-family:var(--font);text-decoration:none;display:inline-flex;align-items:center;gap:7px;
+    transition:background .15s,color .15s;
   }
-  .navbar .back-btn:hover{background:rgba(255,255,255,0.3);}
+  .navbar .back-btn:hover{background:var(--surface-2);color:var(--text);}
 
-  /* Plan Locked */
+  /* Plan locked */
   #planLocked{
-    display:none;max-width:500px;margin:60px auto;padding:40px 24px;
-    background:var(--surface);border-radius:var(--radius-lg);text-align:center;
-    box-shadow:var(--shadow);
+    display:none;max-width:520px;margin:72px auto;padding:44px 32px;
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    text-align:center;box-shadow:var(--shadow-md);
   }
-  #planLocked .lock-icon{font-size:48px;margin-bottom:16px;}
-  #planLocked h2{font-size:22px;color:var(--text);margin-bottom:10px;}
-  #planLocked p{color:var(--text-sub);font-size:14px;line-height:1.6;margin-bottom:16px;}
+  #planLocked .lock-icon{color:var(--accent);display:flex;justify-content:center;margin-bottom:18px;}
+  #planLocked h2{font-family:var(--serif);font-weight:600;font-size:34px;line-height:1.05;letter-spacing:-0.025em;margin-bottom:12px;}
+  #planLocked p{color:var(--text-sub);font-size:14.5px;line-height:1.6;margin-bottom:20px;}
 
-  /* Layout */
-  .container{max-width:900px;margin:20px auto;padding:0 16px;}
+  .container{max-width:900px;margin:34px auto;padding:0 24px;}
+
+  /* Page head */
+  .page-head{margin-bottom:24px;}
+  .eyebrow{
+    display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--accent);background:var(--accent-bg);
+    border-radius:999px;padding:5px 11px;margin-bottom:12px;
+  }
+  .page-head h2{
+    font-family:var(--serif);font-weight:600;font-size:46px;line-height:1.02;
+    letter-spacing:-0.025em;color:var(--text);
+  }
+  .page-head p{font-size:15.5px;color:var(--text-sub);margin-top:10px;max-width:56ch;}
 
   /* Stats */
   .stats-row{
-    display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));
-    gap:12px;margin-bottom:20px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
+    gap:14px;margin-bottom:22px;
   }
   .stat-card{
-    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
-    padding:18px 14px;text-align:center;box-shadow:var(--shadow);
+    background:var(--surface);border:1px solid var(--border);border-radius:18px;
+    padding:18px 18px 16px;box-shadow:var(--shadow);
   }
-  .stat-card .num{font-size:28px;font-weight:800;color:var(--accent-dark);line-height:1;}
-  .stat-card .label{font-size:12px;color:var(--text-sub);margin-top:6px;font-weight:500;}
+  .stat-card .num{
+    font-family:var(--serif);font-weight:600;font-size:32px;line-height:1;
+    letter-spacing:-0.02em;color:var(--text);font-variant-numeric:tabular-nums;
+  }
+  .stat-card .label{
+    font-size:10.5px;color:var(--muted);margin-top:9px;font-weight:800;
+    letter-spacing:.14em;text-transform:uppercase;
+  }
 
   /* Card */
   .card{
     background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
-    padding:22px;margin-bottom:16px;box-shadow:var(--shadow);
+    padding:26px;margin-bottom:20px;box-shadow:var(--shadow-md);
+    transition:box-shadow .2s ease;
   }
+  .card:hover{box-shadow:0 2px 4px rgba(8,22,15,.02),0 26px 52px -34px rgba(8,22,15,.34);}
   .card h2{
-    font-size:17px;font-weight:700;color:var(--text);margin-bottom:18px;
-    letter-spacing:-0.01em;
+    font-size:16px;font-weight:800;color:var(--text);letter-spacing:-0.015em;
+    padding-bottom:14px;border-bottom:1px solid #EDF3EF;margin-bottom:20px;
   }
 
   /* Form */
-  .form-group{margin-bottom:14px;}
+  .form-group{margin-bottom:18px;}
   .form-group label{
-    display:block;font-size:13px;font-weight:600;color:var(--text-sub);margin-bottom:6px;
+    display:block;font-size:12px;font-weight:800;letter-spacing:.02em;
+    color:var(--text-sub);margin-bottom:7px;
   }
   .form-group input, .form-group textarea, .form-group select{
-    width:100%;padding:11px 13px;border:1.5px solid var(--border);border-radius:10px;
-    font-size:14px;font-family:var(--font);background:var(--surface);color:var(--text);
-    transition:border 0.15s;outline:none;
+    width:100%;padding:11px 13px;border:1px solid #DEE9E3;border-radius:11px;
+    font-size:14px;font-family:var(--font);background:#FCFEFD;color:var(--text);
+    transition:border .15s,box-shadow .15s;outline:none;
   }
+  .form-group input:hover, .form-group textarea:hover, .form-group select:hover{border-color:#C9DBD1;}
   .form-group input:focus, .form-group textarea:focus, .form-group select:focus{
-    border-color:var(--accent);box-shadow:0 0 0 3px rgba(37,211,102,0.1);
+    border-color:var(--accent);box-shadow:0 0 0 3px rgba(11,107,74,.12);
   }
-  .form-group textarea{resize:vertical;min-height:100px;line-height:1.5;}
-  .form-group small{color:var(--muted);font-size:12px;display:block;margin-top:5px;}
+  .form-group textarea{resize:vertical;min-height:120px;line-height:1.55;}
+  .form-group small{color:var(--muted);font-size:12px;display:block;margin-top:7px;line-height:1.5;}
+  .form-group small b{color:var(--text-sub);}
 
   /* Buttons */
   .btn{
-    padding:11px 18px;border-radius:10px;font-size:14px;font-weight:600;
-    cursor:pointer;border:none;font-family:var(--font);transition:all 0.15s;
-    display:inline-flex;align-items:center;justify-content:center;gap:6px;
+    padding:11px 18px;border-radius:11px;font-size:14px;font-weight:750;
+    cursor:pointer;border:none;font-family:var(--font);letter-spacing:-0.005em;
+    display:inline-flex;align-items:center;justify-content:center;gap:7px;
+    transition:transform .12s ease,background .15s,box-shadow .15s;
   }
-  .btn-blue{background:var(--blue);color:#fff;}
-  .btn-blue:hover{background:#1d4ed8;}
-  .btn-green{background:var(--accent);color:#fff;box-shadow:var(--shadow);}
-  .btn-green:hover{background:var(--accent-dark);}
-  .btn-orange{background:var(--yellow);color:#fff;}
-  .btn-orange:hover{background:#d97706;}
+  .btn-green{background:var(--accent);color:#fff;box-shadow:0 8px 18px -10px rgba(11,107,74,.9);}
+  .btn-green:hover{background:var(--accent-dark);transform:translateY(-1px);}
+  .btn-blue{background:#F4F8F5;color:var(--text);border:1px solid var(--border);font-weight:650;}
+  .btn-blue:hover{background:#EAF2ED;}
+  .btn-orange{background:var(--accent);color:#fff;box-shadow:0 8px 18px -10px rgba(11,107,74,.9);}
+  .btn-orange:hover{background:var(--accent-dark);transform:translateY(-1px);}
+  .btn-ai{background:var(--surface);color:var(--accent-dark);border:1px solid #CFE6DA;font-weight:700;}
+  .btn-ai:hover{background:var(--accent-bg);}
+  .btn:disabled{opacity:.55;cursor:not-allowed;transform:none;box-shadow:none;}
 
   /* Tabs */
   .tabs{
-    display:flex;gap:6px;margin-bottom:16px;overflow-x:auto;
-    background:var(--surface);padding:6px;border-radius:var(--radius);
+    display:flex;gap:6px;margin-bottom:20px;overflow-x:auto;
+    background:var(--surface);padding:6px;border-radius:999px;
     border:1px solid var(--border);box-shadow:var(--shadow);
   }
+  .tabs::-webkit-scrollbar{display:none;}
   .tab-btn{
-    flex:1;min-width:100px;padding:10px 12px;border:none;background:transparent;
-    border-radius:8px;font-size:13px;font-weight:600;color:var(--text-sub);cursor:pointer;
-    font-family:var(--font);transition:all 0.15s;white-space:nowrap;
+    flex:1;min-width:104px;padding:10px 14px;border:none;background:transparent;
+    border-radius:999px;font-size:13.5px;font-weight:650;color:var(--text-sub);cursor:pointer;
+    font-family:var(--font);transition:background .15s,color .15s;white-space:nowrap;
   }
-  .tab-btn.active{background:var(--accent);color:#fff;box-shadow:var(--shadow);}
+  .tab-btn.active{background:var(--accent);color:#fff;font-weight:750;box-shadow:0 6px 16px -8px rgba(11,107,74,.65);}
   .tab-btn:hover:not(.active){background:var(--surface-2);color:var(--text);}
   .tab-content{display:none;}
-  .tab-content.active{display:block;}
+  @keyframes paneIn{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .tab-content.active{display:block;animation:paneIn .28s cubic-bezier(.22,.61,.36,1) both;}
 
   /* Info box */
   .info-box{
-    background:var(--blue-bg);border-left:4px solid var(--blue);border-radius:8px;
-    padding:12px 14px;margin-bottom:16px;font-size:13px;color:#1e3a8a;line-height:1.5;
+    background:#E7F4EC;border:1px solid #C7E3D3;border-radius:14px;
+    padding:14px 16px;margin-bottom:20px;font-size:13.5px;color:var(--accent-dark);
+    line-height:1.55;font-weight:600;
   }
+  .info-box strong{font-weight:800;}
 
   /* Alert */
   .alert{
-    padding:12px 16px;border-radius:var(--radius);margin-bottom:12px;
-    font-size:13px;font-weight:500;display:none;
+    padding:13px 16px;border-radius:14px;margin-bottom:14px;
+    font-size:13.5px;font-weight:650;display:none;
   }
-  .alert.show{display:block;animation:slide-in 0.25s ease-out;}
-  .alert.success{background:var(--accent-bg);color:var(--accent-dark);border-left:4px solid var(--accent);}
-  .alert.error{background:var(--red-bg);color:#991b1b;border-left:4px solid var(--red);}
+  .alert.show{display:block;animation:slide-in .25s ease-out;}
+  .alert.success{background:var(--accent-bg);color:var(--accent-dark);border:1px solid #C7E3D3;}
+  .alert.error{background:var(--red-bg);color:#7A1F17;border:1px solid #F8D7D3;}
   @keyframes slide-in{from{opacity:0;transform:translateY(-5px);}to{opacity:1;transform:translateY(0);}}
 
   /* Upload zone */
   .upload-zone{
-    border:2px dashed var(--border-dark);border-radius:var(--radius);
-    padding:32px 16px;text-align:center;cursor:pointer;transition:all 0.15s;
-    background:var(--surface-2);
+    border:1px dashed var(--border-dark);border-radius:14px;
+    padding:34px 18px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;
+    background:#FAFCFB;
   }
-  .upload-zone:hover{border-color:var(--accent);background:var(--accent-bg);}
-  .upload-zone .icon{font-size:36px;margin-bottom:8px;}
-  .upload-zone p{font-size:14px;color:var(--text-sub);}
-  .upload-zone small{color:var(--muted);font-size:12px;}
+  .upload-zone:hover{border-color:var(--accent);background:#F1F8F4;}
+  .upload-zone .icon{color:#7C8F85;display:flex;justify-content:center;margin-bottom:10px;}
+  .upload-zone p{font-size:14px;color:var(--text-sub);font-weight:600;}
+  .upload-zone small{color:var(--muted);font-size:12px;font-weight:500;}
   input[type="file"]{display:none;}
 
   /* Progress */
   .progress-wrap{
-    display:none;margin:14px 0;height:10px;background:var(--surface-2);
-    border-radius:999px;overflow:hidden;border:1px solid var(--border);
+    display:none;margin:16px 0;height:6px;background:#EDF3EF;
+    border-radius:999px;overflow:hidden;
   }
-  .progress-bar{
-    height:100%;background:linear-gradient(90deg,#25d366,#128c7e);
-    transition:width 0.3s;width:0%;
-  }
+  .progress-bar{height:100%;background:var(--accent);transition:width .3s;width:0%;}
 
-  /* Toggle switch */
+  /* Toggle */
   .toggle-row{display:flex;align-items:center;gap:12px;}
-  .toggle{position:relative;display:inline-block;width:48px;height:26px;}
+  .toggle{position:relative;display:inline-block;width:48px;height:26px;flex:0 0 48px;}
   .toggle input{opacity:0;width:0;height:0;}
-  .slider{
-    position:absolute;inset:0;background:var(--border-dark);
-    border-radius:999px;cursor:pointer;transition:0.25s;
-  }
+  .slider{position:absolute;inset:0;background:#CFDDD5;border-radius:999px;cursor:pointer;transition:.25s;}
   .slider:before{
     content:"";position:absolute;height:20px;width:20px;left:3px;bottom:3px;
-    background:#fff;border-radius:50%;transition:0.25s;box-shadow:var(--shadow);
+    background:#fff;border-radius:50%;transition:.25s;box-shadow:0 1px 3px rgba(0,0,0,.2);
   }
   .toggle input:checked + .slider{background:var(--accent);}
   .toggle input:checked + .slider:before{transform:translateX(22px);}
+  #autoLabel{font-size:14px;font-weight:700;color:var(--text-sub);}
 
-  /* Logs Table */
-  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:var(--radius);}
-  table{width:100%;border-collapse:collapse;font-size:13px;background:var(--surface);}
+  /* Table */
+  .table-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:14px;}
+  .table-wrap::-webkit-scrollbar{height:8px;}
+  .table-wrap::-webkit-scrollbar-thumb{background:#D8E5DD;border-radius:999px;}
+  table{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--surface);}
   th{
-    background:var(--surface-2);padding:12px 14px;text-align:left;
-    font-weight:600;color:var(--text-sub);font-size:12px;text-transform:uppercase;
-    letter-spacing:0.03em;border-bottom:1px solid var(--border);
+    background:var(--surface-2);padding:13px 14px;text-align:left;
+    font-weight:800;color:#6E837A;font-size:10px;text-transform:uppercase;
+    letter-spacing:.1em;border-bottom:1px solid var(--border);white-space:nowrap;
   }
-  td{padding:12px 14px;border-bottom:1px solid var(--border);color:var(--text);}
+  td{padding:13px 14px;border-bottom:1px solid #EDF3EF;color:var(--text);}
+  tbody tr:hover{background:var(--surface-2);}
   tr:last-child td{border-bottom:none;}
   .badge{
-    display:inline-block;padding:3px 10px;border-radius:999px;
-    font-size:11px;font-weight:600;text-transform:uppercase;
+    display:inline-block;padding:4px 11px;border-radius:999px;
+    font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;
   }
   .badge.sent{background:var(--accent-bg);color:var(--accent-dark);}
-  .badge.failed{background:var(--red-bg);color:#991b1b;}
-  .badge.skipped{background:var(--yellow-bg);color:#92400e;}
+  .badge.failed{background:var(--red-bg);color:#7A1F17;}
+  .badge.skipped{background:var(--yellow-bg);color:#7A4A00;}
 
-  /* Mobile */
+  /* Modal */
+  .modal-shell{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:28px;max-width:500px;width:100%;
+    box-shadow:0 40px 80px -30px rgba(8,22,15,.45);margin:auto 0;
+  }
+  .modal-shell h3{
+    font-family:var(--serif);font-weight:600;font-size:28px;line-height:1.1;
+    letter-spacing:-0.02em;margin:0 0 20px;
+  }
+  .ai-preview{
+    margin:16px 0;padding:16px;background:var(--surface-2);border-radius:14px;
+    border:1px solid var(--border);font-size:13.5px;line-height:1.6;white-space:pre-wrap;
+  }
+  .ai-error{
+    margin:12px 0;padding:12px 15px;background:var(--red-bg);color:#7A1F17;
+    border:1px solid #F8D7D3;border-radius:12px;font-size:13px;font-weight:600;
+  }
+
+  /* Google-review cues */
+  .stars{display:inline-flex;gap:2px;line-height:0;}
+  .gdots{display:inline-flex;gap:3px;}
+  .gdots i{width:7px;height:7px;border-radius:50%;display:block;}
+
+  .hero-rating{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);
+    padding:22px 24px;margin-bottom:22px;box-shadow:var(--shadow-md);
+    display:grid;grid-template-columns:auto auto 1fr;gap:22px;align-items:center;
+  }
+  .hero-rating .score{
+    font-family:var(--serif);font-weight:600;font-size:54px;line-height:.9;
+    letter-spacing:-0.03em;color:var(--text);font-variant-numeric:tabular-nums;
+  }
+  .hero-rating .score-sub{font-size:12px;font-weight:700;color:var(--muted);margin-top:8px;letter-spacing:.04em;}
+  .hero-rating .divider{width:1px;align-self:stretch;background:var(--border);}
+  .bars{display:grid;gap:6px;min-width:0;}
+  .bar-row{display:grid;grid-template-columns:14px 1fr;gap:10px;align-items:center;font-size:11.5px;color:var(--muted);font-weight:700;}
+  .bar-track{display:block;height:7px;background:#EDF3EF;border-radius:999px;overflow:hidden;}
+  .bar-fill{display:block;height:100%;background:#F4B400;border-radius:999px;}
+
+  /* Review card preview */
+  .rev-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:18px;
+  }
+  .rev-top{display:flex;align-items:center;gap:12px;margin-bottom:12px;}
+  .rev-av{
+    width:38px;height:38px;flex:0 0 38px;border-radius:50%;background:#E2F1E8;
+    color:var(--accent-dark);display:flex;align-items:center;justify-content:center;
+    font-weight:800;font-size:15px;
+  }
+  .rev-nm{font-weight:750;font-size:14px;}
+  .rev-meta{font-size:11.5px;color:var(--muted);font-weight:600;margin-top:2px;}
+  .rev-body{font-size:13.5px;color:var(--text-sub);line-height:1.6;}
+  .rev-src{
+    display:flex;align-items:center;gap:8px;margin-top:14px;padding-top:12px;
+    border-top:1px solid #EDF3EF;font-size:11px;font-weight:800;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--muted);
+  }
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;}
+  .stat-card .stars{margin-bottom:8px;}
+
   @media(max-width:768px){
-    body{font-size:14px;padding-bottom:20px;}
-    .container{padding:0 12px;margin:14px auto;}
-    .navbar{padding:12px 14px;}
-    .navbar h1{font-size:15px;}
-    .navbar .back-btn{padding:7px 12px;font-size:12px;}
-    .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
-    .stat-card{padding:14px 10px;}
-    .stat-card .num{font-size:22px;}
-    .stat-card .label{font-size:11px;}
-    .card{padding:16px;margin-bottom:12px;}
-    .card h2{font-size:15px;margin-bottom:14px;}
-    .form-group input, .form-group textarea, .form-group select{font-size:15px;padding:10px 12px;}
-    .btn{width:100%;padding:12px 16px;font-size:14px;}
-    .tab-btn{min-width:80px;font-size:12px;padding:9px 8px;}
-    .info-box{font-size:12px;padding:10px 12px;}
-    th, td{padding:10px;font-size:12px;}
+    .hero-rating{grid-template-columns:1fr;gap:16px;padding:18px;}
+    .hero-rating .divider{display:none;}
+    .hero-rating .score{font-size:44px;}
+    .two-col{grid-template-columns:1fr;gap:14px;}
+
+    body{font-size:14px;padding-bottom:28px;}
+    .container{padding:0 14px;margin:20px auto;}
+    .navbar{padding:0 14px;height:58px;}
+    .navbar h1{font-size:14.5px;}
+    .navbar .back-btn{padding:8px 12px;font-size:12.5px;}
+    .page-head h2{font-size:32px;}
+    .page-head p{font-size:14px;}
+    .stats-row{grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:16px;}
+    .stat-card{padding:14px 14px 12px;border-radius:16px;}
+    .stat-card .num{font-size:25px;}
+    .stat-card .label{font-size:9.5px;letter-spacing:.11em;}
+    .card{padding:18px;margin-bottom:14px;border-radius:16px;}
+    .card h2{font-size:15px;margin-bottom:16px;}
+    .card:hover{box-shadow:var(--shadow-md);}
+    .form-group input, .form-group textarea, .form-group select{font-size:15px;padding:11px 12px;}
+    .btn{width:100%;padding:13px 16px;}
+    .tabs{border-radius:16px;}
+    .tab-btn{min-width:88px;font-size:12.5px;padding:10px 10px;}
+    .info-box{font-size:12.5px;padding:12px 14px;}
+    th, td{padding:11px;font-size:12.5px;}
+    #planLocked{margin:40px auto;padding:32px 22px;}
+    #planLocked h2{font-size:27px;}
+    .modal-shell{padding:22px;}
+    .modal-shell h3{font-size:23px;}
   }
   </style>
 </head>
 <body>
 
-<!-- Navbar -->
 <nav class="navbar">
-  <h1>⭐ Google Review Booster</h1>
-  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-    <a href="/client/" class="back-btn">🏠 Home</a>
-    <a href="/shop" class="back-btn" id="navJobs" style="display:none;">🛠️ Jobs</a>
+  <div class="brand">
+    <span class="brand-ic" style="background:#F4B400;box-shadow:0 4px 12px -4px rgba(244,180,0,.65);">
+      <svg viewBox="0 0 24 24" width="17" height="17" fill="#fff" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg>
+    </span>
+    <h1>Google Review Booster</h1>
+    <span class="gdots" aria-hidden="true" style="margin-left:4px;">
+      <i style="background:#4285F4;"></i><i style="background:#DB4437;"></i><i style="background:#F4B400;"></i><i style="background:#0F9D58;"></i>
+    </span>
+  </div>
+  <div class="nav-actions">
+    <a href="/client/" class="back-btn">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10.5 12 3.5l8.5 7"/><path d="M5.5 10v10.5h13V10"/></svg>
+      Dashboard
+    </a>
+    <a href="/shop" class="back-btn" id="navJobs" style="display:none;">
+      <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M12 2.8v2.4M12 18.8v2.4M4.5 12H2.1M21.9 12h-2.4M6.7 6.7 5 5M19 19l-1.7-1.7M17.3 6.7 19 5M5 19l1.7-1.7"/></svg>
+      Jobs
+    </a>
   </div>
 </nav>
 <script>
@@ -229,7 +366,7 @@
     if(!tok) return;
     fetch('/api/me',{headers:{'x-token':tok}}).then(r=>r.json()).then(d=>{
       if(d && d.ok && d.user && (d.user.plan==='service' || d.user.plan==='business')){
-        var b=document.getElementById('navJobs'); if(b) b.style.display='inline-block';
+        var b=document.getElementById('navJobs'); if(b) b.style.display='inline-flex';
       }
     }).catch(()=>{});
   })();
@@ -237,76 +374,132 @@
 
 <!-- Plan Locked Message -->
 <div id="planLocked">
-  <div class="lock-icon">🔒</div>
-  <h2>Pro Plan Required</h2>
-  <p>Google Review feature is available only on Pro (₹999), Service Hub (₹1499), Business (₹2499), or Review Booster (₹499) plans.</p>
-  <br>
-  <a href="/client/" class="btn btn-blue">← Back to Dashboard</a>
+  <div class="lock-icon">
+    <svg viewBox="0 0 24 24" width="34" height="34" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10.5" width="15" height="10.5" rx="2.5"/><path d="M8 10.5V7.8a4 4 0 0 1 8 0v2.7"/></svg>
+  </div>
+  <h2>Pro plan required</h2>
+  <p>Google Reviews is available on Pro (₹999), Service Hub (₹1499), Business (₹2499) and Review Booster (₹499) plans.</p>
+  <a href="/client/" class="btn btn-green">Back to dashboard</a>
 </div>
 
 <!-- Main Content -->
 <div class="container" id="mainContent">
 
-  <!-- Alert -->
+  <div class="page-head">
+    <span class="eyebrow">Google Business Profile</span>
+    <h2>More 5&#8209;star reviews</h2>
+    <p>Send your review link on WhatsApp right after a job and watch the star rating climb &mdash; cooldown, daily limits and sending window handled for you.</p>
+  </div>
+
+  <div class="hero-rating">
+    <div>
+      <div class="score" id="heroScore">&mdash;</div>
+      <div class="stars" style="margin-top:10px;"><svg viewBox="0 0 24 24" width="18" height="18" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg><svg viewBox="0 0 24 24" width="18" height="18" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg><svg viewBox="0 0 24 24" width="18" height="18" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg><svg viewBox="0 0 24 24" width="18" height="18" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg><svg viewBox="0 0 24 24" width="18" height="18" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg></div>
+      <div class="score-sub">Review asks sent, all time</div>
+    </div>
+    <div class="divider"></div>
+    <div class="bars">
+      <div style="display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;">
+        <span style="font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);">Today&rsquo;s sending quota</span>
+        <span id="heroQuota" style="font-family:var(--serif);font-size:19px;font-weight:600;letter-spacing:-0.01em;font-variant-numeric:tabular-nums;">&mdash;</span>
+      </div>
+      <span class="bar-track" style="height:8px;margin-top:4px;"><span class="bar-fill" id="heroQuotaBar" style="width:0%"></span></span>
+      <p style="font-size:12.5px;color:var(--text-sub);font-weight:600;margin-top:8px;line-height:1.5;" id="heroHint">Requests go out between 10 AM and 8 PM.</p>
+    </div>
+  </div>
+
   <div class="alert" id="globalAlert"></div>
 
   <!-- Stats Row -->
   <div class="stats-row">
     <div class="stat-card">
-      <div class="num" id="statToday">—</div>
-      <div class="label">Sent Today</div>
+      <div class="num" id="statToday">&mdash;</div>
+      <div class="label">Sent today</div>
     </div>
     <div class="stat-card">
       <div class="num" id="statLimit">20</div>
-      <div class="label">Daily Limit</div>
+      <div class="label">Daily limit</div>
     </div>
     <div class="stat-card">
-      <div class="num" id="statTotal">—</div>
-      <div class="label">Total Sent</div>
+      <div class="num" id="statTotal">&mdash;</div>
+      <div class="label">Total sent</div>
     </div>
     <div class="stat-card">
-      <div class="num" id="statLink">🔗</div>
-      <div class="label">Google Link Set</div>
+      <div class="num" id="statLink" style="font-size:22px;">&mdash;</div>
+      <div class="label">Review link</div>
     </div>
   </div>
 
   <!-- Tabs -->
   <div class="tabs">
-    <button class="tab-btn active" onclick="switchTab('single')">📱 Single Send</button>
-    <button class="tab-btn" onclick="switchTab('bulk')">📊 Bulk Excel</button>
-    <button class="tab-btn" onclick="switchTab('settings')">⚙️ Settings</button>
-    <button class="tab-btn" onclick="switchTab('logs')">📋 Logs</button>
+    <button class="tab-btn active" onclick="switchTab('single')">Single send</button>
+    <button class="tab-btn" onclick="switchTab('bulk')">Bulk Excel</button>
+    <button class="tab-btn" onclick="switchTab('settings')">Settings</button>
+    <button class="tab-btn" onclick="switchTab('logs')">Logs</button>
   </div>
 
   <!-- Tab: Single Send -->
   <div class="tab-content active" id="tab-single">
     <div class="card">
-      <h2>📱 Send Review Request to a Single Customer</h2>
-      <div class="info-box">ℹ️ Messages are sent only between 10 AM – 8 PM. Each customer receives only one request every 30 days.</div>
+      <h2>Send a review request</h2>
+      <div class="info-box">Messages go out between 10 AM and 8 PM only. Each customer receives one request every 30 days.</div>
       <div class="form-group">
-        <label>Customer Phone Number (WhatsApp)</label>
+        <label>Customer phone number (WhatsApp)</label>
         <input type="tel" id="singlePhone" placeholder="91XXXXXXXXXX (with country code)" />
       </div>
       <div class="form-group">
-        <label>Customer Name (optional)</label>
+        <label>Customer name (optional)</label>
         <input type="text" id="singleName" placeholder="e.g. Ramesh" />
       </div>
-      <button class="btn btn-green" id="btnSingle" onclick="sendSingle()">⭐ Send Review Request</button>
+      <button class="btn btn-green" id="btnSingle" onclick="sendSingle()">Send review request</button>
+    </div>
+
+    <div class="card">
+      <h2>What the customer will leave</h2>
+      <div class="two-col">
+        <div class="rev-card">
+          <div class="rev-top">
+            <span class="rev-av">R</span>
+            <span>
+              <span class="rev-nm">Ramesh K.</span>
+              <span class="rev-meta">Local Guide &middot; 2 reviews</span>
+            </span>
+          </div>
+          <span class="stars"><svg viewBox="0 0 24 24" width="17" height="17" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg><svg viewBox="0 0 24 24" width="17" height="17" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg><svg viewBox="0 0 24 24" width="17" height="17" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg><svg viewBox="0 0 24 24" width="17" height="17" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg><svg viewBox="0 0 24 24" width="17" height="17" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg></span>
+          <p class="rev-body" style="margin-top:10px;">Quick service and very fair pricing. Got my work done the same day &mdash; would definitely come back.</p>
+          <div class="rev-src">
+            <span class="gdots"><i style="background:#4285F4;"></i><i style="background:#DB4437;"></i><i style="background:#F4B400;"></i><i style="background:#0F9D58;"></i></span>
+            Posted on your Google profile
+          </div>
+        </div>
+        <div>
+          <p style="font-size:13.5px;color:var(--text-sub);line-height:1.65;">
+            Your message carries the direct review link, so the customer lands straight on the star picker &mdash; no searching for your business.
+          </p>
+          <ul style="margin:14px 0 0 0;padding:0;list-style:none;display:grid;gap:10px;font-size:13px;color:var(--text-sub);font-weight:600;">
+            <li style="display:flex;gap:9px;align-items:flex-start;"><span style="color:#F4B400;line-height:1;"><svg viewBox="0 0 24 24" width="14" height="14" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg></span>One tap opens the rating screen</li>
+            <li style="display:flex;gap:9px;align-items:flex-start;"><span style="color:#F4B400;line-height:1;"><svg viewBox="0 0 24 24" width="14" height="14" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg></span>Sent within business hours only</li>
+            <li style="display:flex;gap:9px;align-items:flex-start;"><span style="color:#F4B400;line-height:1;"><svg viewBox="0 0 24 24" width="14" height="14" fill="#F4B400" aria-hidden="true"><path d="M12 2.6l2.94 6.06 6.66.9-4.87 4.66 1.2 6.66L12 17.6l-5.93 3.28 1.2-6.66L2.4 9.56l6.66-.9L12 2.6Z"/></svg></span>One ask per customer every 30 days</li>
+          </ul>
+        </div>
+      </div>
     </div>
   </div>
 
   <!-- Tab: Bulk Excel -->
   <div class="tab-content" id="tab-bulk">
     <div class="card">
-      <h2>📊 Send Bulk Review Requests via Excel</h2>
+      <h2>Bulk review requests</h2>
       <div class="info-box">
-        ℹ️ Excel file must contain <strong>Phone</strong> and <strong>Name</strong> columns.<br>
-        Cooldown, daily limit, and time window are checked automatically.
+        Your file needs a <strong>Phone</strong> column and a <strong>Name</strong> column.
+        Cooldown, daily limit and sending window are checked automatically.
       </div>
 
       <div class="upload-zone" onclick="document.getElementById('fileInput').click()">
-        <div class="icon">📂</div>
-        <p id="uploadLabel">Click to select Excel/CSV file<br><small>(.xlsx, .xls, .csv — max 2MB)</small></p>
+        <div class="icon">
+          <svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="17" height="17" rx="2.5"/><path d="M3.5 9h17M9 9v11.5M15 9v11.5"/></svg>
+        </div>
+        <p id="uploadLabel">Click to select an Excel or CSV file<br><small>.xlsx, .xls, .csv &mdash; max 2 MB</small></p>
       </div>
       <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" onchange="fileSelected(this)" />
 
@@ -314,8 +507,9 @@
         <div class="progress-bar" id="progressBar" style="width:0%"></div>
       </div>
 
-      <br>
-      <button class="btn btn-orange" id="btnBulk" onclick="sendBulk()" disabled>📤 Send Bulk</button>
+      <div style="margin-top:18px;">
+        <button class="btn btn-orange" id="btnBulk" onclick="sendBulk()" disabled>Send bulk requests</button>
+      </div>
       <div id="bulkResult" style="margin-top:16px;"></div>
     </div>
   </div>
@@ -323,56 +517,56 @@
   <!-- Tab: Settings -->
   <div class="tab-content" id="tab-settings">
     <div class="card">
-      <h2>⚙️ Review Settings</h2>
+      <h2>Review settings</h2>
       <div class="form-group">
-        <label>Google Review Link (your direct review link)</label>
+        <label>Google review link</label>
         <input type="url" id="googleLink" placeholder="https://g.page/r/..." />
-        <small style="color:#888;">Google Business Profile → Get more reviews → Copy link</small>
+        <small>Google Business Profile &rarr; Get more reviews &rarr; Copy link</small>
       </div>
       <div class="form-group">
-        <label>Choose a Template (industry-wise)</label>
-        <select id="templateSelect" onchange="applyTemplate()" style="width:100%; padding:10px 12px; border:1.5px solid #ddd; border-radius:10px; font-size:14px; outline:none; background:#fff;">
-          <option value="">— Custom (write your own below) —</option>
-          <option value="salon">💇 Salon / Beauty / Spa</option>
-          <option value="clinic">🏥 Clinic / Doctor / Dental</option>
-          <option value="auto">🚗 Auto / Car Wash / Garage</option>
-          <option value="repair">🔧 Repair / Electrical</option>
-          <option value="food">🍽️ Restaurant / Food / Bakery</option>
-          <option value="retail">🛍️ Retail / Shop / E-commerce</option>
-          <option value="gym">💪 Gym / Fitness / Coaching</option>
-          <option value="general">⭐ General (all-purpose)</option>
+        <label>Choose a template</label>
+        <select id="templateSelect" onchange="applyTemplate()">
+          <option value="">Custom &mdash; write your own below</option>
+          <option value="salon">Salon / Beauty / Spa</option>
+          <option value="clinic">Clinic / Doctor / Dental</option>
+          <option value="auto">Auto / Car wash / Garage</option>
+          <option value="repair">Repair / Electrical</option>
+          <option value="food">Restaurant / Food / Bakery</option>
+          <option value="retail">Retail / Shop / E-commerce</option>
+          <option value="gym">Gym / Fitness / Coaching</option>
+          <option value="general">General &mdash; all purpose</option>
         </select>
-        <small style="color:#888;">Select a template to load a professional pre-written message. You can edit after loading.</small>
+        <small>Loads a pre-written message for that industry. You can edit it afterwards.</small>
       </div>
       <div class="form-group">
-        <label>Message Template</label>
-        <div style="display:flex;gap:8px;margin-bottom:8px;flex-wrap:wrap;">
-          <button type="button" class="btn" onclick="openAiModal()" style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;font-size:13px;padding:9px 14px;">✨ Generate with AI</button>
-          <button type="button" class="btn btn-blue" onclick="applyTemplate(true)" style="font-size:13px;padding:9px 14px;">🔄 Reload Template</button>
+        <label>Message template</label>
+        <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+          <button type="button" class="btn btn-ai" onclick="openAiModal()" style="font-size:13px;padding:9px 14px;">Generate with AI</button>
+          <button type="button" class="btn btn-blue" onclick="applyTemplate(true)" style="font-size:13px;padding:9px 14px;">Reload template</button>
         </div>
         <textarea id="msgTemplate" rows="8" placeholder="Hi {name}, thank you for choosing {business}..."></textarea>
-        <small style="color:#888;"><b>{name}</b> = customer name · <b>{business}</b> = your business name · <b>{link}</b> = Google review link</small>
+        <small><b>{name}</b> customer name &middot; <b>{business}</b> your business name &middot; <b>{link}</b> Google review link</small>
       </div>
       <div class="form-group">
-        <label>Auto-send on Job Complete?</label>
+        <label>Auto-send when a job is completed</label>
         <div class="toggle-row">
           <label class="toggle">
             <input type="checkbox" id="autoToggle" onchange="toggleAuto(this)" />
             <span class="slider"></span>
           </label>
-          <span id="autoLabel" style="font-size:14px;color:#555;">Off</span>
+          <span id="autoLabel">Off</span>
         </div>
-        <small style="color:#888;">Automatically send a review request when a job is marked "Complete"</small>
+        <small>Sends a review request automatically when a job is marked complete.</small>
       </div>
-      <button class="btn btn-blue" onclick="saveSettings()">💾 Save Settings</button>
+      <button class="btn btn-green" onclick="saveSettings()">Save settings</button>
     </div>
   </div>
 
   <!-- Tab: Logs -->
   <div class="tab-content" id="tab-logs">
     <div class="card">
-      <h2>📋 Recent Logs (last 100)</h2>
-      <button class="btn btn-blue" onclick="loadLogs()" style="margin-bottom:16px;">🔄 Refresh</button>
+      <h2>Recent activity <span style="font-weight:600;color:var(--muted);">&mdash; last 100</span></h2>
+      <button class="btn btn-blue" onclick="loadLogs()" style="margin-bottom:18px;">Refresh</button>
       <div class="table-wrap">
         <table>
           <thead>
@@ -380,11 +574,11 @@
               <th>Customer</th>
               <th>Phone</th>
               <th>Status</th>
-              <th>Date/Time</th>
+              <th>Date / time</th>
             </tr>
           </thead>
           <tbody id="logsBody">
-            <tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">Loading logs...</td></tr>
+            <tr><td colspan="4" style="text-align:center;color:var(--muted);padding:34px;">Loading logs&hellip;</td></tr>
           </tbody>
         </table>
       </div>
@@ -450,7 +644,23 @@
       document.getElementById('statToday').textContent = d.todayCount ?? '—';
       document.getElementById('statLimit').textContent = d.dailyLimit ?? 20;
       document.getElementById('statTotal').textContent = d.totalSent ?? '—';
-      document.getElementById('statLink').textContent = d.googleLink ? '✅' : '❌';
+      document.getElementById('statLink').textContent = d.googleLink ? 'Connected' : 'Not set';
+
+      var total = Number(d.totalSent ?? 0);
+      var today = Number(d.todayCount ?? 0);
+      var limit = Number(d.dailyLimit ?? 20) || 20;
+      var hs = document.getElementById('heroScore');
+      if (hs) hs.textContent = total;
+      var hq = document.getElementById('heroQuota');
+      if (hq) hq.textContent = today + ' / ' + limit;
+      var hb = document.getElementById('heroQuotaBar');
+      if (hb) hb.style.width = Math.min(100, Math.round(today / limit * 100)) + '%';
+      var hh = document.getElementById('heroHint');
+      if (hh) hh.textContent = d.googleLink
+        ? (today >= limit
+            ? 'Daily quota used up — sending resumes tomorrow.'
+            : (limit - today) + ' more requests available today, 10 AM to 8 PM.')
+        : 'Add your Google review link in Settings to start sending.';
     } catch {}
   }
 
@@ -464,7 +674,7 @@
       document.getElementById('msgTemplate').value   = s.messageTemplate || '';
       const checked = !!s.autoOnJobComplete;
       document.getElementById('autoToggle').checked  = checked;
-      document.getElementById('autoLabel').textContent = checked ? 'On ✅' : 'Off';
+      document.getElementById('autoLabel').textContent = checked ? 'On' : 'Off';
     } catch {}
   }
 
@@ -474,30 +684,30 @@
       messageTemplate:    document.getElementById('msgTemplate').value.trim(),
       autoOnJobComplete:  document.getElementById('autoToggle').checked
     };
-    if (!body.googleLink) return showAlert('Google Review link is required!', 'error');
+    if (!body.googleLink) return showAlert('Google review link is required', 'error');
     const r = await apiFetch('/api/review/settings', 'POST', body);
-    if (r.ok) { showAlert('Settings saved! ✅', 'success'); loadStats(); }
+    if (r.ok) { showAlert('Settings saved', 'success'); loadStats(); }
     else showAlert(r.msg || 'Error', 'error');
   }
 
   function toggleAuto(el) {
-    document.getElementById('autoLabel').textContent = el.checked ? 'On ✅' : 'Off';
+    document.getElementById('autoLabel').textContent = el.checked ? 'On' : 'Off';
   }
 
   // ── Single Send ───────────────────────────────────
   async function sendSingle() {
     const phone = document.getElementById('singlePhone').value.trim();
     const name  = document.getElementById('singleName').value.trim();
-    if (!phone) return showAlert('Phone number is required!', 'error');
+    if (!phone) return showAlert('Phone number is required', 'error');
 
     const btn = document.getElementById('btnSingle');
-    btn.disabled = true; btn.textContent = '⏳ Sending...';
+    btn.disabled = true; btn.textContent = 'Sending…';
 
     const r = await apiFetch('/api/review/send-single', 'POST', { phone, name });
-    btn.disabled = false; btn.textContent = '⭐ Send Review Request';
+    btn.disabled = false; btn.textContent = 'Send review request';
 
     if (r.ok) {
-      showAlert(r.msg || 'Request sent! ✅', 'success');
+      showAlert(r.msg || 'Request sent', 'success');
       document.getElementById('singlePhone').value = '';
       document.getElementById('singleName').value  = '';
       loadStats(); loadLogs();
@@ -511,7 +721,7 @@
     if (input.files && input.files[0]) {
       selectedFile = input.files[0];
       document.getElementById('uploadLabel').innerHTML =
-        `✅ <strong>${selectedFile.name}</strong> selected (${(selectedFile.size/1024).toFixed(1)} KB)<br><small>Click to change</small>`;
+        `<strong>${selectedFile.name}</strong> selected (${(selectedFile.size/1024).toFixed(1)} KB)<br><small>Click to change</small>`;
       document.getElementById('btnBulk').disabled = false;
     }
   }
@@ -520,7 +730,7 @@
     if (!selectedFile) return showAlert('Please select a file first', 'error');
 
     const btn = document.getElementById('btnBulk');
-    btn.disabled = true; btn.textContent = '⏳ Processing...';
+    btn.disabled = true; btn.textContent = 'Processing…';
     document.getElementById('progressWrap').style.display = 'block';
     animateProgress();
 
@@ -539,9 +749,9 @@
       if (r.ok) {
         document.getElementById('bulkResult').innerHTML = `
           <div class="alert success show">
-            ✅ Bulk complete! &nbsp;|&nbsp;
-            Sent: <strong>${r.sent}</strong> &nbsp;|&nbsp;
-            Skipped: <strong>${r.skipped}</strong> &nbsp;|&nbsp;
+            Bulk complete &nbsp;&middot;&nbsp;
+            Sent: <strong>${r.sent}</strong> &nbsp;&middot;&nbsp;
+            Skipped: <strong>${r.skipped}</strong> &nbsp;&middot;&nbsp;
             Failed: <strong>${r.failed}</strong>
           </div>`;
         loadStats(); loadLogs();
@@ -552,7 +762,7 @@
       showAlert('Network error: ' + e.message, 'error');
     }
 
-    btn.disabled = false; btn.textContent = '📤 Send Bulk';
+    btn.disabled = false; btn.textContent = 'Send bulk requests';
     setTimeout(() => { document.getElementById('progressWrap').style.display = 'none'; document.getElementById('progressBar').style.width = '0%'; }, 3000);
   }
 
@@ -574,7 +784,7 @@
       const logs = r.logs || [];
       const tbody = document.getElementById('logsBody');
       if (!logs.length) {
-        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:#aaa;padding:30px;">No logs yet</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;color:var(--muted);padding:34px;">No requests sent yet</td></tr>';
         return;
       }
       tbody.innerHTML = logs.map(l => `
@@ -582,7 +792,7 @@
           <td>${l.customerName || '—'}</td>
           <td>${l.phone}</td>
           <td><span class="badge ${l.status}">${l.status}</span></td>
-          <td>${new Date(l.sentAt).toLocaleString('hi-IN', { timeZone: 'Asia/Kolkata' })}</td>
+          <td>${new Date(l.sentAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</td>
         </tr>`).join('');
     } catch {}
   }
@@ -611,16 +821,17 @@
     setTimeout(() => el.classList.remove('show'), 4000);
   }
 </script>
+
 <!-- AI Generate Modal -->
-<div id="aiModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:1000;padding:20px;overflow-y:auto;align-items:flex-start;justify-content:center;">
-  <div style="background:#fff;border-radius:16px;padding:24px;max-width:480px;width:100%;box-shadow:0 10px 15px -3px rgba(0,0,0,0.1);margin-top:30px;">
-    <h3 style="margin:0 0 16px;font-size:18px;font-weight:700;">✨ Generate Message with AI</h3>
+<div id="aiModal" style="display:none;position:fixed;inset:0;background:rgba(8,22,15,0.5);z-index:1000;padding:20px;overflow-y:auto;align-items:flex-start;justify-content:center;">
+  <div class="modal-shell" style="margin-top:40px;">
+    <h3>Generate with AI</h3>
     <div class="form-group">
       <label>Industry</label>
-      <select id="aiIndustry" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;">
+      <select id="aiIndustry">
         <option value="salon">Salon / Beauty / Spa</option>
         <option value="clinic">Clinic / Doctor / Dental</option>
-        <option value="auto">Auto / Car Wash / Garage</option>
+        <option value="auto">Auto / Car wash / Garage</option>
         <option value="repair">Repair / Electrical</option>
         <option value="food">Restaurant / Food / Bakery</option>
         <option value="retail">Retail / Shop / E-commerce</option>
@@ -630,27 +841,27 @@
     </div>
     <div class="form-group">
       <label>Tone</label>
-      <select id="aiTone" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;">
-        <option value="friendly">Friendly & Warm</option>
+      <select id="aiTone">
+        <option value="friendly">Friendly &amp; warm</option>
         <option value="professional">Professional</option>
-        <option value="casual">Casual & Fun</option>
-        <option value="grateful">Grateful & Humble</option>
+        <option value="casual">Casual &amp; fun</option>
+        <option value="grateful">Grateful &amp; humble</option>
       </select>
     </div>
     <div class="form-group">
       <label>Language</label>
-      <select id="aiLanguage" style="width:100%;padding:10px;border:1.5px solid #ddd;border-radius:10px;font-size:14px;">
+      <select id="aiLanguage">
         <option value="english">English</option>
         <option value="hindi">Hindi (Roman script)</option>
-        <option value="hinglish">Hinglish (Mix)</option>
+        <option value="hinglish">Hinglish (mix)</option>
       </select>
     </div>
-    <div id="aiPreview" style="display:none;margin:14px 0;padding:14px;background:#f9fafb;border-radius:10px;border:1px solid #e5e7eb;font-size:13px;white-space:pre-wrap;"></div>
-    <div id="aiError" style="display:none;margin:10px 0;padding:10px 14px;background:#fee2e2;color:#991b1b;border-radius:8px;font-size:13px;"></div>
-    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:16px;flex-wrap:wrap;">
-      <button type="button" class="btn" onclick="closeAiModal()" style="background:#f3f4f6;color:#374151;">Cancel</button>
-      <button type="button" class="btn" id="aiGenBtn" onclick="generateAi()" style="background:linear-gradient(135deg,#7c3aed,#2563eb);color:#fff;">✨ Generate</button>
-      <button type="button" class="btn btn-green" id="aiUseBtn" onclick="useAiResult()" style="display:none;">Use this message ✓</button>
+    <div id="aiPreview" class="ai-preview" style="display:none;"></div>
+    <div id="aiError" class="ai-error" style="display:none;"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap;">
+      <button type="button" class="btn btn-blue" onclick="closeAiModal()">Cancel</button>
+      <button type="button" class="btn btn-ai" id="aiGenBtn" onclick="generateAi()">Generate</button>
+      <button type="button" class="btn btn-green" id="aiUseBtn" onclick="useAiResult()" style="display:none;">Use this message</button>
     </div>
   </div>
 </div>
@@ -671,14 +882,14 @@ async function generateAi(){
   var err=document.getElementById('aiError');
   var prev=document.getElementById('aiPreview');
   err.style.display='none';
-  btn.disabled=true;btn.textContent='⏳ Generating...';
+  btn.disabled=true;btn.textContent='Generating…';
   try{
     var r=await apiFetch('/api/review/generate','POST',{
       industry:document.getElementById('aiIndustry').value,
       tone:document.getElementById('aiTone').value,
       language:document.getElementById('aiLanguage').value
     });
-    btn.disabled=false;btn.innerHTML='✨ Regenerate';
+    btn.disabled=false;btn.textContent='Regenerate';
     if(r.ok && r.message){
       prev.textContent=r.message;
       prev.style.display='block';
@@ -688,7 +899,7 @@ async function generateAi(){
       err.style.display='block';
     }
   }catch(e){
-    btn.disabled=false;btn.textContent='✨ Generate';
+    btn.disabled=false;btn.textContent='Generate';
     err.textContent='Error: '+e.message;
     err.style.display='block';
   }
@@ -698,7 +909,7 @@ function useAiResult(){
   if(document.getElementById('msgTemplate').value.trim() && !confirm('Replace existing template?')) return;
   document.getElementById('msgTemplate').value=msg;
   closeAiModal();
-  showAlert('AI message applied! Remember to save settings.','success');
+  showAlert('AI message applied — remember to save settings','success');
 }
 </script>
 
