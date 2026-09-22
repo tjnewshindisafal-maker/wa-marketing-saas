@@ -850,10 +850,10 @@ document.querySelectorAll('.overlay').forEach(function(o){
 // Check if already logged in
 var token = localStorage.getItem('wa_token');
 if(token){
-  fetch('/api/auth/me', { headers:{'Authorization':'Bearer '+token} })
+  fetch('/api/me', { headers:{'x-token':token} })
   .then(function(r){ return r.json(); })
   .then(function(d){
-    if(d.user){
+    if(d.ok && d.user){
       if(d.user.role==='admin') window.location.href='/admin';
       else window.location.href='/client';
     }
