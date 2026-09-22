@@ -95,23 +95,23 @@ function getDailyStats(userId){
 
 // Smart throttling — sending count ke hisab se delay decide karo
 function getSmartDelay(sentCount){
-  // First 10: 20-30 sec (warm up)
-  if(sentCount < 10) return 20000 + Math.random() * 10000;
-  // 10-50: 12-18 sec
-  if(sentCount < 50) return 12000 + Math.random() * 6000;
-  // 50-100: 8-12 sec
-  if(sentCount < 100) return 8000 + Math.random() * 4000;
-  // 100+: 6-10 sec
-  return 6000 + Math.random() * 4000;
+  // First 10: 30-45 sec (warm up)
+  if(sentCount < 10) return 30000 + Math.random() * 15000;
+  // 10-50: 20-30 sec
+  if(sentCount < 50) return 20000 + Math.random() * 10000;
+  // 50-100: 15-22 sec
+  if(sentCount < 100) return 15000 + Math.random() * 7000;
+  // 100+: 12-18 sec (never below 12s, even for high counts)
+  return 12000 + Math.random() * 6000;
 }
 
-// Human break — har 25 messages ke baad 1-2 minute pause
+// Human break — har 20 messages ke baad 2-4 minute pause
 function shouldTakeBreak(sentCount){
-  return sentCount > 0 && sentCount % 25 === 0;
+  return sentCount > 0 && sentCount % 20 === 0;
 }
 
 function getBreakDuration(){
-  return 60000 + Math.random() * 60000; // 1-2 min
+  return 120000 + Math.random() * 120000; // 2-4 min
 }
 
 // Time window check — sirf 10 AM se 8 PM (IST)
@@ -1331,7 +1331,7 @@ app.post('/api/wa/send', upload.single('image'), clientAuth, async (req,res) => 
         const delay = getSmartDelay(sessionStats.sent);
         await new Promise(r => setTimeout(r, delay));
         
-        // 🛡️ SAFETY: Take break every 25 msgs
+        // 🛡️ SAFETY: Take break every 20 msgs
         if(shouldTakeBreak(sessionStats.sent)){
           const breakMs = getBreakDuration();
           io.to('wa_'+userId).emit('break', { 
