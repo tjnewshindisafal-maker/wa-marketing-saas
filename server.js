@@ -941,13 +941,14 @@ app.delete('/api/scheduler/:id', clientAuth, async (req,res) => {
 app.post('/api/jobs', clientAuth, async (req,res) => {
   try {
     if(!hasFeature(req.user.plan,'jobs')) return res.json({ ok:false, msg:'Upgrade to Service plan' });
-    let { customerName, customerPhone, serviceType, description, deviceModel, priority,
+    let { customerName, customerPhone, serviceType, description, deviceModel, address, priority,
             industry, reminderDays, reminderDate, timeSlot } = req.body;
     customerName = sanitizeStr(customerName, 100);
     customerPhone = sanitizeStr(customerPhone, 15);
     serviceType = sanitizeStr(serviceType, 100) || 'General';
     description = sanitizeStr(description, 1000);
     deviceModel = sanitizeStr(deviceModel, 200);
+    address = sanitizeStr(address, 300);
     priority = ['normal','urgent','vip'].indexOf(priority) !== -1 ? priority : 'normal';
 
     if(!customerName || !customerPhone) return res.json({ ok:false, msg:'Customer name and phone required' });
@@ -965,7 +966,7 @@ app.post('/api/jobs', clientAuth, async (req,res) => {
     const job = {
       jobId, clientId:req.user._id.toString(), clientName:req.user.business||req.user.name,
       customerName, customerPhone, serviceType,
-      description, deviceModel, priority,
+      description, deviceModel, address, priority,
       industry: jobIndustry,
       status:'pending',
       statusHistory:[{ status:'pending', time:new Date(), note:'Created' }],
