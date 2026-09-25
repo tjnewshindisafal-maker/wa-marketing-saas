@@ -572,6 +572,12 @@ td .cust-phone{font-size:11px;color:var(--muted);display:block;margin-top:2px;}
             <input type="datetime-local" id="nj-timeslot">
           </div>
 
+          <!-- ADDRESS (only Repair — for home-visit / pickup-drop jobs) -->
+          <div class="mf" id="nj-address-wrap" style="display:none;">
+            <label>📍 Address</label>
+            <input type="text" id="nj-address" placeholder="House no, street, area, landmark">
+          </div>
+
           <!-- REMINDER BOX -->
           <div class="reminder-box">
             <div class="reminder-box-title">🔔 Auto Reminder</div>
@@ -750,6 +756,7 @@ var INDUSTRY_DATA = {
     showPickup: true,
     showCost: true,
     showTimeSlot: false,
+    showAddress: true,
     services: [
       {name:'TV Repair', days:90},
       {name:'AC Service', days:180},
@@ -926,6 +933,9 @@ function applyIndustry(){
 
   // Time slot field (only Salon & Clinic)
   document.getElementById('nj-timeslot-wrap').style.display = data.showTimeSlot ? 'block' : 'none';
+
+  // Address field (only Repair — for home-visit / pickup-drop jobs)
+  document.getElementById('nj-address-wrap').style.display = data.showAddress ? 'block' : 'none';
 
   // Search placeholders
   document.getElementById('jobSearch').placeholder = 'Search '+data.jobWord.toLowerCase()+' / '+data.customerWord.toLowerCase()+'...';
@@ -1233,6 +1243,7 @@ document.getElementById('createJobBtn').addEventListener('click',function(){
   var cp=document.getElementById('nj-cphone').value.trim();
   var svc=document.getElementById('nj-service').value;
   var dev=document.getElementById('nj-device').value.trim();
+  var addr=document.getElementById('nj-address').value.trim();
   var pri=document.getElementById('nj-priority').value;
   var tech=document.getElementById('nj-tech').value;
   var desc=document.getElementById('nj-desc').value.trim();
@@ -1242,7 +1253,7 @@ document.getElementById('createJobBtn').addEventListener('click',function(){
   var btn=this; btn.textContent='Creating...'; btn.disabled=true;
   var payload={
     customerName:cn, customerPhone:cp, serviceType:svc, deviceModel:dev,
-    priority:pri, description:desc,
+    address:addr, priority:pri, description:desc,
     industry: currentIndustry,
     reminderDays: remDays
   };
@@ -1270,7 +1281,7 @@ document.getElementById('createJobBtn').addEventListener('click',function(){
     if(tech){
       fetch('/api/jobs/'+d.job.jobId+'/technician',{method:'PUT',headers:{'x-token':token,'Content-Type':'application/json'},body:JSON.stringify({technicianId:tech})});
     }
-    ['nj-cname','nj-cphone','nj-device','nj-desc'].forEach(function(id){ document.getElementById(id).value=''; });
+    ['nj-cname','nj-cphone','nj-device','nj-address','nj-desc'].forEach(function(id){ document.getElementById(id).value=''; });
     showSection('sec-jobs');
     setTimeout(loadAll,1000);
   });
@@ -1294,7 +1305,7 @@ function openJob(jobId){
     +'<div class="mf"><label>Technician</label><select id="jm-tech"><option value="">Not assigned</option>'+allTechs.map(function(t){return '<option value="'+t._id+'" '+(job.technicianId===t._id.toString()?'selected':'')+'>'+t.name+'</option>';}).join('')+'</select></div>'
     +'</div>'
     +'<div class="mf"><label>Status Note</label><input type="text" id="jm-note" placeholder="e.g. Part ordered, will take 2 days"></div>'
-    +'<div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Service: '+job.serviceType+' | Device: '+(job.deviceModel||'—')+'<br>Phone: +'+job.customerPhone+(job.technicianName?' | Tech: '+job.technicianName:'')+'</div>'
+    +'<div style="font-size:12px;color:var(--muted);margin-bottom:12px;">Service: '+job.serviceType+' | Device: '+(job.deviceModel||'—')+'<br>Phone: +'+job.customerPhone+(job.technicianName?' | Tech: '+job.technicianName:'')+(job.address?'<br>📍 '+job.address:'')+'</div>'
     +'<div style="display:flex;gap:8px;flex-wrap:wrap;">'
     +'<button class="btn-save" style="flex:none;padding:9px 16px;font-size:12px;" onclick="updateJobStatus(\''+jobId+'\')">Update Status</button>'
     +'<button class="abtn ab-wa" style="padding:9px 14px;" onclick="sendJobWA(\''+jobId+'\')">📱 Send WA</button>'
