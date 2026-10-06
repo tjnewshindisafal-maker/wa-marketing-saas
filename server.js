@@ -578,22 +578,20 @@ app.post('/api/signup', signupLimiter, async (req,res) => {
 
     const hashedPass = await hashPassword(pass);
     const planFinal = ['starter','pro','service','business'].indexOf(plan) !== -1 ? plan : 'starter';
-    const isPaidPlan = planFinal !== 'starter';
 
     const result = await db.collection('users').insertOne({
       name, email, pass: hashedPass, phone,
       business: business || name,
       industry, plan: planFinal,
-      role: 'user', status: 'active',
-      isTrial: isPaidPlan,
-      trialEnds: isPaidPlan ? new Date(Date.now()+7*24*60*60*1000) : null,
+      role: 'user', status: 'pending',
+      isTrial: false, trialEnds: null,
       msgCount: 0, jobCount: 0,
       failedLogins: 0,
       createdAt: new Date()
     });
 
     const token = createToken(result.insertedId.toString(), 'user');
-    res.json({ ok:true, token, name, plan: planFinal });
+    res.json({ ok:true, token, name, plan: planFinal, pending:true });
   } catch(e){
     console.log('signup error:', e.message);
     res.json({ ok:false, msg:'Signup failed. Try again.' });
@@ -630,6 +628,7 @@ app.post('/api/login', loginLimiter, async (req,res) => {
     }
 
     if(user.status === 'blocked') return res.json({ ok:false, msg:'Account suspended.' });
+    if(user.status === 'pending') return res.json({ ok:false, msg:'Payment pending. Complete payment — your account will be activated after approval.', pending:true });
 
     // Auto-migrate: if password was plain text, hash it now
     if(user.pass && !user.pass.startsWith('$2')){
@@ -683,14 +682,12 @@ app.post('/api/google-login', loginLimiter, async (req,res) => {
       const phone = sanitizeStr(req.body.phone || '', 15);
       const business = sanitizeStr(req.body.business || name, 150);
       const industry = sanitizeStr(req.body.industry || 'general', 50);
-      const isPaidPlan = plan !== 'starter';
 
       const doc = {
         name, email, pass: '', phone, business,
         industry, plan,
-        role: 'user', status: 'active', googleAuth: true,
-        isTrial: isPaidPlan,
-        trialEnds: isPaidPlan ? new Date(Date.now()+7*24*60*60*1000) : null,
+        role: 'user', status: 'pending', googleAuth: true,
+        isTrial: false, trialEnds: null,
         msgCount: 0, jobCount: 0, failedLogins: 0,
         createdAt: new Date()
       };
@@ -698,6 +695,7 @@ app.post('/api/google-login', loginLimiter, async (req,res) => {
       user = { ...doc, _id: result.insertedId };
     } else {
       if(user.status === 'blocked') return res.json({ ok:false, msg:'Account suspended.' });
+      if(user.status === 'pending') return res.json({ ok:false, msg:'Payment pending. Complete payment — your account will be activated after approval.' });
       await db.collection('users').updateOne(
         { _id: user._id },
         { $set: { lastLogin: new Date(), googleAuth: true } }
@@ -708,7 +706,8 @@ app.post('/api/google-login', loginLimiter, async (req,res) => {
     res.json({
       ok:true, token, name:user.name, role:user.role||'user',
       plan:user.plan, business:user.business, email:user.email,
-      industry:user.industry, isTrial:user.isTrial||false
+      industry:user.industry, isTrial:user.isTrial||false,
+      pending: user.status === 'pending'
     });
   } catch(e){
     console.log('google login error:', e.message);
@@ -728,6 +727,7 @@ app.get('/api/me', async (req,res) => {
     const user = await db.collection('users').findOne({ _id: new ObjectId(decoded.uid) });
     if(!user) return res.json({ ok:false, msg:'User not found' });
     if(user.status === 'blocked') return res.json({ ok:false, msg:'Account suspended' });
+    if(user.status === 'pending') return res.json({ ok:false, msg:'Payment pending. Your account will be activated after approval.', pending:true });
 
     let trialStatus = null;
     if(user.isTrial && user.trialEnds){
@@ -775,6 +775,7 @@ async function clientAuth(req,res,next){
   const user = await db.collection('users').findOne({ _id: new ObjectId(decoded.uid) });
   if(!user) return res.json({ ok:false, msg:'Unauthorized' });
   if(user.status === 'blocked') return res.json({ ok:false, msg:'Account suspended' });
+  if(user.status === 'pending') return res.json({ ok:false, msg:'Payment pending. Your account will be activated after approval.' });
   req.user = user;
   next();
 }
